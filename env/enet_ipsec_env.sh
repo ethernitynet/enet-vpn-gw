@@ -24,7 +24,7 @@ export SELECTOR_OUTBOUND='sel dev %s src %s dst %s'
 export SELECTOR_INBOUND='sel dev %s dst %s src %s'
 export ALGO_AUTH='auth "%s" %s'
 export ALGO_ENC='enc "%s" %s'
-export OFFLOAD_OUTBOUND='offload dev %s dir out'
+export OFFLOAD_OUTBOUND='offload dev %s dmac %s dir out'
 export OFFLOAD_INBOUND='offload dev %s dir in'
 
 export OUTBOUND_TUNNEL_SPEC="${SELECTOR_OUTBOUND} ${OFFLOAD_OUTBOUND}"

@@ -73,6 +73,20 @@ enet_ipsec_format_cipher_key() {
 	echo "-Confident_key ${enet_confidentiality_key} -Confident_IV ${enet_confidentiality_iv}"
 }
 
+function enet_ipsec_resolve_tun_mac_dst {
+
+	local dev_dst=$1
+	local tun_ip_dst=$2
+	local srvr_ip=$(srvr_ip_by_id ${dev_dst})
+	local srvr_name=$(srvr_name_by_ip ${srvr_ip})
+	
+	local docker_cmd="docker exec ${srvr_name} ip neigh | grep ${tun_ip_dst} | sed -s 's/^.* dev vpndev0 lladdr \([0-9a-fA-F\:]*\) .*$/\1/'"
+	host_log "${docker_cmd}"
+	local neigh_mac=$(eval "${docker_cmd}")
+	host_log "${tun_ip_dst}@${dev_dst}: ${neigh_mac}"
+	echo "${neigh_mac}"
+}
+
 enet_ipsec_add_profile() {
 
 	local spi=$2
@@ -105,9 +119,17 @@ enet_ipsec_outbound_tunnel_partial_offload_delete() {
 	local subnet_src=$2
 	local subnet_dst=$3
 	local dev_dst=$4
+	local tun_mac_dst=$5
 	local tunnel_id=$(enet_ipsec_unique_id_by_subnets ${subnet_src} ${subnet_dst})
 	local in_vlan_hex=$(printf '0x81000%03x' ${tunnel_id})
 	
+	################################
+	ovs_dpdk del-flows $OVS_VPN_BR \
+		$OVS_FLOW_PORT_SUBNET_PAIR_SPEC \
+		$ENET_HOST_PORT \
+		${subnet_src} \
+		${subnet_dst}
+	################################
 	set -x
 	local service_line_pattern="^${WS}\([0-9][0-9]*\)${WS}${ENET_HOST_PORT}${WS}${in_vlan_hex}${WS}N${WS}\/${WS}N${WS}transp${WS}NA${WS}0x00000000${WS}N${WS}\/${WS}N${WS}transp${WS}NA${WS}0${WS}NA${WS}Encrypt${WS}\([0-9][0-9]*\)${WS}NONE${WS}${enet_mach_id_ipsec_enc_pop_vlan}${WS}NONE${WS}NA.*$"
 	exec_delete=$(\
@@ -116,6 +138,7 @@ enet_ipsec_outbound_tunnel_partial_offload_delete() {
 		)
 	set +x
 	enet_exec "${exec_delete}"
+	################################
 }
 
 enet_ipsec_inbound_tunnel_partial_offload_delete() {
@@ -127,6 +150,13 @@ enet_ipsec_inbound_tunnel_partial_offload_delete() {
 	local tunnel_id=$(enet_ipsec_unique_id_by_subnets ${subnet_src} ${subnet_dst})
 	local out_vlan_hex=$(printf '0x81000%03x' ${tunnel_id})
 
+	################################
+	ovs_dpdk del-flows $OVS_VPN_BR \
+		$OVS_FLOW_PORT_SUBNET_PAIR_SPEC \
+		$ENET_HOST_PORT \
+		${subnet_src} \
+		${subnet_dst}
+	################################
 	set -x
 	exec_delete=$(\
 		meaCli mea service show edit all | \
@@ -134,6 +164,7 @@ enet_ipsec_inbound_tunnel_partial_offload_delete() {
 		)
 	set +x
 	enet_exec "${exec_delete}"
+	################################
 	enet_ovs del-flows \
 		$ENET_NIC_BR \
 		$ENET_FWD_VLAN_PUSH_PATTERN \
@@ -141,12 +172,13 @@ enet_ipsec_inbound_tunnel_partial_offload_delete() {
 		$ENET_IPSEC_VPORT \
 		${tunnel_id} \
 		${dev_dst}
+	################################
 }
 
 enet_ipsec_inbound_tunnel_partial_offload_add() {
 
-	local tun_dst=$1
-	local tun_src=$2
+	local tun_ip_dst=$1
+	local tun_ip_src=$2
 	shift 2
 	
 	local spi=$1
@@ -159,14 +191,14 @@ enet_ipsec_inbound_tunnel_partial_offload_add() {
 	local dev_src=$4
 
 	spi=$(enet_ipsec_spi_ntoh_hex ${spi})
-	local tun_src_ip_hex=$(gethostip -x ${tun_src})
+	local tun_ip_src_hex=$(gethostip -x ${tun_ip_src})
 	local tunnel_id=$(enet_ipsec_unique_id_by_subnets ${subnet_src} ${subnet_dst})
 	local out_vlan_mask=$(printf 'FF%03X' "${tunnel_id}")
 	local out_vlan_header=$(printf '81000%03X' "${tunnel_id}")
 	################################
 	enet_exec "service set create \
 		${in_port} \
-		${tun_src_ip_hex} ${tun_src_ip_hex} \
+		${tun_ip_src_hex} ${tun_ip_src_hex} \
 		D.C 0 1 0 1000000000 0 ${ENET_IPSEC_DEFAULT_CBS} 0 0 1 \
 		${ENET_IPSEC_VPORT} \
 		-ra 0 \
@@ -185,10 +217,10 @@ enet_ipsec_inbound_tunnel_partial_offload_add() {
 		-ra 0 \
 		${ENET_FLAG_CLASSIFY_TAGGED}"
 	################################
-	ovs_dpdk add-flow \
-		'priority=%d,in_port=%d,dl_vlan=%d,ip,nw_src=%s,nw_dst=%s,actions=mod_vlan_vid:%d,goto_table=%d' \
+	ovs_dpdk add-flow $OVS_VPN_BR \
+		$OVS_FLOW_PORT_SUBNET_PAIR_VLAN_SWAP \
 		$ENET_IPSEC_INBOUND_TUNNEL_PARTIAL_OFFLOAD_PRIORITY \
-		${dev_src} \
+		$ENET_HOST_PORT \
 		${tunnel_id} \
 		${subnet_src} \
 		${subnet_dst} \
@@ -199,8 +231,8 @@ enet_ipsec_inbound_tunnel_partial_offload_add() {
 
 enet_ipsec_outbound_tunnel_partial_offload_add() {
 
-	local tun_src=$1
-	local tun_dst=$2
+	local tun_ip_src=$1
+	local tun_ip_dst=$2
 	shift 2
 	
 	local cipher_profile_id=$(enet_ipsec_add_profile $@)
@@ -210,6 +242,7 @@ enet_ipsec_outbound_tunnel_partial_offload_add() {
 	local subnet_src=$2
 	local subnet_dst=$3
 	local dev_dst=$4
+	local tun_mac_dst=$5
 	
 	local tunnel_id=$(enet_ipsec_unique_id_by_subnets ${subnet_src} ${subnet_dst})
 	local in_vlan_mask=$(printf 'FF%03X' "${tunnel_id}")
@@ -225,19 +258,20 @@ enet_ipsec_outbound_tunnel_partial_offload_add() {
 		${ENET_FLAG_CLASSIFY_TAGGED} \
 		-h ${in_vlan_header} 0 0 0 \
 		${ENET_IPSEC_FLAG_TUN_ONLY} \
-		${ENET_IPSEC_LOCAL_IP} ${tun_dst} \
+		${ENET_IPSEC_LOCAL_IP} ${tun_ip_dst} \
 		${ENET_IPSEC_FLAG_ESP_ENCRYPT} ${cipher_profile_id} \
 		${ENET_IPSEC_FLAG_ENG_VLAN_POP_ENCRYPT}"
 	################################
-	ovs_dpdk add-flow \
-		'priority=%d,in_port=%d,dl_vlan=%d,ip,nw_src=%s,nw_dst=%s,actions=mod_vlan_vid:%d,goto_table=%d' \
+	ovs_dpdk add-flow $OVS_VPN_BR \
+		$OVS_FLOW_PORT_SUBNET_PAIR_L3FWD_VLAN_SWAP \
 		$ENET_IPSEC_OUTBOUND_TUNNEL_PARTIAL_OFFLOAD_PRIORITY \
+		$ENET_HOST_PORT \
 		${dev_src} \
-		${tunnel_id} \
 		${subnet_src} \
 		${subnet_dst} \
-		${dev_dst} \
-		${dev_dst}
+		${tunnel_id} \
+		$ENET_VPN_MAC \
+		${tun_mac_dst}
 	################################
 }
 	
@@ -252,7 +286,6 @@ enet_ipsec_tunnel_delete() {
 		enet_ipsec_outbound_tunnel_partial_offload_delete $@
 		;;
 		"${INBOUND_TUNNEL_SPEC}")
-		ovs_dpdk 
 		enet_ipsec_inbound_tunnel_partial_offload_delete $@
 		;;
 		*)
