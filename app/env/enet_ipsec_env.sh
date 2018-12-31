@@ -1,6 +1,5 @@
 #!/bin/bash
 
-export ENET_HOST_PORT=127
 export ENET_IPSEC_VPORT=27
 
 export ENET_IPSEC_SUBTYPE="19"

@@ -7,6 +7,9 @@ COPY utils/*.sh ${SRC_DIR}/utils/
 COPY env/*.sh ${SRC_DIR}/env/
 
 RUN . ${SRC_DIR}/app-entrypoint.sh; \
+	exec_tgt '/' 'docker pull ethernity/libreswan'
+
+RUN . ${SRC_DIR}/app-entrypoint.sh; \
 	enet_build
 
 WORKDIR ${SRC_DIR}
