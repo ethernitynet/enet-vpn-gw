@@ -1,0 +1,149 @@
+{
+	"type": "object",
+	"title": "ENET VPN GW Configuration",
+	"options": {
+		"disable_collapse": true,
+		"disable_edit_json": true,
+		"disable_properties": true
+	},
+	"properties": {
+		"VPN Tunnels": {
+			"type": "array",
+			"options": {
+				"disable_collapse": true,
+				"collapsed": false
+			},
+			"title": "VPN Tunnels",
+			"format": "tabs",
+			"items": {
+				"title": "VPN Tunnel",
+				"headerTemplate": "{{i}} - {{self.Name}}",
+				"oneOf": [
+					{
+						"properties": {
+							"Name": {
+								"propertyOrder": 1,
+								"type": "string",
+								"minLength": 4
+							}
+						},
+						"type": "object",
+						"options": {
+							"disable_collapse": true,
+							"disable_edit_json": true,
+							"disable_properties": true
+						},
+						"$ref": "schema_tun_outbound_full_hw_acceleration.json",
+						"title": "Outbound Full HW Acceleration"
+					},
+					{
+						"properties": {
+							"Name": {
+								"propertyOrder": 1,
+								"type": "string",
+								"minLength": 4
+							}
+						},
+						"type": "object",
+						"options": {
+							"disable_collapse": true,
+							"disable_edit_json": true,
+							"disable_properties": true
+						},
+						"$ref": "schema_tun_inbound_full_hw_acceleration.json",
+						"title": "Inbound Full HW Acceleration"
+					},
+					{
+						"properties": {
+							"Name": {
+								"propertyOrder": 1,
+								"type": "string",
+								"minLength": 4
+							}
+						},
+						"type": "object",
+						"options": {
+							"disable_collapse": true,
+							"disable_edit_json": true,
+							"disable_properties": true
+						},
+						"$ref": "schema_tun_outbound_partial_hw_acceleration.json",
+						"title": "Outbound Partial HW Acceleration"
+					},
+					{
+						"properties": {
+							"Name": {
+								"propertyOrder": 1,
+								"type": "string",
+								"minLength": 4
+							}
+						},
+						"type": "object",
+						"options": {
+							"disable_collapse": true,
+							"disable_edit_json": true,
+							"disable_properties": true
+						},
+						"$ref": "schema_tun_inbound_partial_hw_acceleration.json",
+						"title": "Inbound Partial HW Acceleration"
+					},
+					{
+						"properties": {
+							"Name": {
+								"propertyOrder": 1,
+								"type": "string",
+								"minLength": 4
+							}
+						},
+						"type": "object",
+						"options": {
+							"disable_collapse": true,
+							"disable_edit_json": true,
+							"disable_properties": true
+						},
+						"$ref": "schema_tun_no_hw_acceleration_generic.json",
+						"title": "No HW Acceleration (Generic)"
+					},
+					{
+						"properties": {
+							"Name": {
+								"propertyOrder": 1,
+								"type": "string",
+								"minLength": 4
+							}
+						},
+						"type": "object",
+						"options": {
+							"disable_collapse": true,
+							"disable_edit_json": true,
+							"disable_properties": true
+						},
+						"$ref": "schema_tun_no_hw_acceleration_dual_port.json",
+						"title": "No HW Acceleration (Dual Port)"
+					}
+				]
+			}
+		},
+		"Advanced": {
+			"type": "object",
+			"options": {
+				"disable_edit_json": true,
+				"collapsed": true
+			},
+			"properties": {
+				"ACE-NIC Configuration": {
+					"$ref": "schema_enet.json"
+				},
+				"DPDK Configuration": {
+					"$ref": "schema_dpdk.json"
+				},
+				"OVS Configuration": {
+					"$ref": "schema_ovs.json"
+				},
+				"LibreSwan Configuration": {
+					"$ref": "schema_libreswan.json"
+				}
+			}
+		}
+	}
+}

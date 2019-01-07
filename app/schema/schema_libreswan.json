@@ -1,0 +1,19 @@
+{
+	"type": "object",
+	"options": {
+		"disable_edit_json": true,
+		"disable_properties": true,
+		"collapsed": true
+	},
+	"properties": {
+		"LibreSwan Version": {
+			"type": "string",
+			"default": "v3.27"
+		},
+		"VPN GW IP": {
+			"type": "string",
+			"default": "10.11.11.1",
+			"readOnly": true
+		}
+	}
+}

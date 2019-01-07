@@ -1,0 +1,52 @@
+{
+	"$ref": "schema_tun_common.json",
+	"properties": {
+		"Acceleration": {
+			"propertyOrder": 50,
+			"type": "array",
+			"options": {
+				"collapsed": false,
+				"disable_array_delete": true,
+				"disable_array_delete_all_rows": true,
+				"disable_array_delete_last_row":true,
+				"disable_array_reorder": true,
+				"disable_collapse": true
+			},
+			"format": "table",
+			"minItems": 1,
+			"maxItems": 1,
+			"items": {
+				"type": "object",
+				"properties": {
+					"Outbound HW Acceleration": {
+						"type": "array",
+						"format": "multiselect",
+						"uniqueItems": true,
+						"items": {
+							"type": "string",
+							"enum": [
+								"Partial Acceleration", 
+								"No Acceleration"
+							]
+						},
+						"options": {
+							"input_width": "150px"
+						},
+						"default": "Full Acceleration"
+					},
+					"LibreSwan-Specific Configuration": {
+						"type": "string",
+						"format": "html",
+						"readOnly": true,
+						"options": {
+							"input_height": "100px",
+							"input_width": "200px",
+							"wysiwyg": true
+						},
+						"default": "type=tunnel\nauthby=secret\nike=aes-sha1;modp2048\nikev2=insist\nnarrowing=yes\n"
+					}
+				}
+			}
+		}
+	}
+}
