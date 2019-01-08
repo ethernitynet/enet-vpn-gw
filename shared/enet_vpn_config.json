@@ -1,4 +1,6 @@
 {
+  "UPDATE": "Tue, 08 Jan 2019 12:52:01 GMT",
+  "VPN": {
   "VPN Tunnels": [
     {
       "Name": "tun1_full_hw",
@@ -78,5 +80,6 @@
       "LibreSwan Version": "v3.27",
       "VPN GW IP": "10.11.11.1"
     }
+  }
   }
 }
