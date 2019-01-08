@@ -7,7 +7,7 @@ var fs = require('fs');
 
 const enet_vpn_config = '/shared/enet_vpn_config.json';
 const enet_vpn_log = '/tmp/enet_vpn_log.log';
-const config_mngr_port = 2767;
+const config_mngr_port = 2766;
 
 log4js.configure({
   appenders: { vpncfg: { type: 'file', filename: enet_vpn_log } },
