@@ -1,7 +1,7 @@
 {
 	"$ref": "schema_tun_common.json",
 	"properties": {
-		"Acceleration": {
+		"Configuration": {
 			"propertyOrder": 10,
 			"type": "array",
 			"options": {

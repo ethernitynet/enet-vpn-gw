@@ -1,6 +1,6 @@
 {
 	"properties": {
-		"Acceleration": {
+		"Configuration": {
 			"propertyOrder": 10,
 			"type": "array",
 			"options": {

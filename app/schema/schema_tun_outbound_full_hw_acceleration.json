@@ -1,7 +1,7 @@
 {
 	"$ref": "schema_tun_common.json",
 	"properties": {
-		"Acceleration": {
+		"Configuration": {
 			"propertyOrder": 40,
 			"type": "array",
 			"options": {
@@ -18,39 +18,39 @@
 			"items": {
 				"type": "object",
 				"properties": {
-					"Inbound HW Acceleration": {
+					"HW Acceleration Choice": {
 						"type": "array",
 						"format": "multiselect",
 						"uniqueItems": true,
 						"items": {
 							"type": "string",
 							"enum": [
-								"Full Acceleration",
-								"Partial Acceleration", 
-								"No Acceleration"
+								"Outbound Full Acceleration, Inbound Full Acceleration",
+								"Outbound Full Acceleration, Inbound Partial Acceleration", 
+								"Outbound Full Acceleration, Inbound No Acceleration"
 							]
 						},
 						"options": {
 							"input_width": "200px"
 						},
-						"default": "Full Acceleration"
+						"default": "Outbound Full Acceleration, Inbound Full Acceleration"
 					},
 					"Inbound Static Routes": {
 						"type": "string",
 						"format": "html",
 						"options": {
-							"input_height": "100px",
+							"input_height": "120px",
 							"input_width": "180px",
 							"wysiwyg": true
 						},
-						"default": "10.10.10.1"
+						"default": "10.0.1.1"
 					},
 					"LibreSwan-Specific Configuration": {
 						"type": "string",
 						"format": "html",
 						"readOnly": true,
 						"options": {
-							"input_height": "100px",
+							"input_height": "120px",
 							"input_width": "200px",
 							"wysiwyg": true
 						},

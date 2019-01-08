@@ -10,6 +10,7 @@ ENV BASH_ENV=${SRC_DIR}/docker-entrypoint.sh
 
 RUN exec_tgt '/' 'docker pull ethernity/libreswan'
 RUN enet_build
+RUN enet_vpn_config_ui_install
 
 COPY runtime/ ${SRC_DIR}/runtime/
 ENV BASH_ENV=${SRC_DIR}/app-entrypoint.sh

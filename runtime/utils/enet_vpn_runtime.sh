@@ -1,6 +1,13 @@
 #!/bin/bash
 
-enet_vpn_gw_start() {
+enet_vpn_config_ui_start() {
+
+	cd ${SRC_DIR}/schema
+	http-server &
+	cd -
+}
+
+enet_vpn_start() {
 
 	#enet_run
 	ovs_run

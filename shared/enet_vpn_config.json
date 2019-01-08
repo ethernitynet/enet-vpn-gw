@@ -1,0 +1,82 @@
+{
+  "VPN Tunnels": [
+    {
+      "Name": "tun22_full_hw",
+      "Acceleration": [
+        {
+          "HW Acceleration Choice": [
+            "Outbound Full Acceleration, Inbound Full Acceleration"
+          ],
+          "Inbound Static Routes": "10.0.1.1",
+          "LibreSwan-Specific Configuration": "type=tunnel\nauthby=secret\nike=aes-sha1;modp2048\nikev2=insist\nnarrowing=yes\n"
+        }
+      ],
+      "Tunnel Properties": [
+        {
+          "Remote VPN GW (right)": {
+            "Remote VPN GW IP": "192.168.22.1",
+            "Pre-Shared Secret": "ENET-LibreSwan"
+          },
+          "Inbound": {
+            "Trusted Port": 105,
+            "Local Subnet": "10.0.1.0/24"
+          },
+          "Outbound": {
+            "Protected Port": 104,
+            "Remote Subnet": "10.0.2.0/24"
+          }
+        }
+      ]
+    },
+    {
+      "Name": "tun33_no_hw",
+      "Acceleration": [
+        {
+          "LibreSwan-Specific Configuration": "type=tunnel\nauthby=secret\nike=aes-sha1;modp2048\nikev2=insist\nnarrowing=yes\n"
+        }
+      ],
+      "Tunnel Properties": [
+        {
+          "Remote VPN GW (right)": {
+            "Remote VPN GW IP": "192.168.33.1",
+            "Pre-Shared Secret": "ENET-LibreSwan"
+          },
+          "Inbound": {
+            "Trusted Port": 105,
+            "Local Subnet": "30.0.1.0/24"
+          },
+          "Outbound": {
+            "Protected Port": 104,
+            "Remote Subnet": "30.0.2.0/24"
+          }
+        }
+      ]
+    }
+  ],
+  "Advanced": {
+    "ACE-NIC Configuration": {
+      "SW Installation Directory": "/home/devops",
+      "SW Package Full Path": "/home/devops/ENET_SmartNic_ver_1.31A.tgz",
+      "HW Package Full Path": "/home/devops/HW.tgz",
+      "Log File Path": "/tmp/enet-log.log",
+      "Interface Name": "ens1"
+    },
+    "DPDK Configuration": {
+      "DPDK Version": "v17.11-rc4",
+      "Number of 2MB Hugepages": 2048,
+      "Number of 1GB Hugepages": 2,
+      "Installed Poll-Mode Drivers": [
+        "igb_uio"
+      ]
+    },
+    "OVS Configuration": {
+      "OVS Version": "v2.10.1",
+      "OVS Managegement Threads Mask": "0x00c0",
+      "OVS PMD Threads Mask": "0x003c"
+    },
+    "LibreSwan Configuration": {
+      "LibreSwan Version": "v3.27",
+      "VPN GW IP": "10.11.11.1"
+    }
+  }
+}
