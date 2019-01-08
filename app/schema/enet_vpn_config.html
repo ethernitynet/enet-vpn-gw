@@ -22,6 +22,8 @@
 <script>
 
 const config_mngr_port = 2766;
+var enet_vpn_curr_cfg = { };
+var enet_vpn_editor = undefined;
 
 ///////////////////////////////
 function enet_vpn_config_post(json_cfg) {
@@ -46,11 +48,17 @@ function enet_vpn_config_get() {
 	var xhttp = new XMLHttpRequest();
 	xhttp.onreadystatechange = function() {
 		if(this.readyState == 4 && this.status == 200) {
-			var json_cfg = JSON.parse(this.responseText);
-			return json_cfg;
+			const enet_vpn_curr_cfg = JSON.parse(this.responseText);
+			if(enet_vpn_editor === undefined) {
+				enet_vpn_config_init(enet_vpn_curr_cfg.VPN);
+			}
+			else {
+				enet_vpn_editor.setValue(enet_vpn_curr_cfg.VPN);
+			};
 		};
 	};
-	const config_mngr = 'http://' + window.location.hostname + ':' + config_mngr_port + '/';
+	//const config_mngr = 'http://' + window.location.hostname + ':' + config_mngr_port + '/';
+	const config_mngr = 'http://' + window.location.hostname + ':' + window.location.port + '/enet_vpn_config.json';
 	xhttp.open('GET', config_mngr, true);
 	xhttp.send();
 };
@@ -59,7 +67,7 @@ function enet_vpn_config_get() {
 ///////////////////////////////  
 function enet_vpn_config_init(json_cfg) {
 
-	var enet_vpn_editor = new JSONEditor(document.getElementById('editor_holder'), {
+	enet_vpn_editor = new JSONEditor(document.getElementById('editor_holder'), {
 
 		ajax: true,
 		compact: true,
@@ -106,7 +114,7 @@ function enet_vpn_config_init(json_cfg) {
 	
 	document.getElementById('reload').addEventListener('click', function() {
 
-		enet_vpn_editor.setValue(enet_vpn_config_get());
+		enet_vpn_config_get();
 	});
 	
 	document.getElementById('shutdown').addEventListener('click', function() {
@@ -137,7 +145,7 @@ function enet_vpn_config_init(json_cfg) {
 
 window.onload = function() {
 
-	enet_vpn_config_init(enet_vpn_config_get());
+	enet_vpn_config_get();
 };
 
 </script>

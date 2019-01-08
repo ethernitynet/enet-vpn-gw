@@ -6,7 +6,7 @@ const bodyParser = require('body-parser');
 var fs = require('fs');
 
 const enet_vpn_config = '/shared/enet_vpn_config.json';
-const enet_vpn_log = '/tmp/enet_vpn_log.log';
+const enet_vpn_log = '/shared/enet_vpn_log.log';
 const config_mngr_port = 2766;
 
 log4js.configure({
@@ -58,6 +58,25 @@ function ls_cfg_build(json_cfg) {
 	logger.info('ipsec_secrets: %s', ipsec_secrets);
 };
 
+function get_curr_config() {
+
+	logger.info('Sending config file %s', enet_vpn_config);
+	fs.readFile(enet_vpn_config, 'utf8', function (error, data) {
+
+		if(error) {
+			logger.error(`readFile error: ${error}`);
+			return { };
+		};
+		try {
+			logger.info('Sending config %s', data);
+			return JSON.parse(data);
+		} catch (error) {
+			logger.error(`JSON send error: ${error}`);
+			return { };
+		};
+	});
+};
+
 app.use(morgan('dev'));
 app.use(function(req, res, next) {
 	res.header('Access-Control-Allow-Origin', req.get('Origin') || '*');
@@ -69,8 +88,9 @@ app.use(function(req, res, next) {
 		return res.send(200);
 	}
 	else if (req.method === 'GET') {
-		logger.info('Sending config %s', enet_vpn_config);
-		return res.sendFile(enet_vpn_config);
+		res.setHeader('Content-Type', 'application/json');
+		const curr_cfg = get_curr_config();
+		return res.send(JSON.stringify(curr_cfg, null, 2));
 		//return res.send(200);
 	} else {
 		return next();
@@ -81,8 +101,9 @@ app.use(bodyParser.json());
 
 app.get('/', (req, res) => {
 
-	logger.info('Sending config %s', enet_vpn_config);
-	res.sendFile(enet_vpn_config);
+	res.setHeader('Content-Type', 'application/json');
+	const curr_cfg = get_curr_config();
+	return res.send(JSON.stringify(curr_cfg, null, 2));
 });
 
 app.post('/', (req, res) => {
@@ -99,7 +120,7 @@ app.post('/', (req, res) => {
 			const update_cmd = json_body['UPDATE'];
 			json_body['UPDATE'] = new Date().toUTCString();
 			if(json_body['VPN'] != undefined) {
-				fs.writeFile(enet_vpn_config, JSON.stringify(json_body, null, 2), function(err) {
+				fs.writeFile(enet_vpn_config, JSON.stringify(json_body, null, 2), function(error) {
 					
 					if(error) {
 						logger.error(`JSON.stringify error: ${error}`);

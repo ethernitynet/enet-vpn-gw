@@ -9,5 +9,6 @@ enet_vpn_config_mngr_install() {
 	cd ${SRC_DIR}/schema
 	apt-get -y install wget
 	wget "https://cdn.jsdelivr.net/npm/@json-editor/json-editor/dist/jsoneditor.min.js"
+	wget "https://cdn.jsdelivr.net/npm/@json-editor/json-editor/dist/jsoneditor.min.js.map"
 	cd -
 }

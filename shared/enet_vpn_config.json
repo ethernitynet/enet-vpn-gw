@@ -1,9 +1,9 @@
 {
-  "UPDATE": "Tue, 08 Jan 2019 13:02:08 GMT",
+  "UPDATE": "Tue, 08 Jan 2019 13:03:59 GMT",
   "VPN": {
     "VPN Tunnels": [
       {
-        "Name": "tun1_full_hw",
+        "Name": "tun22_full_hw",
         "Tunnel Configuration": [
           {
             "HW Acceleration Choice": [
