@@ -1,7 +1,10 @@
 #!/bin/bash
 
-enet_vpn_config_ui_start() {
+enet_vpn_config_mngr_start() {
 
+	cd ${SRC_DIR}/config
+	npm start &
+	cd -
 	cd ${SRC_DIR}/schema
 	http-server &
 	cd -
