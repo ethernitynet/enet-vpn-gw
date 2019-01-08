@@ -1,0 +1,16 @@
+{
+  "name": "enet_vpn_config_mngr",
+  "version": "1.0.0",
+  "description": "Configuration Manager for ENET-VPN GW",
+  "main": "config_mngr.js",
+  "scripts": {
+    "start": "node config_mngr.js"
+  },
+  "author": "Erez Buchnik",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.16.4",
+    "log4js": "^3.0.6",
+    "morgan": "^1.9.1"
+  }
+}

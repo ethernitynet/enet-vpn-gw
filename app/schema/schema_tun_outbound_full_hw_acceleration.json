@@ -1,7 +1,7 @@
 {
 	"$ref": "schema_tun_common.json",
 	"properties": {
-		"Configuration": {
+		"Tunnel Configuration": {
 			"propertyOrder": 40,
 			"type": "array",
 			"options": {
@@ -54,7 +54,7 @@
 							"input_width": "200px",
 							"wysiwyg": true
 						},
-						"default": "type=tunnel\nauthby=secret\nike=aes-sha1;modp2048\nikev2=insist\nnarrowing=yes\n"
+						"default": "type=tunnel\nauthby=secret\nike=aes-sha1;modp2048\nikev2=insist\nnarrowing=yes\nesp=aes_gcm128-null\n"
 					}
 				}
 			}

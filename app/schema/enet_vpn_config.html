@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="utf-8" />
+	<title>VPN Tunnels Configuration</title>
+	<script src="jsoneditor.min.js"></script>
+</head>
+
+<body>
+
+	<h1>VPN Tunnels Configuration</h1>
+	<button id='apply'>Apply</button>
+	<button id='apply_restart'>Apply & Restart VPN Service</button>
+	<button id='apply_reboot'>Apply & Reboot VPN GW</button>
+	<button id='reload'>Reload Saved Settings</button>
+	<button id='shutdown'>Shutdown VPN GW</button>
+	<span id='valid_indicator'></span>
+	<div id='editor_holder'></div>
+	<p id='status'>[]</p>
+    
+<script>
+
+const config_mngr_port = 2766;
+
+///////////////////////////////
+function enet_vpn_config_post(json_cfg) {
+
+	var xhttp = new XMLHttpRequest();
+	xhttp.onreadystatechange = function() {
+		if(this.readyState == 4 && this.status == 200) {
+			document.getElementById("status").innerHTML = '[' + this.responseText + ']';
+		};
+	};
+	const config_mngr = 'http://' + window.location.hostname + ':' + config_mngr_port;
+	const cmd_obj_str = JSON.stringify(json_cfg);
+	xhttp.open('POST', config_mngr, true);
+	xhttp.send(cmd_obj_str);
+	console.log(config_mngr);
+}
+///////////////////////////////
+
+///////////////////////////////
+function enet_vpn_config_get() {
+
+	var xhttp = new XMLHttpRequest();
+	xhttp.onreadystatechange = function() {
+		if(this.readyState == 4 && this.status == 200) {
+			var json_cfg = JSON.parse(this.responseText);
+			return json_cfg;
+		};
+	};
+	const config_mngr = 'http://' + window.location.hostname + ':' + config_mngr_port + '/';
+	xhttp.open('GET', config_mngr, true);
+	xhttp.send();
+};
+///////////////////////////////  
+
+///////////////////////////////  
+function enet_vpn_config_init(json_cfg) {
+
+	var enet_vpn_editor = new JSONEditor(document.getElementById('editor_holder'), {
+
+		ajax: true,
+		compact: true,
+		disable_edit_json: false,
+		disable_properties: true,
+		keep_oneof_values: false,
+		show_errors: "always",
+
+		schema: {
+			$ref: "schema_enet_vpn.json",
+		},
+
+		startval: json_cfg,
+		no_additional_properties: true,
+		required_by_default: true
+	});
+
+	document.getElementById('apply').addEventListener('click', function() {
+
+		const json_cfg_to_post = {
+			UPDATE: 'apply',
+			VPN: enet_vpn_editor.getValue()
+		};
+		enet_vpn_config_post(json_cfg_to_post);
+	});
+	
+	document.getElementById('apply_restart').addEventListener('click', function() {
+
+		const json_cfg_to_post = {
+			UPDATE: 'apply_restart',
+			VPN: enet_vpn_editor.getValue()
+		};
+		enet_vpn_config_post(json_cfg_to_post);
+	});
+	
+	document.getElementById('apply_reboot').addEventListener('click', function() {
+
+		const json_cfg_to_post = {
+			UPDATE: 'apply_reboot',
+			VPN: enet_vpn_editor.getValue()
+		};
+		enet_vpn_config_post(json_cfg_to_post);
+	});
+	
+	document.getElementById('reload').addEventListener('click', function() {
+
+		enet_vpn_editor.setValue(enet_vpn_config_get());
+	});
+	
+	document.getElementById('shutdown').addEventListener('click', function() {
+
+		const json_cfg_to_post = {
+			UPDATE: 'shutdown'
+		};
+		enet_vpn_config_post(json_cfg_to_post);
+	});
+
+	enet_vpn_editor.on('change', function() {
+
+		var errors = enet_vpn_editor.validate();
+		document.getElementById("status").innerHTML = '[' + JSON.stringify(errors) + ']';
+		var valid_indicator = document.getElementById('valid_indicator');
+
+		if(errors.length) {
+			valid_indicator.style.color = 'red';
+			valid_indicator.textContent = "not valid";
+		}
+		else {
+			valid_indicator.style.color = 'green';
+			valid_indicator.textContent = "valid";
+		};
+	});
+};
+///////////////////////////////  
+
+window.onload = function() {
+
+	enet_vpn_config_init(enet_vpn_config_get());
+};
+
+</script>
+	
+</body>
+</html>

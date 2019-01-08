@@ -1,6 +1,6 @@
 {
 	"properties": {
-		"Configuration": {
+		"Tunnel Configuration": {
 			"propertyOrder": 10,
 			"type": "array",
 			"options": {

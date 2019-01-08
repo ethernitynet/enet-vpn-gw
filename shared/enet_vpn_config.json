@@ -1,27 +1,27 @@
 {
   "VPN Tunnels": [
     {
-      "Name": "tun22_full_hw",
-      "Acceleration": [
+      "Name": "tun1_full_hw",
+      "Tunnel Configuration": [
         {
           "HW Acceleration Choice": [
             "Outbound Full Acceleration, Inbound Full Acceleration"
           ],
           "Inbound Static Routes": "10.0.1.1",
-          "LibreSwan-Specific Configuration": "type=tunnel\nauthby=secret\nike=aes-sha1;modp2048\nikev2=insist\nnarrowing=yes\n"
+          "LibreSwan-Specific Configuration": "type=tunnel\nauthby=secret\nike=aes-sha1;modp2048\nikev2=insist\nnarrowing=yes\nesp=aes_gcm128-null\n"
         }
       ],
-      "Tunnel Properties": [
+      "Forwarding Policy": [
         {
-          "Remote VPN GW (right)": {
+          "Tunnel Connectivity": {
             "Remote VPN GW IP": "192.168.22.1",
             "Pre-Shared Secret": "ENET-LibreSwan"
           },
-          "Inbound": {
+          "Local": {
             "Trusted Port": 105,
             "Local Subnet": "10.0.1.0/24"
           },
-          "Outbound": {
+          "Remote": {
             "Protected Port": 104,
             "Remote Subnet": "10.0.2.0/24"
           }
@@ -29,23 +29,23 @@
       ]
     },
     {
-      "Name": "tun33_no_hw",
-      "Acceleration": [
+      "Name": "tun2_no_hw",
+      "Tunnel Configuration": [
         {
-          "LibreSwan-Specific Configuration": "type=tunnel\nauthby=secret\nike=aes-sha1;modp2048\nikev2=insist\nnarrowing=yes\n"
+          "LibreSwan-Specific Configuration": "type=tunnel\nauthby=secret\nike=aes-sha1;modp2048\nikev2=insist\nnarrowing=yes\nesp=aes_gcm128-null\n"
         }
       ],
-      "Tunnel Properties": [
+      "Forwarding Policy": [
         {
-          "Remote VPN GW (right)": {
+          "Tunnel Connectivity": {
             "Remote VPN GW IP": "192.168.33.1",
             "Pre-Shared Secret": "ENET-LibreSwan"
           },
-          "Inbound": {
+          "Local": {
             "Trusted Port": 105,
             "Local Subnet": "30.0.1.0/24"
           },
-          "Outbound": {
+          "Remote": {
             "Protected Port": 104,
             "Remote Subnet": "30.0.2.0/24"
           }
