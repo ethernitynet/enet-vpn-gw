@@ -481,7 +481,8 @@ enet_ipsec_tunnel_delete() {
 
 enet_ipsec_tunnel_add() {
 
-	local xfrm_pattern=$1
+	set +x
+	local xfrm_pattern="$1"
 	shift
 
 	case "${xfrm_pattern}" in
@@ -507,6 +508,7 @@ enet_ipsec_tunnel_add() {
 		exec_log "ip xfrm state add $(printf '${xfrm_pattern}' $@)"
 		;;
 	esac
+	set +x
 }
 
 enet_ipsec() {
@@ -516,19 +518,22 @@ enet_ipsec() {
 	local verb=$3
 	shift 3
 
+	set +x
 	case "${object} ${command} ${verb}" in
 		'xfrm state add')
-		enet_ipsec_tunnel_add $@
+		enet_ipsec_tunnel_add "$@"
 		;;
 		'xfrm state delete')
-		enet_ipsec_tunnel_delete $@
+		enet_ipsec_tunnel_delete "$@"
 		;;
 		'xfrm state update')
 		enet_ipsec_tunnel_delete "${@:7}"
-		enet_ipsec_tunnel_add $@
+		enet_ipsec_tunnel_add "$@"
 		;;
 		*)
 		exec_log "ip xfrm ${command} ${verb} $@"
 		;;
 	esac
+	set +x
 }
+

@@ -4,11 +4,14 @@
 <head>
 	<meta charset="utf-8" />
 	<title>VPN Tunnels Configuration</title>
+	<link rel='stylesheet' id='theme_stylesheet'>
+	<link rel='stylesheet' id='icon_stylesheet'>
+	<style>[class*="foundicon-"] {font-family: GeneralFoundicons;font-style: normal;}</style>
 	<script src="jsoneditor.min.js"></script>
 </head>
 
 <body>
-
+	<IMG SRC="ethernity_logo.png" ALT="Ethernity Networks Ltd.">
 	<h1>VPN Tunnels Configuration</h1>
 	<button id='apply'>Apply</button>
 	<button id='apply_restart'>Apply & Restart VPN Service</button>
@@ -150,5 +153,83 @@ window.onload = function() {
 
 </script>
 	
+<script>
+(function() {
+
+	var setTheme = function(theme, no_reload) {
+	
+		theme = theme || '';
+
+		var mapping = {
+			barebones: '',
+			html: '',
+			bootstrap2: '//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.2/css/bootstrap-combined.min.css',
+			bootstrap3: '//netdna.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css',
+			bootstrap4: '//maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css',
+			foundation3: '//cdnjs.cloudflare.com/ajax/libs/foundation/3.2.5/stylesheets/foundation.css',
+			foundation4: '//cdnjs.cloudflare.com/ajax/libs/foundation/4.3.2/css/foundation.min.css',
+			foundation5: '//cdnjs.cloudflare.com/ajax/libs/foundation/5.5.3/css/foundation.min.css',
+			foundation6: '//cdnjs.cloudflare.com/ajax/libs/foundation/6.2.4/foundation.min.css',
+			jqueryui: '//code.jquery.com/ui/1.10.3/themes/south-street/jquery-ui.css',
+			materialize: '//cdnjs.cloudflare.com/ajax/libs/materialize/0.100.2/css/materialize.min.css'
+		};
+
+		if(typeof mapping[theme] === 'undefined') {
+			theme = 'bootstrap3';
+		};
+
+		var scriptMapping = {
+			materialize: [
+				'https://code.jquery.com/jquery-3.2.1.min.js',
+				'https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.2/js/materialize.min.js'
+			]
+		};
+
+		var themeScripts = scriptMapping[theme],
+			head = document.getElementsByTagName('head')[0],
+			script;
+
+		if (typeof themeScripts == 'string') { themeScripts = [themeScripts]; }
+		if (Array.isArray(themeScripts)) {
+			for (var i = 0; i < themeScripts.length; i++) {
+				script = document.createElement('script');
+				script.type = 'text/javascript';
+				script.src = themeScripts[i];
+				head.appendChild(script);
+			};
+		};
+
+		JSONEditor.defaults.options.theme = theme;
+
+		document.getElementById('theme_stylesheet').href = mapping[theme];
+
+		if(!no_reload) reload(true);
+	};
+	
+	var setIconlib = function(iconlib,no_reload) {
+	
+		iconlib = iconlib || '';
+		var mapping = {
+			foundation2: '//cdnjs.cloudflare.com/ajax/libs/foundicons/2.0/stylesheets/general_foundicons.css',
+			foundation3: '//cdnjs.cloudflare.com/ajax/libs/foundicons/3.0.0/foundation-icons.css',
+			fontawesome3: '//cdnjs.cloudflare.com/ajax/libs/font-awesome/3.2.1/css/font-awesome.css',
+			fontawesome4: '//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.0.3/css/font-awesome.css',
+			fontawesome5: 'https://use.fontawesome.com/releases/v5.6.1/css/all.css',
+			materialicons: 'https://fonts.googleapis.com/icon?family=Material+Icons'
+		};
+
+		JSONEditor.defaults.options.iconlib = iconlib;
+
+		document.getElementById('icon_stylesheet').href = mapping[iconlib] || '';
+
+		if(!no_reload) reload(true);
+	};
+	
+	setTheme((window.location.href.match(/[?&]theme=([^&]+)/)||[])[1] || 'bootstrap2', true);
+    setIconlib((window.location.href.match(/[?&]iconlib=([^&]*)/)||[null,'bootstrap3'])[1], true);
+	JSONEditor.defaults.options.object_layout = (window.location.href.match(/[?&]object_layout=([^&]+)/)||[])[1] || 'normal';
+	JSONEditor.defaults.options.show_errors = (window.location.href.match(/[?&]show_errors=([^&]+)/)||[])[1] || 'always';
+})();
+</script>
 </body>
 </html>
