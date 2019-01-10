@@ -2,6 +2,7 @@
 
 enet_vpn_config_mngr_start() {
 
+	ln -s /shared/enet_vpn_config.json ${SRC_DIR}/schema/enet_vpn_config.json
 	cd ${SRC_DIR}/config
 	npm start &
 	cd -
