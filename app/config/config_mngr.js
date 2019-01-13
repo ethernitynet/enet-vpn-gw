@@ -6,7 +6,7 @@ const bodyParser = require('body-parser');
 var fs = require('fs');
 
 const enet_vpn_config = '/shared/enet_vpn_config.json';
-const enet_vpn_log = '/shared/enet_vpn_log.log';
+const enet_vpn_log = '/tmp/enet_vpn_log.log';
 const config_mngr_port = 2766;
 
 log4js.configure({
@@ -19,46 +19,59 @@ const server = require('http').createServer(app);
 const { parse } = require('querystring');
 const { exec } = require('child_process');
 
-function tun_ls_cfg_add(ipsec_conf, ipsec_secrets, json_cfg, tun_json_cfg) {
+function conn_libreswan_cfg_add(ipsec_conf, ipsec_secrets, json_cfg, conn_json_cfg) {
 
-	ipsec_conf += 'conn ' + tun_json_cfg['Name'] + '\n';
-	var libreswan_specific_config = tun_json_cfg['Tunnel Configuration'][0]['LibreSwan-Specific Configuration'];
+	ipsec_conf += 'conn ' + conn_json_cfg.name + '\n';
+	var libreswan_specific_config = conn_json_cfg.libreswan_config;
 	var libreswan_specific_config_arr = libreswan_specific_config.split('\n');
 	libreswan_specific_config_arr.forEach(function(param) {
 		ipsec_conf += '  ' + param + '\n';
 	});
-	ipsec_conf += '  left=' + json_cfg['Advanced']['LibreSwan Configuration']['VPN GW IP'] + '\n';
-	ipsec_conf += '  right=' + tun_json_cfg['Forwarding Policy'][0]['Tunnel Connectivity']['Remote VPN GW IP'] + '\n';
-	ipsec_conf += '  leftsubnet=' + tun_json_cfg['Forwarding Policy'][0]['Local']['Local Subnet'] + '\n';
-	ipsec_conf += '  rightsubnet=' + tun_json_cfg['Forwarding Policy'][0]['Remote']['Remote Subnet'] + '\n';
-	ipsec_conf += '  esp=' + tun_json_cfg['Forwarding Policy'][0]['Remote']['Remote Subnet'] + '\n';
+	ipsec_conf += '  left=' + json_cfg.libreswan_config.vpn_gw_ip + '\n';
+	ipsec_conf += '  right=' + conn_json_cfg.remote_vpn_gw_ip + '\n';
+	ipsec_conf += '  leftsubnet=' + conn_json_cfg.local_subnet + '\n';
+	ipsec_conf += '  rightsubnet=' + conn_json_cfg.remote_subnet + '\n';
+	ipsec_conf += '  esp=' + conn_json_cfg.encryption_type + '\n';
 	ipsec_conf += '#\n';
 	
-	ipsec_secrets += json_cfg['Advanced']['LibreSwan Configuration']['VPN GW IP'] + ' ';
-	ipsec_secrets += tun_json_cfg['Forwarding Policy'][0]['Tunnel Connectivity']['Remote VPN GW IP'] + ' ';
-	ipsec_secrets += ': PSK \"' + tun_json_cfg['Forwarding Policy'][0]['Tunnel Connectivity']['Pre-Shared Secret'] + '\"\n';
+	ipsec_secrets += json_cfg.libreswan_config.vpn_gw_ip + ' ';
+	ipsec_secrets += conn_json_cfg.remote_vpn_gw_ip + ' ';
+	ipsec_secrets += ': PSK \"' + conn_json_cfg.pre_shared_secret + '\"\n';
 };
 
-function ls_cfg_build(json_cfg) {
+function libreswan_cfg_init(ipsec_conf_arr, ipsec_secrets_arr, json_cfg) {
 
-	let ipsec_conf = '\n';
-	let ipsec_secrets = '\n';
-	json_cfg['VPN Tunnels'].foreach(function(tun_json_cfg) {
+	ipsec_conf_arr.foreach(function(ipsec_conf) {
 		
-		switch(tun_json_cfg['Tunnel Configuration']['HW Acceleration Choice']) {
-			case 'Outbound Full Acceleration, Inbound Full Acceleration':
-				tun_ls_cfg_add(ipsec_conf, ipsec_secrets, json_cfg, tun_json_cfg);
-				break;
-			default:
-				tun_ls_cfg_add(ipsec_conf, ipsec_secrets, json_cfg, tun_json_cfg);
-				break;
+		ipsec_conf += '# /etc/ipsec.conf\n';
+		ipsec_conf += '# # #\n';
+		ipsec_conf += 'config setup\n';
+		ipsec_conf += '  protostack=netkey\n';
+		ipsec_conf += '  logfile=' + json_cfg.ace_nic_config.log_file + '\n';
+		ipsec_conf += '  plutodebug=all\n';
+		ipsec_conf += '#\n';
+	});
+	ipsec_secrets_arr.foreach(function(ipsec_secrets) {
+		
+		ipsec_secrets += 'include /etc/ipsec.d/*.secrets\n';
+	});
+};
+
+function libreswan_cfg_build(ipsec_conf_arr, ipsec_secrets_arr, json_cfg) {
+
+	json_cfg.conns.foreach(function(conn_json_cfg) {
+		
+		const tunnel_port_idx = (conn_json_cfg.tunnel_port - 104);
+		if((conn_json_cfg.inbound_accel == "full") && (conn_json_cfg.outbound_accel == "full")) {
+			conn_libreswan_cfg_add(ipsec_conf_arr[tunnel_port_idx], ipsec_secrets_arr[tunnel_port_idx], json_cfg, conn_json_cfg);
+		}
+		else {
+			conn_libreswan_cfg_add(ipsec_conf_arr[tunnel_port_idx], ipsec_secrets_arr[tunnel_port_idx], json_cfg, conn_json_cfg);
 		};
 	});
-	logger.info('ipsec_conf: %s', ipsec_conf);
-	logger.info('ipsec_secrets: %s', ipsec_secrets);
 };
 
-function get_curr_config() {
+function send_curr_config(res) {
 
 	logger.info('Sending config file %s', enet_vpn_config);
 	fs.readFile(enet_vpn_config, 'utf8', function (error, data) {
@@ -69,7 +82,8 @@ function get_curr_config() {
 		};
 		try {
 			logger.info('Sending config %s', data);
-			return JSON.parse(data);
+			const curr_cfg = JSON.parse(data);
+			return res.send(JSON.stringify(curr_cfg, null, 2))
 		} catch (error) {
 			logger.error(`JSON send error: ${error}`);
 			return { };
@@ -89,8 +103,7 @@ app.use(function(req, res, next) {
 	}
 	else if (req.method === 'GET') {
 		res.setHeader('Content-Type', 'application/json');
-		const curr_cfg = get_curr_config();
-		return res.send(JSON.stringify(curr_cfg, null, 2));
+		send_curr_config(res);
 		//return res.send(200);
 	} else {
 		return next();
@@ -102,8 +115,7 @@ app.use(bodyParser.json());
 app.get('/', (req, res) => {
 
 	res.setHeader('Content-Type', 'application/json');
-	const curr_cfg = get_curr_config();
-	return res.send(JSON.stringify(curr_cfg, null, 2));
+	send_curr_config(res);
 });
 
 app.post('/', (req, res) => {
@@ -123,11 +135,34 @@ app.post('/', (req, res) => {
 				fs.writeFile(enet_vpn_config, JSON.stringify(json_body, null, 2), function(error) {
 					
 					if(error) {
-						logger.error(`JSON.stringify error: ${error}`);
+						logger.error(`fs.writeFile enet_vpn_config error: ${error}`);
 						return;
 					};
 				});
-				ls_cfg_build(json_cfg);
+				let ipsec_conf_arr = [ '\n', '\n', '\n', '\n' ];
+				let ipsec_secrets_arr = [ '\n', '\n', '\n', '\n' ];
+				libreswan_cfg_init(ipsec_conf_arr, ipsec_secrets_arr, json_cfg);
+				libreswan_cfg_build(ipsec_conf_arr, ipsec_secrets_arr, json_cfg);
+				ipsec_conf_arr.foreach(function(ipsec_conf, i) {
+					
+					const ipsec_conf_path = '/shared/enet' + json_cfg.ace_nic_config.nic_id + '_libreswan' + (104 + i) + '/ipsec.conf';
+					fs.writeFile(ipsec_conf_path, ipsec_conf, function(error) {
+						
+						if(error) {
+							logger.error(`fs.writeFile ipsec_conf error: ${error}`);
+						};
+					});
+				};
+				ipsec_secrets_arr.foreach(function(ipsec_secrets) {
+					
+					const ipsec_secrets_path = '/shared/enet' + json_cfg.ace_nic_config.nic_id + '_libreswan' + (104 + i) + '/ipsec.secrets';
+					fs.writeFile(ipsec_secrets_path, ipsec_secrets, function(error) {
+						
+						if(error) {
+							logger.error(`fs.writeFile ipsec_secrets error: ${error}`);
+						};
+					});
+				};
 			};
 		} catch (error) {
 			logger.error(`JSON.parse error: ${error}`);

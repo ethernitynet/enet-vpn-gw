@@ -23,5 +23,13 @@ enet_vpn_start() {
 
 enet_vpn_boot_libreswan() {
 
+	exec_tgt '/' 'docker run -d local/enet-libreswan:v3.27'
 	ovs_dpdk add-docker-port br0 lib107 libreswan --ipaddress=15.1.1.108/24 --macaddress=00:62:B1:49:1D:BF
+}
+
+enet_vpn_update_env() {
+
+	local enet_vpn_config=$(</shared/enet_vpn_config.json)
+	
+	export ACENIC_ID=$(jq -r .ace_nic_config[0].nic_id <<< "${enet_vpn_config}")
 }
