@@ -226,7 +226,7 @@ window.onload = function() {
 	};
 	
 	setTheme((window.location.href.match(/[?&]theme=([^&]+)/)||[])[1] || 'bootstrap2', true);
-    setIconlib((window.location.href.match(/[?&]iconlib=([^&]*)/)||[null,'bootstrap3'])[1], true);
+    setIconlib((window.location.href.match(/[?&]iconlib=([^&]*)/)||[null,'bootstrap2'])[1], true);
 	JSONEditor.defaults.options.object_layout = (window.location.href.match(/[?&]object_layout=([^&]+)/)||[])[1] || 'normal';
 	JSONEditor.defaults.options.show_errors = (window.location.href.match(/[?&]show_errors=([^&]+)/)||[])[1] || 'always';
 })();

@@ -2,33 +2,20 @@
 	"$ref": "schema_tun_common.json",
 	"properties": {
 		"Tunnel Configuration": {
-			"propertyOrder": 10,
-			"type": "array",
+			"propertyOrder": 150,
+			"type": "object",
 			"options": {
-				"collapsed": false,
-				"disable_array_delete": true,
-				"disable_array_delete_all_rows": true,
-				"disable_array_delete_last_row": true,
-				"disable_array_reorder": true,
-				"disable_collapse": true
+				"layout": "grid"
 			},
-			"format": "table",
-			"minItems": 1,
-			"maxItems": 1,
-			"items": {
-				"type": "object",
-				"properties": {
-					"LibreSwan-Specific Configuration": {
-						"description": "(may be overridden by tunnel properties configuration below)",
-						"type": "string",
-						"format": "html",
-						"options": {
-							"input_height": "160px",
-							"input_width": "350px",
-							"wysiwyg": true
-						},
-						"default": "left=10.11.11.1\nleftsubnet=10.0.1.0/24\nleftnexthop=172.16.55.66\nleftsourceip=10.0.1.1\nright=192.168.22.1\nrightsubnet=10.0.2.0/24\nrightnexthop=172.16.88.99\nrightsourceip=10.0.2.1\nkeyingtries=%forever"
-					}
+			"properties": {
+				"LibreSwan-Specific Configuration": {
+					"description": "(may be overridden by tunnel properties configuration below)",
+					"type": "string",
+					"format": "html",
+					"options": {
+						"wysiwyg": true
+					},
+					"default": "left=10.11.11.1\nleftsubnet=10.0.1.0/24\nleftnexthop=172.16.55.66\nleftsourceip=10.0.1.1\nright=192.168.22.1\nrightsubnet=10.0.2.0/24\nrightnexthop=172.16.88.99\nrightsourceip=10.0.2.1\nkeyingtries=%forever"
 				}
 			}
 		}

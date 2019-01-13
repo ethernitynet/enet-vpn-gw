@@ -20,103 +20,109 @@
 				"headerTemplate": "{{i}} - {{self.Name}}",
 				"oneOf": [
 					{
+						"type": "object",
+						"options": {
+							"disable_collapse": true,
+							"disable_edit_json": true,
+							"disable_properties": true,
+							"layout": "normal"
+						},
 						"properties": {
 							"Name": {
 								"propertyOrder": 1,
 								"type": "string",
 								"minLength": 4
 							}
-						},
-						"type": "object",
-						"options": {
-							"disable_collapse": true,
-							"disable_edit_json": true,
-							"disable_properties": true
 						},
 						"$ref": "schema_tun_outbound_full_hw_acceleration.json",
 						"title": "Outbound Full HW Acceleration"
 					},
 					{
+						"type": "object",
+						"options": {
+							"disable_collapse": true,
+							"disable_edit_json": true,
+							"disable_properties": true,
+							"layout": "normal"
+						},
 						"properties": {
 							"Name": {
 								"propertyOrder": 1,
 								"type": "string",
 								"minLength": 4
 							}
-						},
-						"type": "object",
-						"options": {
-							"disable_collapse": true,
-							"disable_edit_json": true,
-							"disable_properties": true
 						},
 						"$ref": "schema_tun_inbound_full_hw_acceleration.json",
 						"title": "Inbound Full HW Acceleration"
 					},
 					{
+						"type": "object",
+						"options": {
+							"disable_collapse": true,
+							"disable_edit_json": true,
+							"disable_properties": true,
+							"layout": "normal"
+						},
 						"properties": {
 							"Name": {
 								"propertyOrder": 1,
 								"type": "string",
 								"minLength": 4
 							}
-						},
-						"type": "object",
-						"options": {
-							"disable_collapse": true,
-							"disable_edit_json": true,
-							"disable_properties": true
 						},
 						"$ref": "schema_tun_outbound_partial_hw_acceleration.json",
 						"title": "Outbound Partial HW Acceleration"
 					},
 					{
+						"type": "object",
+						"options": {
+							"disable_collapse": true,
+							"disable_edit_json": true,
+							"disable_properties": true,
+							"layout": "normal"
+						},
 						"properties": {
 							"Name": {
 								"propertyOrder": 1,
 								"type": "string",
 								"minLength": 4
 							}
-						},
-						"type": "object",
-						"options": {
-							"disable_collapse": true,
-							"disable_edit_json": true,
-							"disable_properties": true
 						},
 						"$ref": "schema_tun_inbound_partial_hw_acceleration.json",
 						"title": "Inbound Partial HW Acceleration"
 					},
 					{
+						"type": "object",
+						"options": {
+							"disable_collapse": true,
+							"disable_edit_json": true,
+							"disable_properties": true,
+							"layout": "normal"
+						},
 						"properties": {
 							"Name": {
 								"propertyOrder": 1,
 								"type": "string",
 								"minLength": 4
 							}
-						},
-						"type": "object",
-						"options": {
-							"disable_collapse": true,
-							"disable_edit_json": true,
-							"disable_properties": true
 						},
 						"$ref": "schema_tun_no_hw_acceleration_generic.json",
 						"title": "No HW Acceleration (Generic)"
 					},
 					{
+						"type": "object",
+						"options": {
+							"disable_collapse": true,
+							"disable_edit_json": true,
+							"disable_properties": true,
+							"layout": "normal"
+						},
 						"properties": {
 							"Name": {
 								"propertyOrder": 1,
 								"type": "string",
 								"minLength": 4
 							}
-						},
-						"type": "object",
-						"options": {
-							"disable_collapse": true,
-							"disable_edit_json": true,
-							"disable_properties": true
 						},
 						"$ref": "schema_tun_no_hw_acceleration_dual_port.json",
 						"title": "No HW Acceleration (Dual Port)"

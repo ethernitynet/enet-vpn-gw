@@ -1,92 +1,66 @@
 {
 	"properties": {
 		"Forwarding Policy": {
-			"propertyOrder": 20,
-			"type": "array",
+			"propertyOrder": 9,
+			"type": "object",
 			"options": {
-				"collapsed": false,
-				"disable_array_delete": true,
-				"disable_array_delete_all_rows": true,
-				"disable_array_delete_last_row":true,
-				"disable_array_reorder": true,
-				"disable_collapse": true
+				"disable_collapse": true,
+				"disable_edit_json": true,
+				"layout": "grid"
 			},
-			"format": "table",
-			"minItems": 1,
-			"maxItems": 1,
-			"items": {
-				"type": "object",
-				"properties": {
-					"Tunnel Connectivity": {
-						"type": "object",
-						"options": {
-							"disable_collapse": true,
-							"disable_edit_json": true
-						},
-						"properties": {
-							"Remote VPN GW IP": {
-								"description": "(right)",
-								"type": "string",
-								"minLength": 7,
-								"default": "192.168.22.1"
-							},
-							"Pre-Shared Secret": {
-								"description": "(ipsec.secrets)",
-								"type": "string",
-								"default": "ENET-LibreSwan"
-							}
-						}
+			"properties": {
+				"Remote VPN GW IP": {
+					"description": "(right)",
+					"type": "string",
+					"default": "192.168.22.1"
+				},
+				"Local": {
+					"propertyOrder": 20,
+					"type": "object",
+					"options": {
+						"disable_collapse": true,
+						"disable_edit_json": true
 					},
-					"Local": {
-						"type": "object",
-						"options": {
-							"disable_collapse": true,
-							"disable_edit_json": true
+					"properties": {
+						"Trusted Port": {
+							"type": "integer",
+							"enum": [
+								104,
+								105,
+								106,
+								107
+							],
+							"default": 105
 						},
-						"properties": {
-							"Trusted Port": {
-								"type": "integer",
-								"enum": [
-									104,
-									105,
-									106,
-									107
-								],
-								"default": 105
-							},
-							"Local Subnet": {
-								"description": "(leftsubnet)",
-								"type": "string",
-								"minLength": 9,
-								"maxLength": 18,
-								"default": "10.0.1.0/24"
-							}
+						"Local Subnet": {
+							"description": "(leftsubnet)",
+							"type": "string",
+							"default": "10.0.1.0/24"
 						}
+					}
+				},
+				"Remote": {
+					"propertyOrder": 30,
+					"type": "object",
+					"options": {
+						"disable_collapse": true,
+						"disable_edit_json": true
 					},
-					"Remote": {
-						"type": "object",
-						"options": {
-							"disable_collapse": true,
-							"disable_edit_json": true
+					"properties": {
+						"Protected Port": {
+							"type": "integer",
+							"enum": [
+								104,
+								105,
+								106,
+								107
+							],
+							"default": 104
 						},
-						"properties": {
-							"Protected Port": {
-								"type": "integer",
-								"enum": [
-									104,
-									105,
-									106,
-									107
-								],
-								"default": 104
-							},
-							"Remote Subnet": {
-								"description": "(rightsubnet)",
-								"type": "string",
-								"minLength": 9,
-								"maxLength": 18,
-								"default": "10.0.2.0/24"
-							}
+						"Remote Subnet": {
+							"description": "(rightsubnet)",
+							"type": "string",
+							"default": "10.0.2.0/24"
 						}
 					}
 				}
