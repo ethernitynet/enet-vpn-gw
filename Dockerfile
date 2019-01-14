@@ -19,5 +19,5 @@ WORKDIR ${ENET_VPN_DIR}
 
 #RUN cat $BASH_ENV >> /etc/profile
 #ENTRYPOINT ["${SRC_DIR}/app-entrypoint.sh"]
-CMD ["/bin/bash" "--init-file", "${SRC_DIR}/docker-entrypoint.sh"]
+CMD ["/bin/bash" "--init-file", "${SRC_DIR}/app-entrypoint.sh"]
 #CMD ["./enet_vpn_run.sh"]

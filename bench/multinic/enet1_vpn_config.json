@@ -1,5 +1,5 @@
 {
-  "UPDATE": "Mon, 14 Jan 2019 12:21:23 GMT",
+  "UPDATE": "Mon, 14 Jan 2019 13:15:01 GMT",
   "VPN": {
     "conns": [
       {
@@ -38,7 +38,7 @@
         "sw_pkg": "/home/devops/ENET_SmartNic_ver_1.31A.tgz",
         "hw_pkg": "/home/devops/HW.tgz",
         "log_file": "/tmp/enet1_vpn_log.log",
-        "nic_id": "0"
+        "nic_id": "1"
       }
     ],
     "dpdk_config": [

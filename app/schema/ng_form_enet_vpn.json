@@ -1,0 +1,192 @@
+[{
+		"key": "conns",
+		"type": "tabarray",
+		"add": "New",
+		"remove": "Delete",
+		"style": {
+			"remove": "btn-danger"
+		},
+		"title": "{{ value.name || 'Tab '+$index }}",
+		"items": [
+			"conns[].name",
+			"conns[].pre_shared_secret",
+			{
+				"type": "section",
+				"htmlClass": "row",
+				"items": [{
+						"type": "section",
+						"htmlClass": "col-xs-6",
+						"items": [
+							"conns[].encryption_type"
+						]
+					},
+					{
+						"type": "section",
+						"htmlClass": "col-xs-6",
+						"items": [
+							"conns[].remote_vpn_gw_ip"
+						]
+					}
+				]
+			},
+			{
+				"type": "section",
+				"htmlClass": "row",
+				"items": [{
+						"type": "section",
+						"htmlClass": "col-xs-6",
+						"items": [
+							"conns[].lan_port"
+						]
+					},
+					{
+						"type": "section",
+						"htmlClass": "col-xs-6",
+						"items": [
+							"conns[].tunnel_port"
+						]
+					}
+				]
+			},
+			{
+				"type": "section",
+				"htmlClass": "row",
+				"items": [{
+						"type": "section",
+						"htmlClass": "col-xs-6",
+						"items": [
+							"conns[].local_subnet"
+						]
+					},
+					{
+						"type": "section",
+						"htmlClass": "col-xs-6",
+						"items": [
+							"conns[].remote_subnet"
+						]
+					}
+				]
+			},
+			{
+				"type": "section",
+				"htmlClass": "row",
+				"items": [{
+						"type": "section",
+						"htmlClass": "col-xs-6",
+						"items": [{
+							"key": "conns[].inbound_accel",
+							"title": "Inbound Acceleration",
+							"type": "radios",
+							"titleMap": [{
+									"value": "full",
+									"name": "Full HW Acceleration"
+								},
+								{
+									"value": "hybrid",
+									"name": "Hybrid Acceleration"
+								},
+								{
+									"value": "none",
+									"name": "No Acceleration"
+								}
+							]
+						}]
+					},
+					{
+						"type": "section",
+						"htmlClass": "col-xs-6",
+						"items": [{
+							"key": "conns[].outbound_accel",
+							"title": "Outbound Acceleration",
+							"type": "radios",
+							"titleMap": [{
+									"value": "full",
+									"name": "Full HW Acceleration"
+								},
+								{
+									"value": "hybrid",
+									"name": "Hybrid Acceleration"
+								},
+								{
+									"value": "none",
+									"name": "No Acceleration"
+								}
+							]
+						}]
+					}
+				]
+			},
+			{
+				"key": "conns[].inbound_routes",
+				"type": "textarea"
+			},
+			{
+				"key": "conns[].libreswan_specific",
+				"type": "textarea"
+			}
+		]
+	},
+	{
+		"type": "submit",
+		"style": "btn-default",
+		"title": "OK"
+	},
+
+	"advanced",
+	{
+		"key": "ace_nic_config",
+		"condition": "model.advanced",
+		"title": "ACE-NIC Configuration",
+		"add": null,
+		"remove": null,
+		"minItems": 1,
+		"items": [
+			"ace_nic_config[].install_dir",
+			"ace_nic_config[].sw_pkg",
+			"ace_nic_config[].hw_pkg",
+			"ace_nic_config[].log_file",
+			"ace_nic_config[].nic_id"
+		]
+	},
+	{
+		"key": "dpdk_config",
+		"condition": "model.advanced",
+		"title": "DPDK Configuration",
+		"add": null,
+		"remove": null,
+		"minItems": 1,
+		"items": [
+			"dpdk_config[].dpdk_ver",
+			"dpdk_config[].no_2mb_hugepages",
+			"dpdk_config[].no_1g_hugepages",
+			"dpdk_config[].installed_pmds"
+		]
+	},
+	{
+		"key": "ovs_config",
+		"condition": "model.advanced",
+		"title": "OVS Configuration",
+		"add": null,
+		"remove": null,
+		"minItems": 1,
+		"items": [
+			"ovs_config[].ovs_ver",
+			"ovs_config[].mgmt_threads",
+			"ovs_config[].pmd_threads"
+		]
+	},
+	{
+		"key": "libreswan_config",
+		"condition": "model.advanced",
+		"title": "LibreSwan Configuration",
+		"add": null,
+		"remove": null,
+		"minItems": 1,
+		"items": [
+			"libreswan_config[].libreswan_ver",
+			"libreswan_config[].vpn_gw_ip"
+		]
+	}
+
+]
+

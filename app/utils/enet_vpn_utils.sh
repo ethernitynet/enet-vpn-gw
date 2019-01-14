@@ -3,7 +3,7 @@
 enet_vpn_config_mngr_install() {
 
 	cd ${SRC_DIR}/config
-	apt-get -y install nodejs npm
+	apt-get -y install nodejs npm jq
 	npm install
 	cd -
 	cd ${SRC_DIR}/schema
