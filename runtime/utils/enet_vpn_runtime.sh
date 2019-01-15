@@ -6,8 +6,10 @@ enet_vpn_update_env() {
 	
 	export ACENIC_ID=$(jq -r .VPN.ace_nic_config[0].nic_id <<< "${enet_vpn_config}")
 	export ENET_IPSEC_LOCAL_IP=$(jq -r .VPN.libreswan_config[0].vpn_gw_ip <<< "${enet_vpn_config}")
+	export ENET_OVS_DATAPLANE=$(jq -r .VPN.ace_nic_config[0].dataplane <<< "${enet_vpn_config}")
+	export ENET_NIC_INTERFACE=$(jq -r .VPN.ace_nic_config[0].nic_name <<< "${enet_vpn_config}")
+	export ENET_NIC_PCI=$(jq -r .VPN.ace_nic_config[0].nic_pci <<< "${enet_vpn_config}")
 	export ENET_NIC_BR="enet${ACENIC_ID}"
-	export DOCKER_INST="enet${ACENIC_ID}-vpn"
 	export OVS_VPN_BR="ovsvpn${ACENIC_ID}"
 }
 
@@ -68,12 +70,15 @@ enet_vpn_connect_libreswan_inst() {
 	local nic_id=$1
 	local nic_port=$2
 	local libreswan_inst="${ENET_NIC_BR}_libreswan${nic_port}"
-	local port_name="e${nic_id}ls${nic_port}"
+	local dev_name="e${nic_id}ls${nic_port}"
 	
+	local libreswan_inst_id=$(echo "nic_id=${nic_id};nic_port=${nic_port};(nic_port%4)*4+nic_id" | bc)
+	local libreswan_inst_mac=$(printf 'CC:D3:9D:FF:FF:%02X' ${libreswan_inst_id})
 	ovs_dpdk add-docker-port \
-		$OVS_VPN_BR ${port_name} ${libreswan_inst} \
+		$OVS_VPN_BR ${dev_name} ${libreswan_inst} \
 		--ipaddress=${ENET_IPSEC_LOCAL_IP}/8 \
-		--macaddress=${ENET_VPN_MAC}
+		--macaddress=${libreswan_inst_mac}
+	ovs_dpdk set-docker-port-id ${libreswan_inst} ${dev_name} ${nic_port}
 }
 
 enet_vpn_deploy_libreswan() {
@@ -101,7 +106,5 @@ enet_vpn_start() {
 	exec_tgt '/' "mkdir -p /tmp/${DOCKER_INST}"
 	ip link del dev ${OVS_VPN_BR}
 	ovs_run
-	#ovs_dpdk add-br ${OVS_VPN_BR}
-	#enet_ovs_add_nic_br ${ENET_NIC_BR}
-	#enet_ovs_attach_nic_br ${ENET_NIC_BR} ${OVS_VPN_BR} ${ENET_NIC_INTERFACE} ${ENET_NIC_PCI}
+	enet_ovs_attach ${OVS_VPN_BR}
 }

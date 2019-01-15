@@ -38,7 +38,10 @@
         "sw_pkg": "/home/devops/ENET_SmartNic_ver_1.31A.tgz",
         "hw_pkg": "/home/devops/HW.tgz",
         "log_file": "/tmp/enet1_vpn_log.log",
-        "nic_id": "1"
+        "nic_id": "1",
+        "nic_name": "enp136s0",
+        "nic_pci": "0000:88:00.0",
+        "dataplane": "kernel"
       }
     ],
     "dpdk_config": [

@@ -9,8 +9,8 @@ COPY app/ ${SRC_DIR}/
 ENV BASH_ENV=${SRC_DIR}/docker-entrypoint.sh
 
 RUN exec_tgt '/' 'docker pull ethernity/libreswan'
-RUN enet_build
 RUN enet_vpn_config_mngr_install
+RUN exec_apt_install "$(enet_vpn_prerequisites)"
 
 COPY runtime/ ${SRC_DIR}/runtime/
 ENV BASH_ENV=${SRC_DIR}/app-entrypoint.sh

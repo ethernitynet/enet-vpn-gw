@@ -1,6 +1,8 @@
 #!/bin/bash
 
 ACENIC_ID=${1:-0}
+ENET_NIC_INTERFACE=${2:-ens1}
+ENET_NIC_PCI=${2:-0000:3d:00.0}
 IMG_DOMAIN=${2:-local}
 OVS_VERSION=${3:-v2.10.1}
 LIBRESWAN_VERSION=${4:-v3.27}
@@ -31,13 +33,17 @@ esac
 mkdir -p $(pwd)/shared/$DOCKER_INST
 
 docker run \
-	-ti \
+	-t \
+	-d \
+	--rm \
 	--net=host \
 	--privileged \
 	-v /mnt/huge:/mnt/huge \
 	--device=/dev/uio0:/dev/uio0 \
 	-v $(pwd)/shared/$DOCKER_INST:/shared \
 	--env ACENIC_ID=$ACENIC_ID \
+	--env ENET_NIC_INTERFACE=$ENET_NIC_INTERFACE \
+	--env ENET_NIC_PCI=$ENET_NIC_PCI \
 	--env DOCKER_INST=$DOCKER_INST \
 	--hostname=$DOCKER_INST \
 	--name=$DOCKER_INST \
