@@ -39,7 +39,7 @@
         "hw_pkg": "/home/devops/HW.tgz",
         "log_file": "/tmp/enet0_vpn_log.log",
         "nic_id": "0",
-        "nic_name": "ens1",
+        "nic_name": "ACENIC1_127",
         "nic_pci": "0000:3d:00.0",
         "dataplane": "userspace"
       }

@@ -25,8 +25,9 @@ enet_vpn_config_mngr_start() {
 	npm start &
 	cd -
 	cd ${SRC_DIR}/schema
-	http-server &
+	#http-server &
 	cd -
+	sleep 1
 }
 
 enet_vpn_boot_libreswan_inst() {

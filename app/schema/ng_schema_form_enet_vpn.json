@@ -1,0 +1,440 @@
+{
+	"schema": {
+		"type": "object",
+		"title": "ENET VPN GW Configuration",
+		"properties": {
+
+			"advanced": {
+				"title": "Advanced",
+				"type": "boolean"
+			},
+
+			"ace_nic_config": {
+				"type": "array",
+				"items": {
+					"type": "object",
+					"properties": {
+						"install_dir": {
+							"title": "SW Installation Directory",
+							"type": "string"
+						},
+						"sw_pkg": {
+							"title": "SW Package",
+							"type": "string",
+							"description": "(full path)"
+						},
+						"hw_pkg": {
+							"title": "HW Package",
+							"type": "string",
+							"description": "(full path)"
+						},
+						"log_file": {
+							"title": "Log File Path",
+							"type": "string",
+							"description": "(full path)"
+						},
+						"nic_id": {
+							"title": "NIC ID",
+							"type": "string",
+							"enum": [
+								"0",
+								"1",
+								"2",
+								"3"
+							]
+						}
+					},
+					"required": [
+						"ace_nic_install_dir",
+						"sw_pkg",
+						"hw_pkg",
+						"log_file",
+						"nic_id"
+					]
+				}
+			},
+
+
+			"dpdk_config": {
+				"type": "array",
+				"items": {
+					"type": "object",
+					"properties": {
+						"dpdk_ver": {
+							"title": "DPDK Version",
+							"type": "string"
+						},
+						"no_2mb_hugepages": {
+							"title": "No. of 2MB Hugepages",
+							"type": "number"
+						},
+						"no_1g_hugepages": {
+							"title": "No. of 1GB Hugepages",
+							"type": "number"
+						},
+						"installed_pmds": {
+							"title": "Installed Poll-Mode Drivers",
+							"type": "array",
+							"items": {
+								"type": "string",
+								"enum": [
+									"igb_uio",
+									"vfio-pci"
+								]
+							}
+						},
+						"required": [
+							"dpdk_ver",
+							"no_2mb_hugepages",
+							"no_1g_hugepages",
+							"installed_pmds"
+						]
+					}
+				}
+			},
+
+
+			"ovs_config": {
+				"type": "array",
+				"items": {
+					"type": "object",
+					"properties": {
+						"ovs_ver": {
+							"title": "OVS Version",
+							"type": "string"
+						},
+						"mgmt_threads": {
+							"title": "OVS Managegement Threads Mask",
+							"type": "string"
+						},
+						"pmd_threads": {
+							"title": "OVS PMD Threads Mask",
+							"type": "string"
+						}
+					},
+					"required": [
+						"ovs_ver",
+						"mgmt_threads",
+						"pmd_threads"
+					]
+				}
+			},
+
+			"libreswan_config": {
+				"type": "array",
+				"items": {
+					"type": "object",
+					"properties": {
+						"libreswan_ver": {
+							"title": "LibreSwan Version",
+							"type": "string"
+						},
+						"vpn_gw_ip": {
+							"title": "VPN GW IP",
+							"type": "string"
+						}
+					},
+					"required": [
+						"libreswan_ver",
+						"vpn_gw_ip"
+					]
+				}
+			},
+
+			"conns": {
+				"type": "array",
+				"items": {
+					"type": "object",
+
+					"properties": {
+						"name": {
+							"title": "Name",
+							"type": "string"
+						},
+						"remote_vpn_gw_ip": {
+							"title": "Remote VPN GW IP",
+							"type": "string",
+							"description": "(right)"
+						},
+						"tunnel_port": {
+							"title": "Tunnel Port",
+							"type": "string",
+							"enum": [
+								"104",
+								"105",
+								"106",
+								"107"
+							]
+						},
+						"local_subnet": {
+							"title": "Local Subnet",
+							"type": "string",
+							"description": "(leftsubnet)"
+						},
+						"remote_subnet": {
+							"title": "Remote Subnet",
+							"type": "string",
+							"description": "(rightsubnet)"
+						},
+						"lan_port": {
+							"title": "LAN Port",
+							"type": "string",
+							"enum": [
+								"104",
+								"105",
+								"106",
+								"107"
+							]
+						},
+						"encryption_type": {
+							"title": "Encryption Type",
+							"type": "string",
+							"enum": [
+								"aes_gcm128-null"
+							],
+							"description": "(esp)"
+						},
+						"outbound_accel": {
+							"type": "array",
+							"items": {
+								"type": "string",
+								"enum": [
+									"full",
+									"hybrid",
+									"none"
+								]
+							}
+						},
+						"inbound_accel": {
+							"type": "array",
+							"items": {
+								"type": "string",
+								"enum": [
+									"full",
+									"hybrid",
+									"none"
+								]
+							}
+						},
+						"pre_shared_secret": {
+							"title": "Pre-Shared Secret",
+							"type": "string",
+							"description": "(ipsec.secrets)"
+						},
+						"inbound_routes": {
+							"title": "Inbound Static Routes",
+							"type": "string",
+							"description": "(list of next-hop IP addresses)"
+						},
+						"libreswan_specific": {
+							"title": "LibreSwan-Specific Configuration",
+							"type": "string"
+						}
+					},
+					"required": [
+						"name",
+						"pre_shared_secret",
+						"encryption_type",
+						"remote_vpn_gw_ip",
+						"lan_port",
+						"tunnel_port",
+						"inbound_accel",
+						"outbound_accel",
+						"libreswan_config"
+					]
+				}
+			}
+		}
+	},
+	"form": [{
+			"key": "conns",
+			"type": "tabarray",
+			"add": "New",
+			"remove": "Delete",
+			"style": {
+				"remove": "btn-danger"
+			},
+			"title": "{{ value.name || 'Tab '+$index }}",
+			"items": [
+				"conns[].name",
+				"conns[].pre_shared_secret",
+				{
+					"type": "section",
+					"htmlClass": "row",
+					"items": [{
+							"type": "section",
+							"htmlClass": "col-xs-6",
+							"items": [
+								"conns[].encryption_type"
+							]
+						},
+						{
+							"type": "section",
+							"htmlClass": "col-xs-6",
+							"items": [
+								"conns[].remote_vpn_gw_ip"
+							]
+						}
+					]
+				},
+				{
+					"type": "section",
+					"htmlClass": "row",
+					"items": [{
+							"type": "section",
+							"htmlClass": "col-xs-6",
+							"items": [
+								"conns[].lan_port"
+							]
+						},
+						{
+							"type": "section",
+							"htmlClass": "col-xs-6",
+							"items": [
+								"conns[].tunnel_port"
+							]
+						}
+					]
+				},
+				{
+					"type": "section",
+					"htmlClass": "row",
+					"items": [{
+							"type": "section",
+							"htmlClass": "col-xs-6",
+							"items": [
+								"conns[].local_subnet"
+							]
+						},
+						{
+							"type": "section",
+							"htmlClass": "col-xs-6",
+							"items": [
+								"conns[].remote_subnet"
+							]
+						}
+					]
+				},
+				{
+					"type": "section",
+					"htmlClass": "row",
+					"items": [{
+							"type": "section",
+							"htmlClass": "col-xs-6",
+							"items": [{
+								"key": "conns[].inbound_accel",
+								"title": "Inbound Acceleration",
+								"type": "radios",
+								"titleMap": [{
+										"value": "full",
+										"name": "Full HW Acceleration"
+									},
+									{
+										"value": "hybrid",
+										"name": "Hybrid Acceleration"
+									},
+									{
+										"value": "none",
+										"name": "No Acceleration"
+									}
+								]
+							}]
+						},
+						{
+							"type": "section",
+							"htmlClass": "col-xs-6",
+							"items": [{
+								"key": "conns[].outbound_accel",
+								"title": "Outbound Acceleration",
+								"type": "radios",
+								"titleMap": [{
+										"value": "full",
+										"name": "Full HW Acceleration"
+									},
+									{
+										"value": "hybrid",
+										"name": "Hybrid Acceleration"
+									},
+									{
+										"value": "none",
+										"name": "No Acceleration"
+									}
+								]
+							}]
+						}
+					]
+				},
+				{
+					"key": "conns[].inbound_routes",
+					"type": "textarea"
+				},
+				{
+					"key": "conns[].libreswan_specific",
+					"type": "textarea"
+				}
+			]
+		},
+		{
+			"type": "submit",
+			"style": "btn-default",
+			"title": "OK"
+		},
+
+		"advanced",
+		{
+			"key": "ace_nic_config",
+			"condition": "model.advanced",
+			"title": "ACE-NIC Configuration",
+			"add": null,
+			"remove": null,
+			"minItems": 1,
+			"items": [
+				"ace_nic_config[].install_dir",
+				"ace_nic_config[].sw_pkg",
+				"ace_nic_config[].hw_pkg",
+				"ace_nic_config[].log_file",
+				"ace_nic_config[].nic_id"
+			]
+		},
+		{
+			"key": "dpdk_config",
+			"condition": "model.advanced",
+			"title": "DPDK Configuration",
+			"add": null,
+			"remove": null,
+			"minItems": 1,
+			"items": [
+				"dpdk_config[].dpdk_ver",
+				"dpdk_config[].no_2mb_hugepages",
+				"dpdk_config[].no_1g_hugepages",
+				"dpdk_config[].installed_pmds"
+			]
+		},
+		{
+			"key": "ovs_config",
+			"condition": "model.advanced",
+			"title": "OVS Configuration",
+			"add": null,
+			"remove": null,
+			"minItems": 1,
+			"items": [
+				"ovs_config[].ovs_ver",
+				"ovs_config[].mgmt_threads",
+				"ovs_config[].pmd_threads"
+			]
+		},
+		{
+			"key": "libreswan_config",
+			"condition": "model.advanced",
+			"title": "LibreSwan Configuration",
+			"add": null,
+			"remove": null,
+			"minItems": 1,
+			"items": [
+				"libreswan_config[].libreswan_ver",
+				"libreswan_config[].vpn_gw_ip"
+			]
+		}
+
+	]
+}

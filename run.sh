@@ -32,6 +32,8 @@ esac
 
 mkdir -p $(pwd)/shared/$DOCKER_INST
 
+docker kill $DOCKER_INST
+docker rm $DOCKER_INST
 docker run \
 	-t \
 	-d \
