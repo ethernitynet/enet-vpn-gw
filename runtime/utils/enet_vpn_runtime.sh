@@ -4,13 +4,15 @@ enet_vpn_update_env() {
 
 	local enet_vpn_config=$(</shared/enet_vpn_config.json)
 	
-	export ACENIC_ID=$(jq -r .VPN.ace_nic_config[0].nic_id <<< "${enet_vpn_config}")
-	export ENET_IPSEC_LOCAL_IP=$(jq -r .VPN.libreswan_config[0].vpn_gw_ip <<< "${enet_vpn_config}")
+	export ACENIC_ID=$(jq -r .VPN.ace_nic_config[0].nic_name <<< "${enet_vpn_config}")
 	export ENET_OVS_DATAPLANE=$(jq -r .VPN.ace_nic_config[0].dataplane <<< "${enet_vpn_config}")
-	export ENET_NIC_INTERFACE=$(jq -r .VPN.ace_nic_config[0].nic_name <<< "${enet_vpn_config}")
 	export ENET_NIC_PCI=$(jq -r .VPN.ace_nic_config[0].nic_pci <<< "${enet_vpn_config}")
+	
+	export ENET_NIC_INTERFACE=$( printf 'ACENIC%u_127' $(( ${ACENIC_ID} + 1 )) )
 	export ENET_NIC_BR="enet${ACENIC_ID}"
 	export OVS_VPN_BR="ovsvpn${ACENIC_ID}"
+	
+	export ENET_IPSEC_LOCAL_IP=$(jq -r .VPN.vpn_gw_config[0].vpn_gw_ip <<< "${enet_vpn_config}")
 }
 
 enet_vpn_config_mngr_start() {
@@ -24,8 +26,9 @@ enet_vpn_config_mngr_start() {
 	cd ${SRC_DIR}/config
 	npm start &
 	cd -
-	cd ${SRC_DIR}/schema
-	#http-server &
+	cd ${SRC_DIR}/schema/asf
+	local config_mngr_port=$(( 4443 + ${ACENIC_ID} ))
+	http-server -p ${config_mngr_port} &
 	cd -
 	sleep 1
 }
