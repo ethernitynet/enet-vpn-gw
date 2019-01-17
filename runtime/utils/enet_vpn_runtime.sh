@@ -27,13 +27,32 @@ enet_vpn_config_mngr_start() {
 	npm start &
 	cd -
 	cd ${SRC_DIR}/schema/asf
-	local config_mngr_port=$(( 4443 + ${ACENIC_ID} ))
+	local config_mngr_port=$(( 44443 + ${ACENIC_ID} ))
 	http-server -p ${config_mngr_port} &
 	cd -
 	sleep 1
 }
 
-enet_vpn_boot_libreswan_inst() {
+enet_vpn_shutdown_libreswan_inst() {
+
+	local nic_id=$1
+	local nic_port=$2
+	local libreswan_inst="${ENET_NIC_BR}_libreswan${nic_port}"
+	
+	################################
+	local exec_pattern="\
+	docker kill %s; \
+	docker rm %s"
+	local exec_cmd=$(\
+	printf "${exec_pattern}" \
+		${libreswan_inst} \
+		${libreswan_inst})
+	################################
+	sleep 2
+	exec_tgt '/' "${exec_cmd}"
+}
+
+enet_vpn_reboot_libreswan_inst() {
 
 	local nic_id=$1
 	local nic_port=$2
@@ -42,16 +61,19 @@ enet_vpn_boot_libreswan_inst() {
 	local shared_dir="${TGT_SRC_DIR}/enet-vpn-gw/shared/${DOCKER_INST}/${libreswan_inst}"
 	
 	################################
+	enet_vpn_shutdown_libreswan_inst ${nic_id} ${nic_port}
+	################################
 	local exec_pattern="\
 	mkdir -p %s; \
-	docker kill %s; \
-	docker rm %s; \
 	docker run \
 		-t \
 		-d \
 		--rm \
 		--ipc=host \
 		--privileged \
+		--env ACENIC_ID=%d \
+		--env DOCKER_INST=%s \
+		--hostname=%s \
 		--name=%s \
 		-v %s:/etc/ipsec.conf \
 		-v %s:/etc/ipsec.secrets \
@@ -59,6 +81,7 @@ enet_vpn_boot_libreswan_inst() {
 	local exec_cmd=$(\
 	printf "${exec_pattern}" \
 		${shared_dir} \
+		${nic_id} \
 		${libreswan_inst} \
 		${libreswan_inst} \
 		${libreswan_inst} \
@@ -66,10 +89,31 @@ enet_vpn_boot_libreswan_inst() {
 		${shared_dir}/ipsec.secrets \
 		${img_name})
 	################################
+	sleep 2
 	exec_tgt '/' "${exec_cmd}"
 }
 
 enet_vpn_connect_libreswan_inst() {
+
+	set -x
+	local nic_id=$1
+	local nic_port=$2
+	local libreswan_inst="${ENET_NIC_BR}_libreswan${nic_port}"
+	local dev_name="e${nic_id}ls${nic_port}"
+	
+	local libreswan_inst_id=$(echo "nic_id=${nic_id};nic_port=${nic_port};(nic_port%4)*4+nic_id" | bc)
+	local libreswan_inst_mac=$(printf 'CC:D3:9D:FF:FF:%02X' ${libreswan_inst_id})
+	sleep 2
+	ovs_dpdk add-docker-port \
+		$OVS_VPN_BR ${dev_name} ${libreswan_inst} \
+		--ipaddress=${ENET_IPSEC_LOCAL_IP}/8 \
+		--macaddress=${libreswan_inst_mac}
+	sleep 2
+	ovs_dpdk set-docker-port-id ${libreswan_inst} ${dev_name} ${nic_port}
+	set +x
+}
+
+enet_vpn_disconnect_libreswan_inst() {
 
 	local nic_id=$1
 	local nic_port=$2
@@ -78,19 +122,17 @@ enet_vpn_connect_libreswan_inst() {
 	
 	local libreswan_inst_id=$(echo "nic_id=${nic_id};nic_port=${nic_port};(nic_port%4)*4+nic_id" | bc)
 	local libreswan_inst_mac=$(printf 'CC:D3:9D:FF:FF:%02X' ${libreswan_inst_id})
-	ovs_dpdk add-docker-port \
-		$OVS_VPN_BR ${dev_name} ${libreswan_inst} \
-		--ipaddress=${ENET_IPSEC_LOCAL_IP}/8 \
-		--macaddress=${libreswan_inst_mac}
-	ovs_dpdk set-docker-port-id ${libreswan_inst} ${dev_name} ${nic_port}
+	sleep 2
+	ovs_dpdk del-docker-port \
+		$OVS_VPN_BR ${dev_name} ${libreswan_inst}
 }
 
 enet_vpn_deploy_libreswan() {
 
-	enet_vpn_boot_libreswan_inst ${ACENIC_ID} 104
-	enet_vpn_boot_libreswan_inst ${ACENIC_ID} 105
-	enet_vpn_boot_libreswan_inst ${ACENIC_ID} 106
-	enet_vpn_boot_libreswan_inst ${ACENIC_ID} 107
+	enet_vpn_reboot_libreswan_inst ${ACENIC_ID} 104
+	enet_vpn_reboot_libreswan_inst ${ACENIC_ID} 105
+	enet_vpn_reboot_libreswan_inst ${ACENIC_ID} 106
+	enet_vpn_reboot_libreswan_inst ${ACENIC_ID} 107
 }
 
 enet_vpn_connect_libreswan() {
@@ -99,6 +141,14 @@ enet_vpn_connect_libreswan() {
 	enet_vpn_connect_libreswan_inst ${ACENIC_ID} 105
 	enet_vpn_connect_libreswan_inst ${ACENIC_ID} 106
 	enet_vpn_connect_libreswan_inst ${ACENIC_ID} 107
+}
+
+enet_vpn_disconnect_libreswan() {
+
+	enet_vpn_disconnect_libreswan_inst ${ACENIC_ID} 104
+	enet_vpn_disconnect_libreswan_inst ${ACENIC_ID} 105
+	enet_vpn_disconnect_libreswan_inst ${ACENIC_ID} 106
+	enet_vpn_disconnect_libreswan_inst ${ACENIC_ID} 107
 }
 
 enet_vpn_start() {
