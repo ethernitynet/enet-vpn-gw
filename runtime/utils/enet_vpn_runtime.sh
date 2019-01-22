@@ -62,6 +62,7 @@ enet_vpn_reboot_libreswan_inst() {
 	local shared_conn_dir="${TGT_SRC_DIR}/enet-vpn-gw/shared/${DOCKER_INST}/conn"
 	
 	################################
+	enet_vpn_disconnect_libreswan_inst ${nic_id} ${nic_port}
 	enet_vpn_shutdown_libreswan_inst ${nic_id} ${nic_port}
 	################################
 	local exec_pattern="\
@@ -159,6 +160,8 @@ enet_vpn_start() {
 	enet_vpn_update_env
 	exec_tgt '/' "mkdir -p /tmp/${DOCKER_INST}"
 	ip link del dev ${OVS_VPN_BR}
-	ovs_run
+	#ovs_run
 	enet_ovs_attach ${OVS_VPN_BR}
+	enet_vpn_deploy_libreswan
+	enet_vpn_connect_libreswan
 }
