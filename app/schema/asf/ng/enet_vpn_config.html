@@ -421,7 +421,7 @@ app.controller('TestCtrl', function($scope, $http, $location, $q) {
       $scope.schemaJson = res.files['schema.json'].content;
       $scope.formJson   = res.files['form.json'].content;
       $scope.modelData  = JSON.parse(res.files['model.json'].content);
-      $scope.LibreSwan_conf  = libreswan_cfg_create($scope.modelData);
+      $scope.LibreSwan_conf  = libreswan_expr_cfg_build($scope.modelData);
     }).error(function() {
       $scope.loadedData = 'dummy';
       $scope.error = 'Failed to load gist.';
@@ -476,7 +476,7 @@ app.controller('TestCtrl', function($scope, $http, $location, $q) {
     $scope.schemaJson = JSON.stringify($scope.schema,undefined,2);
     $scope.formJson   = JSON.stringify($scope.form,undefined,2);
     $scope.modelData = res_model.data.VPN || res_data.data.model || {};
-    $scope.LibreSwan_conf  = libreswan_cfg_create($scope.modelData);
+    $scope.LibreSwan_conf  = libreswan_expr_cfg_build($scope.modelData);
   };
 
   $scope.pretty = function(){
@@ -539,8 +539,33 @@ app.controller('TestCtrl', function($scope, $http, $location, $q) {
   };
 
   $scope.submitForm = function(form) {
+  
+	var expr = '\n';
+
+	const json_cfg = $scope.modelData;
+	var conn_dictionary = { };
+	const conns_count = json_cfg.conns.length;
+	for(var i = 0; i < conns_count; ++i) {
+		conn_dictionary_append(conn_dictionary, json_cfg.VPN, i);
+	};
+	expr += JSON.stringify(conn_dictionary, null, 2);;
+  };
+
+  $scope.submitForm = function(form) {
     // First we broadcast an event so all fields validate themselves
     $scope.$broadcast('schemaFormValidate');
+	
+    $http.post('https://api.github.com/gists', gist).success(function(data) {
+      $scope.error = null;
+      $location.path('/' + data.id);
+      $scope.savedGistData = {
+        data: data,
+        url: $location.absUrl()
+      };
+    }).error(function() {
+      $scope.error = 'Failed to save gist.';
+    });	
+	
     // Then we check if the form is valid
     if (form.$valid) {
       alert('You did it!');

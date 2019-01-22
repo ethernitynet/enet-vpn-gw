@@ -19,10 +19,10 @@ enet_vpn_config_mngr_start() {
 
 	pkill node
 	ln -s /shared/enet_vpn_config.json ${SRC_DIR}/schema/enet_vpn_config.json
-	mkdir -p /shared/enet${ACENIC_ID}_libreswan104
-	mkdir -p /shared/enet${ACENIC_ID}_libreswan105
-	mkdir -p /shared/enet${ACENIC_ID}_libreswan106
-	mkdir -p /shared/enet${ACENIC_ID}_libreswan107
+	mkdir -p /shared/enet${ACENIC_ID}_libreswan104/conns
+	mkdir -p /shared/enet${ACENIC_ID}_libreswan105/conns
+	mkdir -p /shared/enet${ACENIC_ID}_libreswan106/conns
+	mkdir -p /shared/enet${ACENIC_ID}_libreswan107/conns
 	cd ${SRC_DIR}/config
 	npm start &
 	cd -
@@ -59,6 +59,7 @@ enet_vpn_reboot_libreswan_inst() {
 	local img_name="local/enet-libreswan:v3.27"
 	local libreswan_inst="${ENET_NIC_BR}_libreswan${nic_port}"
 	local shared_dir="${TGT_SRC_DIR}/enet-vpn-gw/shared/${DOCKER_INST}/${libreswan_inst}"
+	local shared_conn_dir="${TGT_SRC_DIR}/enet-vpn-gw/shared/${DOCKER_INST}/conn"
 	
 	################################
 	enet_vpn_shutdown_libreswan_inst ${nic_id} ${nic_port}
@@ -77,6 +78,7 @@ enet_vpn_reboot_libreswan_inst() {
 		--name=%s \
 		-v %s:/etc/ipsec.conf \
 		-v %s:/etc/ipsec.secrets \
+		-v %s:/shared/conn \
 		%s"
 	local exec_cmd=$(\
 	printf "${exec_pattern}" \
@@ -87,6 +89,7 @@ enet_vpn_reboot_libreswan_inst() {
 		${libreswan_inst} \
 		${shared_dir}/ipsec.conf \
 		${shared_dir}/ipsec.secrets \
+		${shared_conn_dir} \
 		${img_name})
 	################################
 	sleep 2
@@ -101,8 +104,7 @@ enet_vpn_connect_libreswan_inst() {
 	local libreswan_inst="${ENET_NIC_BR}_libreswan${nic_port}"
 	local dev_name="e${nic_id}ls${nic_port}"
 	
-	local libreswan_inst_id=$(echo "nic_id=${nic_id};nic_port=${nic_port};(nic_port%4)*4+nic_id" | bc)
-	local libreswan_inst_mac=$(printf 'CC:D3:9D:FF:FF:%02X' ${libreswan_inst_id})
+	local libreswan_inst_mac=$(printf 'CC:D3:9D:D0:00:%01X%01X' ${nic_id} $(( ${nic_port} - 100 )))
 	sleep 2
 	ovs_dpdk add-docker-port \
 		$OVS_VPN_BR ${dev_name} ${libreswan_inst} \
@@ -120,8 +122,6 @@ enet_vpn_disconnect_libreswan_inst() {
 	local libreswan_inst="${ENET_NIC_BR}_libreswan${nic_port}"
 	local dev_name="e${nic_id}ls${nic_port}"
 	
-	local libreswan_inst_id=$(echo "nic_id=${nic_id};nic_port=${nic_port};(nic_port%4)*4+nic_id" | bc)
-	local libreswan_inst_mac=$(printf 'CC:D3:9D:FF:FF:%02X' ${libreswan_inst_id})
 	sleep 2
 	ovs_dpdk del-docker-port \
 		$OVS_VPN_BR ${dev_name} ${libreswan_inst}

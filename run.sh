@@ -34,6 +34,52 @@ mkdir -p $(pwd)/shared/$DOCKER_INST
 
 docker kill $DOCKER_INST
 docker rm $DOCKER_INST
+
+ENET_VPN_CONFIG=$(cat shared/${DOCKER_INST}/enet_vpn_config.json)
+ENET_INSTALL_DIR=$(jq -r .VPN.ace_nic_config[0].install_dir <<< "${ENET_VPN_CONFIG}")
+DATAPLANE_TYPE=$(jq -r .VPN.ace_nic_config[0].dataplane <<< "${ENET_VPN_CONFIG}")
+ENET_NIC_INTERFACE=$( printf 'ACENIC%u_127' $(( ${ACENIC_ID} + 1 )) )
+
+
+enet_restart() {
+
+	cd ${ENET_INSTALL_DIR}/Ethernity/lib/pcicard
+	if [[ ${ACENIC_ID} == 0 ]]
+	then
+		pkill pcicard_mea.ex
+		sleep 1
+		./AppInit_Nic
+	elif [[ ${ACENIC_ID} == 1 ]]
+	then
+		pkill pcicard_mea2.ex
+		sleep 1
+		./AppInit_Nic2
+	fi
+	cd -
+}
+
+kmod_install() {
+
+	local dpdk_install_dir=/root/ETHERNITY/GITHUB/dpdk-v17.11-rc4/dpdk
+
+	sleep 1
+	[[ $(lsmod | grep -c "^openvswitch") == 0 ]] && modprobe openvswitch
+	[[ $(lsmod | grep -c "^af_key") == 0 ]] && modprobe af-key
+	
+	if [[ ${DATAPLANE_TYPE} = 'userspace' ]]
+	then
+		sleep 1
+		[[ $(lsmod | grep -c "^uio") == 0 ]] && modprobe uio
+		[[ $(lsmod | grep -c "^igb_uio") == 0 ]] && insmod ${dpdk_install_dir}/x86_64-native-linuxapp-gcc/kmod/igb_uio.ko
+		sleep 1
+		${dpdk_install_dir}/usertools/dpdk-devbind.py -b igb_uio ${ENET_NIC_INTERFACE}
+	fi
+}
+
+
+enet_restart
+kmod_install
+
 docker run \
 	-t \
 	-d \
@@ -42,7 +88,7 @@ docker run \
 	--privileged \
 	-v /mnt/huge:/mnt/huge \
 	--device=/dev/uio0:/dev/uio0 \
-	-v $(pwd)/shared/$DOCKER_INST:/shared \
+	-v ${ENET_INSTALL_DIR}/shared/$DOCKER_INST:/shared \
 	--env ACENIC_ID=$ACENIC_ID \
 	--env ENET_NIC_INTERFACE=$ENET_NIC_INTERFACE \
 	--env ENET_NIC_PCI=$ENET_NIC_PCI \
