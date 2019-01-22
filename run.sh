@@ -66,7 +66,7 @@ kmod_install() {
 	[[ $(lsmod | grep -c "^openvswitch") == 0 ]] && modprobe openvswitch
 	[[ $(lsmod | grep -c "^af_key") == 0 ]] && modprobe af-key
 	
-	if [[ ${DATAPLANE_TYPE} = 'userspace' ]]
+	if [[ ${DATAPLANE_TYPE} == 'userspace' ]]
 	then
 		sleep 1
 		[[ $(lsmod | grep -c "^uio") == 0 ]] && modprobe uio
