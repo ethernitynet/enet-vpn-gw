@@ -1,0 +1,15 @@
+{
+  "name": "enet_vpn_backend",
+  "version": "1.0.0",
+  "description": "Management Backend for ENET VPN GW",
+  "main": "enet_vpn_backend.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Erez Buchnik",
+  "license": "MIT",
+  "dependencies": {
+    "request": "^2.88.0",
+    "shelljs": "^0.8.3"
+  }
+}
