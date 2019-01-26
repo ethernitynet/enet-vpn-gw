@@ -104,3 +104,21 @@ function port_dictionary_append_libreswan(port_dictionary, cfg, port) {
 	expr_arr = []; libreswan_expr_ipsec_conf_build(expr_arr, cfg, port); port_dictionary[`${port}`][`ipsec.conf`] = expr_arr;
 	expr_arr = []; libreswan_expr_ipsec_secrets_build(expr_arr, cfg, port); port_dictionary[`${port}`][`ipsec.secrets`] = expr_arr;
 };
+
+//////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
+
+module.exports = function () {
+
+	this.json_cfg = { };
+	
+    this.update_cfg = function (json_cfg) {
+	
+		this.json_cfg = json_cfg;
+    };
+	
+    this.port_dictionary_append = function (port_dictionary, port) {
+	
+		port_dictionary_append_libreswan(port_dictionary, this.json_cfg, port);
+    };
+};

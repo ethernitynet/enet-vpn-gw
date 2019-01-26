@@ -1,12 +1,18 @@
 
+var syntax_common = require('./syntax_common.js');
+
 var ipsec_conf_arr = [ ];
 var ipsec_secrets_arr = [ ];
 
-function libreswan_expr_ipsec_conf_init(expr_arr, cfg, protected_port) {
+function libreswan_expr_ipsec_conf_init(expr_key, expr_path, expr_arr, cfg) {
 
 	const nic_cfg = cfg.ace_nic_config[0];
 	
-	expr_arr.push(`# enet${nic_cfg.nic_name}_libreswan${protected_port}:/etc/ipsec.conf`);
+	expr_arr.push(`############################`);
+	expr_arr.push(`# ${expr_key}`);
+	expr_arr.push(`############################`);
+	expr_arr.push(`# ${expr_path}`);
+	expr_arr.push(`############################`);
 	expr_arr.push(`# # #`);
 	expr_arr.push(`config setup`);
 	expr_arr.push(`  protostack=netkey`);
@@ -25,8 +31,8 @@ function libreswan_expr_ipsec_conf_conn_append(expr_arr, cfg, conn_id) {
 	const libreswan_specific = conn.libreswan_specific;
 	const libreswan_specific_arr = libreswan_specific.split('\n');
 
-	expr_arr.push(`# Outbound Full HW Offload: ${vpn_cfg.vpn_gw_ip}>>${conn.remote_tunnel_endpoint_ip}[${outbound_ns}]`);
-	expr_arr.push(`# Inbound  Full HW Offload: ${conn.remote_tunnel_endpoint_ip}>>${vpn_cfg.vpn_gw_ip}[${inbound_ns}]`);
+	expr_arr.push(`# Outbound (HW offload: ${conn.outbound_accel}): ${vpn_cfg.vpn_gw_ip}>>${conn.remote_tunnel_endpoint_ip}[${outbound_ns}]`);
+	expr_arr.push(`# Inbound  (HW offload: ${conn.inbound_accel}): ${conn.remote_tunnel_endpoint_ip}>>${vpn_cfg.vpn_gw_ip}[${inbound_ns}]`);
 	expr_arr.push(`conn ${conn.name}`);
 
 	libreswan_specific_arr.forEach(function(param) {
@@ -41,11 +47,15 @@ function libreswan_expr_ipsec_conf_conn_append(expr_arr, cfg, conn_id) {
 	expr_arr.push(`#`);
 };
 
-function libreswan_expr_ipsec_secrets_init(expr_arr, cfg, protected_port) {
+function libreswan_expr_ipsec_secrets_init(expr_key, expr_path, expr_arr, cfg) {
 
 	const nic_cfg = cfg.ace_nic_config[0];
 	
-	expr_arr.push(`# enet${nic_cfg.nic_name}_libreswan${protected_port}:/etc/ipsec.secrets`);
+	expr_arr.push(`############################`);
+	expr_arr.push(`# ${expr_key}`);
+	expr_arr.push(`############################`);
+	expr_arr.push(`# ${expr_path}`);
+	expr_arr.push(`############################`);
 	expr_arr.push(`include /etc/ipsec.d/*.secrets`);
 };
 
@@ -57,23 +67,23 @@ function libreswan_expr_ipsec_secrets_conn_append(expr_arr, cfg, conn_id) {
 	expr_arr.push(`${vpn_cfg.vpn_gw_ip} ${conn.remote_tunnel_endpoint_ip} : PSK "${conn.pre_shared_secret}"`);
 };
 
-function libreswan_expr_ipsec_conf_build(expr_arr, cfg, protected_port) {
+function libreswan_expr_ipsec_conf_build(expr_key, expr_path, expr_arr, cfg, tunnel_port) {
 
-	libreswan_expr_ipsec_conf_init(expr_arr, cfg, protected_port);
+	libreswan_expr_ipsec_conf_init(expr_key, expr_path, expr_arr, cfg);
 	for(var conn_id = 0; conn_id < cfg.conns.length; ++conn_id) {
 		const conn = cfg.conns[conn_id];
-		if(conn.tunnel_port == protected_port) {
+		if(conn.tunnel_port == tunnel_port) {
 			libreswan_expr_ipsec_conf_conn_append(expr_arr, cfg, conn_id);
 		};
 	};
 };
 
-function libreswan_expr_ipsec_secrets_build(expr_arr, cfg, protected_port) {
+function libreswan_expr_ipsec_secrets_build(expr_key, expr_path, expr_arr, cfg, tunnel_port) {
 
-	libreswan_expr_ipsec_secrets_init(expr_arr, cfg, protected_port);
+	libreswan_expr_ipsec_secrets_init(expr_key, expr_path, expr_arr, cfg);
 	for(var conn_id = 0; conn_id < cfg.conns.length; ++conn_id) {
 		const conn = cfg.conns[conn_id];
-		if(conn.tunnel_port == protected_port) {
+		if(conn.tunnel_port == tunnel_port) {
 			libreswan_expr_ipsec_secrets_conn_append(expr_arr, cfg, conn_id);
 		};
 	};
@@ -100,7 +110,29 @@ function libreswan_expr_cfg_build(cfg) {
 
 function port_dictionary_append_libreswan(port_dictionary, cfg, port) {
 
+	const nic_cfg = cfg.ace_nic_config[0];
+	const gw_inst = enet_gw_inst(nic_cfg, port);
+	const expr_dir = `/etc`;
+	
 	var expr_arr = [];
-	expr_arr = []; libreswan_expr_ipsec_conf_build(expr_arr, cfg, port); port_dictionary[`${port}`][`ipsec.conf`] = expr_arr;
-	expr_arr = []; libreswan_expr_ipsec_secrets_build(expr_arr, cfg, port); port_dictionary[`${port}`][`ipsec.secrets`] = expr_arr;
+	expr_arr = []; libreswan_expr_ipsec_conf_build(`ipsec.conf`, `${gw_inst}:${expr_dir}/ipsec.conf`, expr_arr, cfg, port); port_dictionary[`${port}`][`ipsec.conf`] = expr_arr;
+	expr_arr = []; libreswan_expr_ipsec_secrets_build(`ipsec.secrets`, `${gw_inst}:${expr_dir}/ipsec.secrets`, expr_arr, cfg, port); port_dictionary[`${port}`][`ipsec.secrets`] = expr_arr;
+};
+
+//////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
+
+module.exports = function () {
+
+	this.json_cfg = { };
+	
+    this.update_cfg = function (json_cfg) {
+	
+		this.json_cfg = json_cfg;
+    };
+	
+    this.port_dictionary_append = function (port_dictionary, port) {
+	
+		port_dictionary_append_libreswan(port_dictionary, this.json_cfg, port);
+    };
 };

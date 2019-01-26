@@ -46,10 +46,10 @@ function influxdb_stats_block_parse(json_cfg, tunnels_config, stats_container) {
 	for(var i = 0; i < tunnels_config.length; ++i) {
 		const config_lan = tunnels_config[i].LAN;
 		const stats_lan = stats_container[config_lan.STATS_ID];
-		influxdb_expr_stats_add(line_proto_arr, json_cfg.VPN, config_lan, stats_lan);
+		influxdb_expr_stats_add(line_proto_arr, json_cfg, config_lan, stats_lan);
 		const config_tunnel = tunnels_config[i].TUNNEL;
 		const stats_tunnel = stats_container[config_tunnel.STATS_ID];
-		influxdb_expr_stats_add(line_proto_arr, json_cfg.VPN, config_tunnel, stats_tunnel);
+		influxdb_expr_stats_add(line_proto_arr, json_cfg, config_tunnel, stats_tunnel);
 	};
 	return line_proto_arr;
 };

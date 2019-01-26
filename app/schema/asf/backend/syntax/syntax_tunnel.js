@@ -1,4 +1,9 @@
 
+var syntax_mea = require('./syntax_mea.js');
+var syntax_ovs = require('./syntax_ovs.js');
+var syntax_netns = require('./syntax_netns.js');
+var syntax_libreswan = require('./syntax_libreswan.js');
+
 /////////////////////////////////////
 /////////////////////////////////////
 // Tunnel
@@ -125,6 +130,9 @@ function expr_dictionary_display(expr_dictionary) {
 		if(key == `ports`) {
 			expr += `\n`;
 			const port_dictionary = expr_dictionary[`ports`];
+			expr += `#######\n`;
+			expr += `# Ports\n`;
+			expr += `#######\n`;
 			Object.keys(port_dictionary).forEach(function(port_key) {
 				expr += `\n`;
 				expr += `#===================\n`;
@@ -133,28 +141,25 @@ function expr_dictionary_display(expr_dictionary) {
 				const port_cmd_dictionary = port_dictionary[`${port_key}`];
 				Object.keys(port_cmd_dictionary).forEach(function(port_cmd_key) {
 					expr += `\n`;
-					expr += `    ###########################\n`;
-					expr += `    # Command: ${port_cmd_key}:\n`;
-					expr += `    ###########################\n`;
 					const port_cmd = port_cmd_dictionary[port_cmd_key];
 					for(var line_id = 0; line_id < port_cmd.length; ++line_id) {
 						expr += `${port_cmd[line_id]}\n`;
 					};
 				});
 				expr += `\n`;
-				expr += port_dictionary[`ipsec.secrets`];
 			});
+			expr += `#######\n`;
+			expr += `#######\n`;
+			expr += `#######\n`;
 		}
 		else {
-			expr += `##########################\n`;
+			expr += `\n`;
+			expr += `#>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n`;
 			expr += `# Tunnel: ${key}:\n`;
-			expr += `##########################\n`;
+			expr += `#>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n`;
 			const conn_dictionary = expr_dictionary[key];
 			Object.keys(conn_dictionary).forEach(function(tun_cmd_key) {
 				expr += `\n`;
-				expr += `    ##########################\n`;
-				expr += `    # Command: ${tun_cmd_key}:\n`;
-				expr += `    ##########################\n`;
 				const tun_cmd = conn_dictionary[tun_cmd_key];
 				for(var line_id = 0; line_id < tun_cmd.length; ++line_id) {
 					expr += `${tun_cmd[line_id]}\n`;
@@ -164,4 +169,61 @@ function expr_dictionary_display(expr_dictionary) {
 	});
 	expr += `#============================\n`;
 	return expr;
+};
+
+//////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
+
+module.exports = function () {
+
+	this.mea = new syntax_mea();
+	this.ovs = new syntax_ovs();
+	this.netns = new syntax_netns();
+	this.libreswan = new syntax_libreswan();
+	this.json_cfg = { };
+	this.expr_dictionary = { };
+	
+    this.update_cfg = function (json_cfg) {
+	
+		this.json_cfg = json_cfg;
+		this.mea.update_cfg(this.json_cfg);
+		this.ovs.update_cfg(this.json_cfg);
+		this.netns.update_cfg(this.json_cfg);
+		this.libreswan.update_cfg(this.json_cfg);
+		
+		this.expr_dictionary = { };
+		var conn_dictionary = { };
+		this.expr_dictionary[`ports`] = { };
+		for(var protected_port = 104; protected_port <= 107; ++protected_port) {
+			this.expr_dictionary[`ports`][`${protected_port}`] = { };
+			this.libreswan.port_dictionary_append(this.expr_dictionary[`ports`], protected_port);
+			this.mea.port_dictionary_append(this.expr_dictionary[`ports`], protected_port);
+			this.ovs.port_dictionary_append(this.expr_dictionary[`ports`], protected_port);
+			this.netns.port_dictionary_append(this.expr_dictionary[`ports`], protected_port);
+		};
+		for(var conn_id = 0; conn_id < this.json_cfg.conns.length; ++conn_id) {
+			const conn = this.json_cfg.conns[conn_id];
+			const nic_cfg = this.json_cfg.ace_nic_config[0];
+			const ns = tun_ns(nic_cfg, conn);
+			this.expr_dictionary[`${ns}`] = { };
+			this.mea.conn_dictionary_append(this.expr_dictionary, conn_id);
+			this.ovs.conn_dictionary_append(this.expr_dictionary, conn_id);
+			this.netns.conn_dictionary_append(this.expr_dictionary, conn_id);
+		};
+    };
+	
+    this.json_cfg_get = function () {
+	
+		return this.json_cfg;
+    };
+	
+    this.expr_dictionary_get = function () {
+	
+		return this.expr_dictionary;
+    };
+	
+    this.expr_dictionary_display = function () {
+	
+		return expr_dictionary_display(this.expr_dictionary);
+    };
 };
