@@ -1,4 +1,8 @@
 
+var fs = require('fs');
+var path = require('path');
+var node_ssh = require('node-ssh');
+var ssh = new node_ssh();
 var http_request = require('request');
 var sh = require('shelljs');
 sh.config.silent = true;
@@ -38,6 +42,38 @@ function stats_collect(stats_collect_cmd) {
 	const bytes_line = `^${ws_pattern}Byte${ws_pattern}\\(${dec_pattern}\\)${ws_pattern}\\(${dec_pattern}\\)${ws_pattern}\\(${dec_pattern}\\)${ws_pattern}${txt_pattern}${ws_pattern}${txt_pattern}${ws_pattern}${txt_pattern}${ws_pattern}${txt_pattern}$`;
 	const cmd_out = sh.exec(`${stats_collect_cmd} | sed -e '/${bottom_line}/,$d' | sed -n -e '/${delimiter_line}/,$p' | grep -v '${delimiter_line}' | sed -s 's/${pmid_line}/"STATS\\1":{/g' | sed -s 's/${pkts_line}/"pkts":[\\1,\\2,\\3],/g' | sed -s 's/${bytes_line}/"bytes":[\\1,\\2,\\3]},/g'`).stdout;
 	return JSON.parse(`{${cmd_out}"sentinel":0}`);
+};
+
+function stats_collect_remote(remote_ip, remote_username, remote_password, db_ip, db_port, db_name, json_cfg, tunnels_config, stats_collect_cmd) {
+	
+	const ws_pattern = '\\s\\s*';
+	const dec_pattern = '[0-9][0-9]*';
+	const txt_pattern = '[0-9a-zA-Z][0-9a-zA-Z]*';
+	const delimiter_line = '^------ ---------------- ---------------- ---------------- ---------------- ---------------- ---------------- ----------------$';
+	const bottom_line = '^===========================================================================================================================$';
+	const pmid_line = `^${ws_pattern}\\(${dec_pattern}\\)${ws_pattern}FwdGreen${ws_pattern}FwdYellow${ws_pattern}DisGreen${ws_pattern}DisYellow${ws_pattern}DisRed${ws_pattern}DisOther${ws_pattern}DisMtu$`;
+	const pkts_line = `^${ws_pattern}Pkt${ws_pattern}\\(${dec_pattern}\\)${ws_pattern}\\(${dec_pattern}\\)${ws_pattern}\\(${dec_pattern}\\)${ws_pattern}${txt_pattern}${ws_pattern}${txt_pattern}${ws_pattern}${txt_pattern}${ws_pattern}${txt_pattern}$`;
+	const bytes_line = `^${ws_pattern}Byte${ws_pattern}\\(${dec_pattern}\\)${ws_pattern}\\(${dec_pattern}\\)${ws_pattern}\\(${dec_pattern}\\)${ws_pattern}${txt_pattern}${ws_pattern}${txt_pattern}${ws_pattern}${txt_pattern}${ws_pattern}${txt_pattern}$`;
+	const cmd = `${stats_collect_cmd} | sed -e '/${bottom_line}/,$d' | sed -n -e '/${delimiter_line}/,$p' | grep -v '${delimiter_line}' | sed -s 's/${pmid_line}/"STATS\\1":{/g' | sed -s 's/${pkts_line}/"pkts":[\\1,\\2,\\3],/g' | sed -s 's/${bytes_line}/"bytes":[\\1,\\2,\\3]},/g'`;
+
+	ssh.connect({
+		host: remote_ip,
+		username: remote_username,
+		password: remote_password
+	})
+	.then(function() {
+
+		// Command
+		ssh.execCommand(cmd, { cwd:'/' }).then(function(result) {
+			
+			console.log('STDOUT: ' + result.stdout);
+			console.log('STDERR: ' + result.stderr);
+			ssh.dispose();
+			const stats_container = JSON.parse(`{${result.stdout}"sentinel":0}`);
+			const line_proto_arr = influxdb_stats_block_parse(json_cfg, tunnels_config, stats_container);
+			influxdb_send_batch(db_ip, db_port, db_name, line_proto_arr);
+		});
+	});
 };
 
 function influxdb_stats_block_parse(json_cfg, tunnels_config, stats_container) {
@@ -84,6 +120,8 @@ function influxdb_send_batch(db_ip, db_port, db_name, line_proto_arr) {
 	influxdb_send(`172.16.10.151`, 8086, `enet_vpn_db`, line_proto_str);
 };
 
+//////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
 
 module.exports = function (db_ip, db_port, db_name) {
 
@@ -102,5 +140,10 @@ module.exports = function (db_ip, db_port, db_name) {
 		const stats_container = stats_collect(stats_collect_cmd);
 		const line_proto_arr = influxdb_stats_block_parse(this.json_cfg, tunnels_config, stats_container);
 		influxdb_send_batch(this.db_ip, this.db_port, this.db_name, line_proto_arr);
+    };
+	
+    this.stats_collect_remote = function (tunnels_config, stats_collect_cmd) {
+	
+		stats_collect_remote(`172.17.0.1`, `root`, `devops123`, this.db_ip, this.db_port, this.db_name, this.json_cfg, tunnels_config, stats_collect_cmd);
     };
 };

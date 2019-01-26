@@ -97,5 +97,5 @@ syntax_tunnel_inst.update_cfg(json_cfg.VPN);
 const expr = syntax_tunnel_inst.expr_dictionary_display();
 console.log(expr);
 influxdb_stats_inst.update_cfg(json_cfg.VPN);
-influxdb_stats_inst.stats_collect(TUNNELS_CONFIG, `cat /tmp/blkshow.txt`);
+influxdb_stats_inst.stats_collect_remote(TUNNELS_CONFIG, `cat /tmp/blkshow.txt`);
 
