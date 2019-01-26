@@ -92,10 +92,22 @@ const TUNNELS_CONFIG =
 }];
 
 var syntax_tunnel_inst = new syntax_tunnel();
-var influxdb_stats_inst = new influxdb_stats(`172.16.10.151`, 8086, `enet_vpn_db`);
+var influxdb_stats_inst = new influxdb_stats(`172.17.0.1`, `root`, `devops123`, `172.16.10.151`, 8086, `enet_vpn_db`, `cat /tmp/blkshow.txt`);
+
+// Tunnel configuration:
 syntax_tunnel_inst.update_cfg(json_cfg.VPN);
+influxdb_stats_inst.update_cfg(json_cfg.VPN);
 const expr = syntax_tunnel_inst.expr_dictionary_display();
 console.log(expr);
-influxdb_stats_inst.update_cfg(json_cfg.VPN);
-influxdb_stats_inst.stats_collect_remote(TUNNELS_CONFIG, `cat /tmp/blkshow.txt`);
+
+// Tunnel creation:
+influxdb_stats_inst.update_tunnels_config(TUNNELS_CONFIG);
+
+// Periodic updates:
+function backend_stats_collect() {
+	
+	influxdb_stats_inst.stats_collect_remote();
+};
+
+setInterval(backend_stats_collect, 2000);
 
