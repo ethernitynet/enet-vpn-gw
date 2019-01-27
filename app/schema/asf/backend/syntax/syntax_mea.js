@@ -422,7 +422,7 @@ function mea_expr_conn_add_inbound(expr_key, expr_path, expr_arr, cfg, conn_id) 
 /////////////////////////////////////
 /////////////////////////////////////
 
-function mea_expr_port_add_outbound(expr_key, expr_path, expr_arr, cfg, port) {
+function mea_expr_gw_ip_get(expr_key, expr_path, expr_arr, cfg, port) {
 
 	const nic_cfg = cfg.ace_nic_config[0];
 	const vpn_cfg = cfg.vpn_gw_config[0];
@@ -436,6 +436,23 @@ function mea_expr_port_add_outbound(expr_key, expr_path, expr_arr, cfg, port) {
 	expr_arr.push(`############################`);
 	expr_arr.push(`# ${expr_path}`);
 	expr_arr.push(`############################`);
+	expr_arr.push(`  printf '{"GW_IP":"%s"}' "$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${gw_inst})"`);
+};
+
+function mea_expr_port_add_outbound(expr_key, expr_path, expr_arr, cfg, port) {
+
+	const nic_cfg = cfg.ace_nic_config[0];
+	const vpn_cfg = cfg.vpn_gw_config[0];
+	const vpn_inst = enet_vpn_inst(nic_cfg);
+	const gw_ip_hex = ip_to_hex(vpn_cfg.vpn_gw_ip);
+	const gw_inst = enet_gw_inst(nic_cfg, port);
+	const gw_mac = gw_port_mac(nic_cfg, port);
+
+	expr_arr.push(`############################`);
+	expr_arr.push(`# ${expr_key}`);
+	expr_arr.push(`############################`);
+	expr_arr.push(`# ${expr_path}`);
+	expr_arr.push(`############################`);
 	mea_expr_port_config_delete(expr_arr, cfg);
 	expr_arr.push(`  SERVICES=''`);
 	expr_arr.push(`  ACTIONS=''`);
@@ -443,6 +460,7 @@ function mea_expr_port_add_outbound(expr_key, expr_path, expr_arr, cfg, port) {
 	expr_arr.push(`  PM_ID=''`);
 	expr_arr.push(`  ` + log_wrapper(`ACE-NIC# Add Port Outbound Classification ${gw_inst}:'`));
 	expr_arr.push(`  ` + log_wrapper(`=================================================================='`));
+	//mea_expr_service_add(expr_arr, cfg, `${port} FF000  FF000  D.C 0 1 0 1000000000 0 64000 0 0 0 -f 1 0 -ra 0 -l2Type 1 -v ${port} -h 0 0 0 0 -lmid 1 0 1 0 -r ${gw_mac} 00:00:00:00:00:00 0000 -hType 0`);
 	mea_expr_service_add(expr_arr, cfg, `${port} FFF000 FFF000 D.C 0 1 0 1000000000 0 64000 0 0 0 -f 1 0 -ra 0 -l2Type 0 -v ${port} -p 0 -h 0 0 0 0`);
 	mea_expr_port_config_output(expr_arr, cfg, port);
 	expr_arr.push(`  printf '%s' "\${PORT_CONFIG}"`);
@@ -470,12 +488,10 @@ function mea_expr_fwd_add_inbound(expr_key, expr_path, expr_arr, cfg, port) {
 	expr_arr.push(`  while IFS= read -r FWD_MAPPING`);
 	expr_arr.push(`  do`);
 	expr_arr.push(`    eval "\${FWD_MAPPING}"`);
-	expr_arr.push(`    ` + mea_wrapper(nic_cfg, `action set create -ed 1 0 -h 0 0 0 0 -lmid 1 0 1 0 -r \${LAN_MAC} \${NS_MAC} 0000 -hType 3`));
-	//mea_expr_action_id_parse(expr_arr);
-	expr_arr.push(`    ` + mea_wrapper(nic_cfg, `forwarder add 6 \${LAN_IP} 0 0x\${TUN_ID} 3 1 0 1 \${LAN_PORT} -action 1 \${ACTION_ID}`));
-	expr_arr.push(`    FORWARDER_IDS="\${FORWARDER_IDS},\${FORWARDER_ID}"`);
+	mea_expr_action_add(expr_arr, cfg, `-pm 1 0 -ed 1 0 -h 0 0 0 0 -lmid 1 0 1 0 -r \${LAN_MAC} \${CONN_NS_MAC} 0000 -hType 3`);
+	mea_expr_forwarder_add(expr_arr, cfg, `6 \${LAN_IP} 0 0x\${CONN_NS_ID}`, `3 1 0 1 \${LAN_PORT} -action 1 \${ACTION_ID}`);
 	expr_arr.push(`  done < <(echo "\${FWD_MAPPINGS}")`);
-	expr_arr.push(`  echo "{'${gw_inst}':{'ACTION_IDS':[\${ACTION_IDS}],'FORWARDER_IDS':[\${FORWARDER_IDS}]}}" | sed -s 's/ //g' | sed -s 's/,\\]/\\]/g' | sed -s 's/\\[,/\\[/g' | sed -s "s/'/\\"/g"`);
+	mea_expr_port_config_output(expr_arr, cfg, port);
 };
 
 
@@ -490,6 +506,7 @@ function port_dictionary_append_mea(port_dictionary, cfg, port) {
 	const expr_dir = `${nic_cfg.install_dir}/shared/${vpn_inst}/${gw_inst}/conns`;
 
 	var expr_arr = [];
+	expr_arr = []; mea_expr_gw_ip_get(`mea_gw_ip_get`, `[host]:${expr_dir}/mea_gw_ip_get`, expr_arr, cfg, port); port_dictionary[`${port}`][`mea_gw_ip_get`] = expr_arr;
 	expr_arr = []; mea_expr_port_add_outbound(`mea_port_add_outbound`, `[host]:${expr_dir}/mea_port_add_outbound`, expr_arr, cfg, port); port_dictionary[`${port}`][`mea_port_add_outbound`] = expr_arr;
 	expr_arr = []; mea_expr_fwd_add_inbound(`mea_fwd_add_inbound`, `[host]:${expr_dir}/mea_fwd_add_inbound`, expr_arr, cfg, port); port_dictionary[`${port}`][`mea_fwd_add_inbound`] = expr_arr;
 };
@@ -532,15 +549,6 @@ module.exports = function (remote_ip, remote_user, remote_password) {
  		this.ports_config_file = `${enet_vpn_inst(nic_cfg)}_ports_config.json`;
 	};
 	
-    this.load_conns_config = function () {
-	
-		try {
-			this.conns_config = JSON.parse(fs.readFileSync(this.conns_config_file));
-		} catch (err) {
-			this.conns_config = { };
-		};
-    };
-	
     this.load_ports_config = function () {
 	
 		try {
@@ -550,10 +558,19 @@ module.exports = function (remote_ip, remote_user, remote_password) {
 		};
     };
 	
+    this.load_conns_config = function () {
+	
+		try {
+			this.conns_config = JSON.parse(fs.readFileSync(this.conns_config_file));
+		} catch (err) {
+			this.conns_config = { };
+		};
+    };
+	
     this.port_dictionary_append = function (port_dictionary, port) {
 	
 		port_dictionary_append_mea(port_dictionary, this.json_cfg, port);
-		this.conns_config[`${port}`] = { };
+		this.ports_config[`${port}`] = { };
     };
 	
     this.conn_dictionary_append = function (conn_dictionary, conn_id) {
@@ -568,13 +585,16 @@ module.exports = function (remote_ip, remote_user, remote_password) {
 	
     this.port_exec = function (exec_dictionary, port, env, expr_key) {
 	
+		if(this.ports_config[`${port}`] == undefined) {
+			this.ports_config[`${port}`] = { };
+		};
 		const port_config = this.ports_config[`${port}`];
 		
 		var that = this;
 		var exec_cmd = `${env}\n`;
 		exec_cmd += `PORT_CONFIG='${JSON.stringify(port_config)}'\n`;
 		exec_cmd += exec_dictionary[`ports`][`${port}`][`${expr_key}`];
-		console.log(exec_cmd);
+		//console.log(exec_cmd);
 		ssh.connect({
 			host: that.remote_ip,
 			username: that.remote_user,
@@ -588,7 +608,12 @@ module.exports = function (remote_ip, remote_user, remote_password) {
 				console.log(`STDERR: \n${result.stderr}`);
 				ssh.dispose();
 				console.log(`result.stdout: ${result.stdout}`);
-				that.ports_config[`${port}`] = JSON.parse(result.stdout);
+				console.log(`that.ports_config: ${JSON.stringify(that.ports_config)}`);
+				const PORT_CONFIG = JSON.parse(result.stdout);
+				Object.keys(PORT_CONFIG).forEach(function(port_config_key) {
+					
+					that.ports_config[`${port}`][`${port_config_key}`] = PORT_CONFIG[`${port_config_key}`];
+				});
 				console.log(`that.ports_config[${port}] = \n${JSON.stringify(that.ports_config[port], null, 2)};`);
 				fs.writeFileSync(that.ports_config_file, JSON.stringify(that.ports_config));
 			});
@@ -603,7 +628,7 @@ module.exports = function (remote_ip, remote_user, remote_password) {
 		var exec_cmd = `${env}\n`;
 		exec_cmd += `CONN_CONFIG='${JSON.stringify(conn_config)}'\n`;
 		exec_cmd += exec_dictionary[`${conn_ns}`][`${expr_key}`];
-		console.log(exec_cmd);
+		//console.log(exec_cmd);
 		ssh.connect({
 			host: that.remote_ip,
 			username: that.remote_user,
@@ -624,6 +649,43 @@ module.exports = function (remote_ip, remote_user, remote_password) {
 				});
 				console.log(`that.conns_config[${conn_ns}] = \n${JSON.stringify(that.conns_config[conn_ns], null, 2)};`);
 				fs.writeFileSync(that.conns_config_file, JSON.stringify(that.conns_config));
+			});
+		});
+    };
+	
+    this.gw_exec = function (exec_dictionary, gw_port, env, expr_key) {
+	
+		const nic_cfg = this.json_cfg.ace_nic_config[0];
+		const gw_inst = enet_gw_inst(nic_cfg, gw_port);
+		const port_config = this.ports_config[`${gw_port}`];
+		
+		var that = this;
+		var exec_cmd = `docker exec ${gw_inst} /bin/bash -c '\n`;
+		exec_cmd += `${env}\n`;
+		exec_cmd += `PORT_CONFIG='${JSON.stringify(port_config)}'\n`;
+		exec_cmd += exec_dictionary[`ports`][`${gw_port}`][`${expr_key}`];
+		exec_cmd += `'`;
+		//console.log(exec_cmd);
+		ssh.connect({
+			host: that.remote_ip,
+			username: that.remote_user,
+			password: that.remote_password
+		})
+		.then(function() {
+
+			ssh.execCommand(exec_cmd, { cwd:'/' }).then(function(result) {
+				
+				console.log(`STDOUT: \n${result.stdout}`);
+				console.log(`STDERR: \n${result.stderr}`);
+				ssh.dispose();
+				console.log(`result.stdout: ${result.stdout}`);
+				const PORT_CONFIG = JSON.parse(result.stdout);
+				Object.keys(PORT_CONFIG).forEach(function(port_config_key) {
+					
+					that.ports_config[`${gw_port}`][`${port_config_key}`] = PORT_CONFIG[`${port_config_key}`];
+				});
+				console.log(`that.ports_config[${gw_port}] = \n${JSON.stringify(that.ports_config[gw_port], null, 2)};`);
+				fs.writeFileSync(that.ports_config_file, JSON.stringify(that.ports_config));
 			});
 		});
     };

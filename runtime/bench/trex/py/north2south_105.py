@@ -208,38 +208,38 @@ class STLS1(object):
 		
 			if stream_id == 0:
 				##########################################
-				vxlan_sip_x = "172.172.106.1"
+				vxlan_sip_x = "10.0.1.210"
 				##########################################
-				vtep_dip_min =                       172
-				vtep_dip_min = (vtep_dip_min << 8) + 172
-				vtep_dip_min = (vtep_dip_min << 8) + 1
+				vtep_dip_min =                       10
+				vtep_dip_min = (vtep_dip_min << 8) + 0
+				vtep_dip_min = (vtep_dip_min << 8) + 2
 				vtep_dip_min = (vtep_dip_min << 8) + 0
 				##########################################
 			elif stream_id == 1:
 				##########################################
-				vxlan_sip_x = "172.172.106.2"
+				vxlan_sip_x = "10.0.1.211"
 				##########################################
-				vtep_dip_min =                       172
-				vtep_dip_min = (vtep_dip_min << 8) + 172
-				vtep_dip_min = (vtep_dip_min << 8) + 1
+				vtep_dip_min =                       10
+				vtep_dip_min = (vtep_dip_min << 8) + 0
+				vtep_dip_min = (vtep_dip_min << 8) + 2
 				vtep_dip_min = (vtep_dip_min << 8) + 0
 				##########################################
 			elif stream_id == 2:
 				##########################################
-				vxlan_sip_x = "172.172.106.3"
+				vxlan_sip_x = "10.0.1.212"
 				##########################################
-				vtep_dip_min =                       172
-				vtep_dip_min = (vtep_dip_min << 8) + 172
-				vtep_dip_min = (vtep_dip_min << 8) + 1
+				vtep_dip_min =                       10
+				vtep_dip_min = (vtep_dip_min << 8) + 0
+				vtep_dip_min = (vtep_dip_min << 8) + 2
 				vtep_dip_min = (vtep_dip_min << 8) + 0
 				##########################################
 			else:
 				##########################################
-				vxlan_sip_x = "172.172.106.4"
+				vxlan_sip_x = "10.0.1.213"
 				##########################################
-				vtep_dip_min =                       172
-				vtep_dip_min = (vtep_dip_min << 8) + 172
-				vtep_dip_min = (vtep_dip_min << 8) + 1
+				vtep_dip_min =                       10
+				vtep_dip_min = (vtep_dip_min << 8) + 0
+				vtep_dip_min = (vtep_dip_min << 8) + 2
 				vtep_dip_min = (vtep_dip_min << 8) + 0
 				##########################################
 
@@ -258,7 +258,7 @@ class STLS1(object):
 					vtep_dip0 = (ip_num & 255)
 					vtep_dip_x = "%d.%d.%d.%d" % (vtep_dip0, vtep_dip1, vtep_dip2, vtep_dip3)
 					vxlan_smac_x = '08:00:27:9c:81:cb'
-					vxlan_dmac_x = '0a:ce:00:00:0a:ce'
+					vxlan_dmac_x = 'CC:D3:9D:D5:6E:04'
 					#vxlan_dmac_x = '00:e0:ed:39:95:76'
 					#############################################
 					#vxlan_smac_x = '00:e0:%02x:5c:0f:21' % (256 - (vtep_dip2 + 1))

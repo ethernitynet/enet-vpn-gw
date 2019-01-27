@@ -35,15 +35,12 @@ function netns_expr_fwd_get(expr_key, expr_path, expr_arr, cfg, port) {
 
 	const nic_cfg = cfg.ace_nic_config[0];
 	const gw_inst = enet_gw_inst(nic_cfg, port);
-	const netns_shared_dir = `/shared/conns`;
 
-	expr_arr.push(`#!/bin/bash`);
 	expr_arr.push(`############################`);
 	expr_arr.push(`# ${expr_key}`);
 	expr_arr.push(`############################`);
 	expr_arr.push(`# ${expr_path}`);
 	expr_arr.push(`############################`);
-	expr_arr.push(`  sleep ${delay_long}`);
 	expr_arr.push(`  ` + log_wrapper(`netns# Get All Forwarding Rules: ${gw_inst}`));
 	expr_arr.push(`  ` + log_wrapper(`==================================================================`));
 	expr_arr.push(`  for NS in $(ip netns)`);
@@ -153,5 +150,10 @@ module.exports = function () {
     this.conn_dictionary_append = function (conn_dictionary, conn_id) {
 	
 		conn_dictionary_append_netns(conn_dictionary, this.json_cfg, conn_id);
+    };
+	
+    this.port_exec = function (mea_inst, exec_dictionary, port, env, expr_key) {
+	
+		mea_inst.gw_exec(exec_dictionary, port, env, expr_key);
     };
 };

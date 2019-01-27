@@ -105,11 +105,16 @@ console.log(expr);
 syntax_tunnel_inst.load_config();
 
 // Initialization:
-function enet_vpn_restart() {
+function enet_vpn_gw_port_add() {
+	
+	syntax_tunnel_inst.mea_port(104, ``, `mea_gw_ip_get`);
+};
+function enet_vpn_lan_port_add() {
 	
 	syntax_tunnel_inst.mea_port(105, ``, `mea_port_add_outbound`);
 };
-enet_vpn_restart();
+enet_vpn_gw_port_add();
+setTimeout(enet_vpn_lan_port_add, 2000);
 
 // Tunnel creation:
 function outbound_tunnel_create() {
