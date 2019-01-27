@@ -322,10 +322,16 @@ module.exports = function (remote_ip, remote_user, remote_password) {
 	
     this.load_config = function () {
 	
+		this.mea.load_ports_config();
 		this.mea.load_conns_config();
     };
 	
-    this.mea_exec = function (ns, env, expr_key) {
+    this.mea_port = function (port, env, expr_key) {
+	
+		this.mea.port_exec(this.exec_dictionary, port, env, expr_key);
+    };
+	
+    this.mea_conn = function (ns, env, expr_key) {
 	
 		this.mea.conn_exec(this.exec_dictionary, ns, env, expr_key);
     };

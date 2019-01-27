@@ -10,11 +10,11 @@ var ssh = new node_ssh();
 /////////////////////////////////////
 /////////////////////////////////////
 
-function mea_expr_forwarders_delete(expr_arr, cfg, forwarders_arr_expr) {
+function mea_expr_forwarders_delete(expr_arr, cfg, forwarders_arr_expr, config_obj) {
 
 	const nic_cfg = cfg.ace_nic_config[0];
 	
-	expr_arr.push(`  FORWARDERS_LIST="$(jq -r ${forwarders_arr_expr} <<< "\${TUNNEL_CONFIG}")"`);
+	expr_arr.push(`  FORWARDERS_LIST="$(jq -r ${forwarders_arr_expr} <<< ${config_obj})"`);
 	expr_arr.push(`  if [[ "\${FORWARDERS_LIST}" != "[]" ]]`);
 	expr_arr.push(`  then`);
 	expr_arr.push(`  for FORWARDER_PATTERN in "$(jq -r .[] <<< "\${FORWARDERS_LIST}")"`);
@@ -24,11 +24,11 @@ function mea_expr_forwarders_delete(expr_arr, cfg, forwarders_arr_expr) {
 	expr_arr.push(`  fi`);
 };
 
-function mea_expr_actions_delete(expr_arr, cfg, actions_arr_expr) {
+function mea_expr_actions_delete(expr_arr, cfg, actions_arr_expr, config_obj) {
 
 	const nic_cfg = cfg.ace_nic_config[0];
 	
-	expr_arr.push(`  ACTIONS_LIST="$(jq -r ${actions_arr_expr} <<< "\${TUNNEL_CONFIG}")"`);
+	expr_arr.push(`  ACTIONS_LIST="$(jq -r ${actions_arr_expr} <<< ${config_obj})"`);
 	expr_arr.push(`  if [[ "\${ACTIONS_LIST}" != "[]" ]]`);
 	expr_arr.push(`  then`);
 	expr_arr.push(`  for ACTION_ID in "$(jq -r .[] <<< "\${ACTIONS_LIST}")"`);
@@ -38,11 +38,11 @@ function mea_expr_actions_delete(expr_arr, cfg, actions_arr_expr) {
 	expr_arr.push(`  fi`);
 };
 
-function mea_expr_services_delete(expr_arr, cfg, services_arr_expr) {
+function mea_expr_services_delete(expr_arr, cfg, services_arr_expr, config_obj) {
 
 	const nic_cfg = cfg.ace_nic_config[0];
 	
-	expr_arr.push(`  SERVICES_LIST="$(jq -r ${services_arr_expr} <<< "\${TUNNEL_CONFIG}")"`);
+	expr_arr.push(`  SERVICES_LIST="$(jq -r ${services_arr_expr} <<< ${config_obj})"`);
 	expr_arr.push(`  if [[ "\${SERVICES_LIST}" != "[]" ]]`);
 	expr_arr.push(`  then`);
 	expr_arr.push(`  for SERVICE_ID in "$(jq -r .[] <<< "\${SERVICES_LIST}")"`);
@@ -52,11 +52,11 @@ function mea_expr_services_delete(expr_arr, cfg, services_arr_expr) {
 	expr_arr.push(`  fi`);
 };
 
-function mea_expr_crypto_profiles_delete(expr_arr, cfg, profiles_arr_expr) {
+function mea_expr_crypto_profiles_delete(expr_arr, cfg, profiles_arr_expr, config_obj) {
 
 	const nic_cfg = cfg.ace_nic_config[0];
 	
-	expr_arr.push(`  PROFILES_LIST="$(jq -r ${profiles_arr_expr} <<< "\${TUNNEL_CONFIG}")"`);
+	expr_arr.push(`  PROFILES_LIST="$(jq -r ${profiles_arr_expr} <<< ${config_obj})"`);
 	expr_arr.push(`  if [[ "\${PROFILES_LIST}" != "[]" ]]`);
 	expr_arr.push(`  then`);
 	expr_arr.push(`  for PROFILE_ID in "$(jq -r .[] <<< "\${PROFILES_LIST}")"`);
@@ -69,19 +69,30 @@ function mea_expr_crypto_profiles_delete(expr_arr, cfg, profiles_arr_expr) {
 /////////////////////////////////////
 /////////////////////////////////////
 
+function mea_expr_port_config_delete(expr_arr, cfg) {
+
+	expr_arr.push(`  PORT_CONFIG="$(jq -r . <<< "\${PORT_CONFIG}")"`);
+	expr_arr.push(`  if [[ "\${PORT_CONFIG}" != "{}" ]]`);
+	expr_arr.push(`  then`);
+	mea_expr_forwarders_delete(expr_arr, cfg, `.FORWARDERS`, `"\${PORT_CONFIG}"`);
+	mea_expr_actions_delete(expr_arr, cfg, `.ACTIONS`, `"\${PORT_CONFIG}"`);
+	mea_expr_services_delete(expr_arr, cfg, `.SERVICES`, `"\${PORT_CONFIG}"`);
+	expr_arr.push(`  fi`);
+};
+
 function mea_expr_conn_config_delete(expr_arr, cfg, direction) {
 
 	expr_arr.push(`  TUNNEL_CONFIG="$(jq -r .${direction} <<< "\${CONN_CONFIG}")"`);
 	expr_arr.push(`  if [[ "\${TUNNEL_CONFIG}" != "{}" ]]`);
 	expr_arr.push(`  then`);
-	mea_expr_forwarders_delete(expr_arr, cfg, `.LAN.FORWARDERS`);
-	mea_expr_actions_delete(expr_arr, cfg, `.LAN.ACTIONS`);
-	mea_expr_services_delete(expr_arr, cfg, `.LAN.SERVICES`);
-	mea_expr_crypto_profiles_delete(expr_arr, cfg, `.LAN.CRYPTO_PROFILES`);
-	mea_expr_forwarders_delete(expr_arr, cfg, `.TUNNEL.FORWARDERS`);
-	mea_expr_actions_delete(expr_arr, cfg, `.TUNNEL.ACTIONS`);
-	mea_expr_services_delete(expr_arr, cfg, `.TUNNEL.SERVICES`);
-	mea_expr_crypto_profiles_delete(expr_arr, cfg, `.TUNNEL.CRYPTO_PROFILES`);
+	mea_expr_forwarders_delete(expr_arr, cfg, `.LAN.FORWARDERS`, `"\${TUNNEL_CONFIG}"`);
+	mea_expr_actions_delete(expr_arr, cfg, `.LAN.ACTIONS`, `"\${TUNNEL_CONFIG}"`);
+	mea_expr_services_delete(expr_arr, cfg, `.LAN.SERVICES`, `"\${TUNNEL_CONFIG}"`);
+	mea_expr_crypto_profiles_delete(expr_arr, cfg, `.LAN.CRYPTO_PROFILES`, `"\${TUNNEL_CONFIG}"`);
+	mea_expr_forwarders_delete(expr_arr, cfg, `.TUNNEL.FORWARDERS`, `"\${TUNNEL_CONFIG}"`);
+	mea_expr_actions_delete(expr_arr, cfg, `.TUNNEL.ACTIONS`, `"\${TUNNEL_CONFIG}"`);
+	mea_expr_services_delete(expr_arr, cfg, `.TUNNEL.SERVICES`, `"\${TUNNEL_CONFIG}"`);
+	mea_expr_crypto_profiles_delete(expr_arr, cfg, `.TUNNEL.CRYPTO_PROFILES`, `"\${TUNNEL_CONFIG}"`);
 	expr_arr.push(`  fi`);
 };
 
@@ -102,6 +113,11 @@ function mea_expr_conn_config_empty(expr_arr, cfg, conn_id, tunnel_direction, co
 	const conn_ns = vpn_conn_ns(vpn_cfg, conn);
 	
 	expr_arr.push(`  ${tunnel_direction}_${conn_side}_CONFIG=$(printf '{"STATS_ID":"STATS%u","CONN_ID":${conn_id},"NS":"${conn_ns}","DIRECTION":"${tunnel_direction}","SIDE":"${conn_side}","CRYPTO_PROFILES":[%s],"SERVICES":[%s],"ACTIONS":[%s],"FORWARDERS":[%s]}' "65536" " " " " " " " ")`);
+};
+
+function mea_expr_port_config_output(expr_arr, cfg, port) {
+
+	expr_arr.push(`  PORT_CONFIG=$(printf '{"STATS_ID":"STATS%u","PORT":${port},"SERVICES":[%s],"ACTIONS":[%s],"FORWARDERS":[%s]}' "65536" "\${SERVICES}" "\${ACTIONS}" "\${FORWARDERS}")`);
 };
 
 /////////////////////////////////////
@@ -403,44 +419,8 @@ function mea_expr_conn_add_inbound(expr_key, expr_path, expr_arr, cfg, conn_id) 
 	expr_arr.push(`  printf '{"INBOUND":{"LAN":%s,"TUNNEL":%s}}' "\${INBOUND_LAN_CONFIG}" "\${INBOUND_TUNNEL_CONFIG}"`);
 };
 
-
-/*
-function mea_expr_conn_add_inbound(expr_arr, cfg, conn_id) {
-
-	const nic_cfg = cfg.ace_nic_config[0];
-	const vpn_cfg = cfg.vpn_gw_config[0];
-	const conn = cfg.conns[conn_id];
-	const ns = tun_ns(nic_cfg, conn);
-	const ns_hash = tun_ns_hash(nic_cfg, conn);
-	const ns_mac = tun_ns_mac(nic_cfg, conn);
-	const vpn_inst = enet_vpn_inst(nic_cfg);
-	const gw_inst = enet_gw_inst(nic_cfg, conn.tunnel_port);
-	const remote_tunnel_endpoint_ip_hex = ip_to_hex(conn.remote_tunnel_endpoint_ip);
-	const mea_shared_dir = `${nic_cfg.install_dir}/shared/${vpn_inst}/${gw_inst}/conns/${ns}`;
-
-	expr_arr.push(`#!/bin/bash`);
-	expr_arr.push(`# [host]:${mea_shared_dir}/mea_add_inbound.sh`);
-	expr_arr.push(`mea_add_inbound() {`);
-	expr_arr.push(`  local PROFILE_IDS=''`);
-	expr_arr.push(`  local ACTION_IDS=''`);
-	expr_arr.push(`  local FORWARDER_IDS=''`);
-	expr_arr.push(`  local SERVICE_IDS=''`);
-	expr_arr.push(`  local PM_IDS=''`);
-	expr_arr.push(`  sleep ${delay_long}`);
-	expr_arr.push(`  echo 'ACE-NIC# Add Inbound Tunnel (HW offload: ${conn.inbound_accel}): ${vpn_cfg.vpn_gw_ip}>>${conn.remote_tunnel_endpoint_ip}[${ns}]'`);
-	expr_arr.push(`  echo '=================================================================='`);
-	mea_ipsec_auth_key_expr_append(expr_arr, 'AUTH_KEY');
-	mea_ipsec_cipher_key_expr_append(expr_arr, 'CIPHER_KEY');
-	ntoh_32_expr_append(expr_arr, 'SPI');
-	expr_arr.push(`  ` + mea_wrapper(nic_cfg, `IPSec ESP set create auto -security_type ${mea_ipsec_cipher_type_hex(conn.encryption_type)} -TFC_en 0 -ESN_en 0 -SPI \${SPI} \${AUTH_KEY} \${CIPHER_KEY}`));
-	mea_expr_ipsec_profile_id_parse(expr_arr);
-	uint32_hex_expr_append(expr_arr, 'SPI');
-	expr_arr.push(`  ` + mea_wrapper(nic_cfg, `service set create ${conn.tunnel_port} ${remote_tunnel_endpoint_ip_hex} ${remote_tunnel_endpoint_ip_hex} D.C 0 1 0 1000000000 0 64000 0 0 1 27 -ra 0 -inf 1 0x\${SPI} -l2Type 0 -subType 19 -h 81000${ns_hash.substring(0, 3)} 0 0 0 -hType 1 -hESP 2 \${PROFILE_ID}`));
-	expr_arr.push(`  ` + mea_wrapper(nic_cfg, `service set create 27 FF${ns_hash.substring(0, 3)} FF${ns_hash.substring(0, 3)} D.C 0 1 0 1000000000 0 64000 0 0 0 -f 1 6 -v 0x${ns_hash.substring(0, 3)} -l4port_mask 1 -ra 0 -l2Type 1`));
-	expr_arr.push(`  echo "{'\${PM_ID}':{'PROFILE_IDS':[\${PROFILE_IDS}],'ACTION_IDS':[\${ACTION_IDS}],'FORWARDER_IDS':[\${FORWARDER_IDS}],'SERVICE_IDS':[\${SERVICE_IDS}],'PM_IDS':[\${PM_IDS}]}}" | sed -s 's/ //g' | sed -s 's/,\\]/\\]/g' | sed -s 's/\\[,/\\[/g' | sed -s "s/'/\\"/g"`);
-	expr_arr.push(`}`);
-};
-*/
+/////////////////////////////////////
+/////////////////////////////////////
 
 function mea_expr_port_add_outbound(expr_key, expr_path, expr_arr, cfg, port) {
 
@@ -456,16 +436,16 @@ function mea_expr_port_add_outbound(expr_key, expr_path, expr_arr, cfg, port) {
 	expr_arr.push(`############################`);
 	expr_arr.push(`# ${expr_path}`);
 	expr_arr.push(`############################`);
-	expr_arr.push(`  local PROFILE_IDS=''`);
-	expr_arr.push(`  local ACTION_IDS=''`);
-	expr_arr.push(`  local FORWARDER_IDS=''`);
-	expr_arr.push(`  local SERVICE_IDS=''`);
-	expr_arr.push(`  local PM_IDS=''`);
-	expr_arr.push(`  sleep ${delay_long}`);
+	mea_expr_port_config_delete(expr_arr, cfg);
+	expr_arr.push(`  SERVICES=''`);
+	expr_arr.push(`  ACTIONS=''`);
+	expr_arr.push(`  FORWARDERS=''`);
+	expr_arr.push(`  PM_ID=''`);
 	expr_arr.push(`  ` + log_wrapper(`ACE-NIC# Add Port Outbound Classification ${gw_inst}:'`));
 	expr_arr.push(`  ` + log_wrapper(`=================================================================='`));
-	expr_arr.push(`  ` + mea_wrapper(nic_cfg, `service set create ${port} FFF000 FFF000 D.C 0 1 0 1000000000 0 64000 0 0 0 -f 1 0 -ra 0 -l2Type 0 -v ${port} -p 0 -h 0 0 0 0`));
-	expr_arr.push(`  echo "{'\${PM_ID}':{'SERVICE_IDS':[\${SERVICE_IDS}],'PM_IDS':[\${PM_IDS}]}}" | sed -s 's/ //g' | sed -s 's/,\\]/\\]/g' | sed -s 's/\\[,/\\[/g' | sed -s "s/'/\\"/g"`);
+	mea_expr_service_add(expr_arr, cfg, `${port} FFF000 FFF000 D.C 0 1 0 1000000000 0 64000 0 0 0 -f 1 0 -ra 0 -l2Type 0 -v ${port} -p 0 -h 0 0 0 0`);
+	mea_expr_port_config_output(expr_arr, cfg, port);
+	expr_arr.push(`  printf '%s' "\${PORT_CONFIG}"`);
 };
 
 function mea_expr_fwd_add_inbound(expr_key, expr_path, expr_arr, cfg, port) {
@@ -480,9 +460,10 @@ function mea_expr_fwd_add_inbound(expr_key, expr_path, expr_arr, cfg, port) {
 	expr_arr.push(`############################`);
 	expr_arr.push(`# ${expr_path}`);
 	expr_arr.push(`############################`);
-	expr_arr.push(`  local ACTION_IDS=''`);
-	expr_arr.push(`  local FORWARDER_IDS=''`);
-	expr_arr.push(`  sleep ${delay_long}`);
+	expr_arr.push(`  SERVICES=''`);
+	expr_arr.push(`  ACTIONS=''`);
+	expr_arr.push(`  FORWARDERS=''`);
+	expr_arr.push(`  PM_ID=''`);
 	expr_arr.push(`  ` + log_wrapper(`ACE-NIC# Add Inbound Forwarders:'`));
 	expr_arr.push(`  ` + log_wrapper(`=================================================================='`));
 	
@@ -537,7 +518,9 @@ module.exports = function (remote_ip, remote_user, remote_password) {
 	this.remote_user = remote_user;
 	this.remote_password = remote_password;
 	this.json_cfg = { };
+	this.ports_config_file = ``;
 	this.conns_config_file = ``;
+	this.ports_config = { };
 	this.conns_config = { };
 	
     this.update_cfg = function (json_cfg) {
@@ -546,7 +529,8 @@ module.exports = function (remote_ip, remote_user, remote_password) {
 		const nic_cfg = this.json_cfg.ace_nic_config[0];
 		
 		this.conns_config_file = `${enet_vpn_inst(nic_cfg)}_conns_config.json`;
-    };
+ 		this.ports_config_file = `${enet_vpn_inst(nic_cfg)}_ports_config.json`;
+	};
 	
     this.load_conns_config = function () {
 	
@@ -557,9 +541,19 @@ module.exports = function (remote_ip, remote_user, remote_password) {
 		};
     };
 	
+    this.load_ports_config = function () {
+	
+		try {
+			this.ports_config = JSON.parse(fs.readFileSync(this.ports_config_file));
+		} catch (err) {
+			this.ports_config = { };
+		};
+    };
+	
     this.port_dictionary_append = function (port_dictionary, port) {
 	
 		port_dictionary_append_mea(port_dictionary, this.json_cfg, port);
+		this.conns_config[`${port}`] = { };
     };
 	
     this.conn_dictionary_append = function (conn_dictionary, conn_id) {
@@ -570,6 +564,35 @@ module.exports = function (remote_ip, remote_user, remote_password) {
 		
 		conn_dictionary_append_mea(conn_dictionary, this.json_cfg, conn_id);
 		this.conns_config[`${conn_ns}`] = { OUTBOUND: {}, INBOUND: {} };
+    };
+	
+    this.port_exec = function (exec_dictionary, port, env, expr_key) {
+	
+		const port_config = this.ports_config[`${port}`];
+		
+		var that = this;
+		var exec_cmd = `${env}\n`;
+		exec_cmd += `PORT_CONFIG='${JSON.stringify(port_config)}'\n`;
+		exec_cmd += exec_dictionary[`ports`][`${port}`][`${expr_key}`];
+		console.log(exec_cmd);
+		ssh.connect({
+			host: that.remote_ip,
+			username: that.remote_user,
+			password: that.remote_password
+		})
+		.then(function() {
+
+			ssh.execCommand(exec_cmd, { cwd:'/' }).then(function(result) {
+				
+				console.log(`STDOUT: \n${result.stdout}`);
+				console.log(`STDERR: \n${result.stderr}`);
+				ssh.dispose();
+				console.log(`result.stdout: ${result.stdout}`);
+				that.ports_config[`${port}`] = JSON.parse(result.stdout);
+				console.log(`that.ports_config[${port}] = \n${JSON.stringify(that.ports_config[port], null, 2)};`);
+				fs.writeFileSync(that.ports_config_file, JSON.stringify(that.ports_config));
+			});
+		});
     };
 	
     this.conn_exec = function (exec_dictionary, conn_ns, env, expr_key) {

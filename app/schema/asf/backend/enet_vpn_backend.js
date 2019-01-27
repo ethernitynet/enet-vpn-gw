@@ -104,22 +104,27 @@ const expr = syntax_tunnel_inst.exec_dictionary_display();
 console.log(expr);
 syntax_tunnel_inst.load_config();
 
+// Initialization:
+function enet_vpn_restart() {
+	
+	syntax_tunnel_inst.mea_port(105, ``, `mea_port_add_outbound`);
+};
+enet_vpn_restart();
+
 // Tunnel creation:
 function outbound_tunnel_create() {
 	
 	const ns = `10.11.11.1:192.168.22.1[t-10.0.1.0#24@105:10.0.2.0#24@104]`;
 	const env = `TUN_REMOTE_MAC='cc:d3:9d:d0:00:14' SPI=7829367 AUTH_ALGO='' AUTH_KEY=0x00 CIPHER_ALGO='AES_GCM_16' CIPHER_KEY=1111111122222222333333334444444455555555`;
-	//let TUN_REMOTE_MAC = await syntax_tunnel_inst.conn_exec(ns, ``, `tun_remote_mac_get`);
-	syntax_tunnel_inst.mea_exec(ns, env, `mea_add_outbound`);
+	syntax_tunnel_inst.mea_conn(ns, env, `mea_add_outbound`);
 };
 function inbound_tunnel_create() {
 	
 	const ns = `10.11.11.1:192.168.22.1[t-10.0.1.0#24@105:10.0.2.0#24@104]`;
 	const env = `TUN_REMOTE_MAC='cc:d3:9d:d0:00:14' SPI=5592405 AUTH_ALGO='' AUTH_KEY=0x00 CIPHER_ALGO='AES_GCM_16' CIPHER_KEY=6666666655555555444444443333333322222222`;
-	//let TUN_REMOTE_MAC = await syntax_tunnel_inst.conn_exec(ns, ``, `tun_remote_mac_get`);
-	syntax_tunnel_inst.mea_exec(ns, env, `mea_add_inbound`);
+	syntax_tunnel_inst.mea_conn(ns, env, `mea_add_inbound`);
 };
-outbound_tunnel_create();
+setTimeout(outbound_tunnel_create, 5000);
 setTimeout(inbound_tunnel_create, 10000);
 //influxdb_stats_inst.update_tunnels_config(TUNNELS_CONFIG);
 
