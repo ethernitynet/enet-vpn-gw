@@ -57,8 +57,8 @@ function netns_expr_conn_del(expr_key, expr_path, expr_arr, cfg, conn_id) {
 	const nic_cfg = cfg.ace_nic_config[0];
 	const vpn_cfg = cfg.vpn_gw_config[0];
 	const conn = cfg.conns[conn_id];
-	const ns = tun_ns(nic_cfg, conn);
-	const ns_dev = tun_ns_dev(nic_cfg, conn);
+	const conn_ns = vpn_conn_ns(vpn_cfg, conn);
+	const ns_dev = conn_ns_dev(vpn_cfg, conn);
 
 	expr_arr.push(`#!/bin/bash`);
 	expr_arr.push(`############################`);
@@ -67,11 +67,11 @@ function netns_expr_conn_del(expr_key, expr_path, expr_arr, cfg, conn_id) {
 	expr_arr.push(`# ${expr_path}`);
 	expr_arr.push(`############################`);
 	expr_arr.push(`  sleep ${delay_long}`);
-	expr_arr.push(`  echo 'netns# Delete Connection Namespace: ${vpn_cfg.vpn_gw_ip}:${conn.remote_tunnel_endpoint_ip}[${ns}]'`);
+	expr_arr.push(`  echo 'netns# Delete Connection Namespace: ${vpn_cfg.vpn_gw_ip}:${conn.remote_tunnel_endpoint_ip}[${conn_ns}]'`);
 	expr_arr.push(`  echo '=================================================================='`);
-	expr_arr.push(`  ip netns exec ${ns} ip link set ${ns_dev} netns 1`);
+	expr_arr.push(`  ip netns exec ${conn_ns} ip link set ${ns_dev} netns 1`);
 	expr_arr.push(`  ip link del ${ns_dev}`);
-	expr_arr.push(`  ip netns del ${ns}`);
+	expr_arr.push(`  ip netns del ${conn_ns}`);
 };
 
 function netns_expr_conn_add(expr_key, expr_path, expr_arr, cfg, conn_id) {
@@ -79,9 +79,9 @@ function netns_expr_conn_add(expr_key, expr_path, expr_arr, cfg, conn_id) {
 	const nic_cfg = cfg.ace_nic_config[0];
 	const vpn_cfg = cfg.vpn_gw_config[0];
 	const conn = cfg.conns[conn_id];
-	const ns = tun_ns(nic_cfg, conn);
-	const ns_dev = tun_ns_dev(nic_cfg, conn);
-	const ns_mac = tun_ns_mac(nic_cfg, conn);
+	const conn_ns = vpn_conn_ns(vpn_cfg, conn);
+	const ns_dev = conn_ns_dev(vpn_cfg, conn);
+	const ns_mac = conn_ns_mac(nic_cfg, vpn_cfg, conn);
 	const ns_ip = tun_ns_ip(nic_cfg, conn);
 	const gw_dev = tun_gw_dev(nic_cfg, conn);
 
@@ -92,16 +92,16 @@ function netns_expr_conn_add(expr_key, expr_path, expr_arr, cfg, conn_id) {
 	expr_arr.push(`# ${expr_path}`);
 	expr_arr.push(`############################`);
 	expr_arr.push(`  sleep ${delay_long}`);
-	expr_arr.push(`  echo 'netns# Add Connection Namespace: ${vpn_cfg.vpn_gw_ip}:${conn.remote_tunnel_endpoint_ip}[${ns}]'`);
+	expr_arr.push(`  echo 'netns# Add Connection Namespace: ${vpn_cfg.vpn_gw_ip}:${conn.remote_tunnel_endpoint_ip}[${conn_ns}]'`);
 	expr_arr.push(`  echo '=================================================================='`);
-	expr_arr.push(`  ip netns add ${ns}`);
+	expr_arr.push(`  ip netns add ${conn_ns}`);
 	expr_arr.push(`  ip link add link ${gw_dev} ${ns_dev} address ${ns_mac} type macvlan mode bridge`);
-	expr_arr.push(`  ip link set dev ${ns_dev} netns ${ns}`);
-	expr_arr.push(`  ip netns exec ${ns} ip link set dev ${ns_dev} up`);
-	expr_arr.push(`  ip netns exec ${ns} ip link set dev lo up`);
-	expr_arr.push(`  ip netns exec ${ns} ip addr add ${ns_ip} dev ${ns_dev}`);
-	expr_arr.push(`  ip netns exec ${ns} ip route add local ${conn.remote_subnet} dev lo`);
-	expr_arr.push(`  ip netns exec ${ns} ip route add ${conn.local_subnet} dev ${ns_dev}`);
+	expr_arr.push(`  ip link set dev ${ns_dev} netns ${conn_ns}`);
+	expr_arr.push(`  ip netns exec ${conn_ns} ip link set dev ${ns_dev} up`);
+	expr_arr.push(`  ip netns exec ${conn_ns} ip link set dev lo up`);
+	expr_arr.push(`  ip netns exec ${conn_ns} ip addr add ${ns_ip} dev ${ns_dev}`);
+	expr_arr.push(`  ip netns exec ${conn_ns} ip route add local ${conn.remote_subnet} dev lo`);
+	expr_arr.push(`  ip netns exec ${conn_ns} ip route add ${conn.local_subnet} dev ${ns_dev}`);
 };
 
 
@@ -123,13 +123,14 @@ function conn_dictionary_append_netns(conn_dictionary, cfg, conn_id) {
 
 	const nic_cfg = cfg.ace_nic_config[0];
 	const conn = cfg.conns[conn_id];
-	const ns = tun_ns(nic_cfg, conn);
+	const vpn_cfg = cfg.vpn_gw_config[0];
+	const conn_ns = vpn_conn_ns(vpn_cfg, conn);
 	const gw_inst = enet_gw_inst(nic_cfg, conn.tunnel_port);
-	const expr_dir = `/shared/conns/${ns}`;
+	const expr_dir = `/shared/conns/${conn_ns}`;
 	
 	var expr_arr = [];
-	expr_arr = []; netns_expr_conn_del(`netns_del`, `${gw_inst}:${expr_dir}/netns_del`, expr_arr, cfg, conn_id); conn_dictionary[`${ns}`][`netns_del`] = expr_arr;
-	expr_arr = []; netns_expr_conn_add(`netns_add`, `${gw_inst}:${expr_dir}/netns_add`, expr_arr, cfg, conn_id); conn_dictionary[`${ns}`][`netns_add`] = expr_arr;
+	expr_arr = []; netns_expr_conn_del(`netns_del`, `${gw_inst}:${expr_dir}/netns_del`, expr_arr, cfg, conn_id); conn_dictionary[`${conn_ns}`][`netns_del`] = expr_arr;
+	expr_arr = []; netns_expr_conn_add(`netns_add`, `${gw_inst}:${expr_dir}/netns_add`, expr_arr, cfg, conn_id); conn_dictionary[`${conn_ns}`][`netns_add`] = expr_arr;
 };
 
 //////////////////////////////////////////////////////////////////////////////

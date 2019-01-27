@@ -10,6 +10,15 @@ global.delay_short = 0.1;
 global.port_offset = 100;
 global.enet_mac_prefix = `CC:D3:9D:D`;
 
+global.ws_pattern = '\\s\\s*';
+global.dec_pattern = '[0-9][0-9]*';
+global.txt_pattern = '[0-9a-zA-Z][0-9a-zA-Z]*';
+
+global.log_wrapper = function (expr) {
+
+	return `(>&2 echo "${expr}")`;
+};
+
 global.mask_arr = [
 	0x0000000000000000,
 	0x0000000080000000,
@@ -61,7 +70,7 @@ global.str_hash = function (str, mask_bits) {
 	};
 	const hash_32 = hash >>> 0;
 	const hash_32_masked = uint32_mask(hash_32, mask_bits);
-	return hash_32_masked.toString(16);
+	return hash_32_masked.toString(16).toUpperCase();
 };
 
 global.ntoh_32_expr_append = function (expr_arr, var_name) {
@@ -116,6 +125,34 @@ global.ip_to_hex = function (ip) {
 	return uint32_to_hex(ip_dec);
 };
 
+global.vpn_conn_ns = function (vpn_cfg, conn) {
+	
+	const conn_ns = `${vpn_cfg.vpn_gw_ip}:${conn.remote_tunnel_endpoint_ip}[t-${conn.local_subnet}@${conn.lan_port}:${conn.remote_subnet}@${conn.tunnel_port}]`;
+	return conn_ns.replace(/\//g, '#');
+};
+
+global.conn_ns_hash = function (vpn_cfg, conn) {
+	
+	const conn_ns = vpn_conn_ns(vpn_cfg, conn);
+	
+	return str_hash(`${conn_ns}`, 24);
+};
+
+global.conn_ns_dev = function (vpn_cfg, conn) {
+	
+	const hash_str = conn_ns_hash(vpn_cfg, conn);
+	
+	return `macv${conn.lan_port - port_offset}${hash_str.substring(4, 6)}`;
+};
+
+global.conn_ns_mac = function (nic_cfg, vpn_cfg, conn) {
+	
+	const hash_str = conn_ns_hash(vpn_cfg, conn);
+	
+	return `${enet_mac_prefix}${conn.lan_port - port_offset}:${hash_str.substring(4, 6)}:${nic_cfg.nic_name}${conn.tunnel_port - port_offset}`;
+};
+
+/*
 global.tun_ns = function (nic_cfg, conn) {
 	
 	const ns_name = `o-${conn.local_subnet}@${conn.lan_port}:${conn.remote_subnet}@${conn.tunnel_port}`;
@@ -139,15 +176,16 @@ global.tun_ns_dev = function (nic_cfg, conn) {
 	return `macv${conn.lan_port - port_offset}${hash_str.substring(4, 6)}`;
 };
 
-global.gw_port_mac = function (nic_cfg, port) {
-	
-	return `${enet_mac_prefix}0:00:${nic_cfg.nic_name}${port - port_offset}`;
-};
-
 global.tun_ns_mac = function (nic_cfg, conn) {
 	
 	const hash_str = tun_ns_hash(nic_cfg, conn);
 	return `${enet_mac_prefix}${conn.lan_port - port_offset}:${hash_str.substring(4, 6)}:${nic_cfg.nic_name}${conn.tunnel_port - port_offset}`;
+};
+*/
+
+global.gw_port_mac = function (nic_cfg, port) {
+	
+	return `${enet_mac_prefix}0:00:${nic_cfg.nic_name}${port - port_offset}`;
 };
 
 global.tun_ns_ip = function (nic_cfg, conn) {
@@ -189,10 +227,20 @@ global.ovs_of_wrapper = function (nic_cfg, cmd, match_expr, action_expr, priorit
 global.mea_wrapper = function (nic_cfg, expr) {
 	
 	if(nic_cfg.nic_name > 0) {
-		return `meaCli top; sleep ${delay_short}; MEA_RESULT=$(meaCli -card ${nic_cfg.nic_name} mea ${expr})`;
+		var expr = `meaCli top; sleep ${delay_short}; MEA_CMD='meaCli -card ${nic_cfg.nic_name} mea ${expr}'; MEA_RESULT=$(eval "\${MEA_CMD}")`;
+		expr += `;`;
+		expr += log_wrapper(`MEA_CMD="\${MEA_CMD}"`);
+		expr += `;`;
+		expr += log_wrapper(`MEA_RESULT="\${MEA_RESULT}"`);
+		return expr;
 	}
 	else {
-		return `meaCli top; sleep ${delay_short}; MEA_RESULT=$(meaCli mea ${expr})`;
+		var expr = `meaCli top; sleep ${delay_short}; MEA_CMD='meaCli mea ${expr}'; MEA_RESULT=$(eval "\${MEA_CMD}")`;
+		expr += `;`;
+		expr += log_wrapper(`MEA_CMD="\${MEA_CMD}"`);
+		expr += `;`;
+		expr += log_wrapper(`MEA_RESULT="\${MEA_RESULT}"`);
+		return expr;
 	};
 };
 
@@ -215,9 +263,4 @@ global.expr_arr_serialize = function (expr_arr) {
 	};
 
 	return expr;	
-};
-
-global.log_wrapper = function (expr) {
-
-	return `(>&2 echo "expr")`;
 };

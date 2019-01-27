@@ -48,9 +48,9 @@ function ovs_expr_conn_del_outbound(expr_key, expr_path, expr_arr, cfg, conn_id)
 	const nic_cfg = cfg.ace_nic_config[0];
 	const vpn_cfg = cfg.vpn_gw_config[0];
 	const conn = cfg.conns[conn_id];
-	const ns = tun_ns(nic_cfg, conn);
-	const ns_dev = tun_ns_dev(nic_cfg, conn);
-	const ns_mac = tun_ns_mac(nic_cfg, conn);
+	const conn_ns = vpn_conn_ns(vpn_cfg, conn);
+	const ns_dev = conn_ns_dev(vpn_cfg, conn);
+	const ns_mac = conn_ns_mac(nic_cfg, vpn_cfg, conn);
 
 	expr_arr.push(`#!/bin/bash`);
 	expr_arr.push(`############################`);
@@ -59,7 +59,7 @@ function ovs_expr_conn_del_outbound(expr_key, expr_path, expr_arr, cfg, conn_id)
 	expr_arr.push(`# ${expr_path}`);
 	expr_arr.push(`############################`);
 	expr_arr.push(`  sleep ${delay_long}`);
-	expr_arr.push(`  echo 'ovs# Delete Outbound Tunnel (HW offload: ${conn.outbound_accel}): ${vpn_cfg.vpn_gw_ip}>>${conn.remote_tunnel_endpoint_ip}[${ns}]'`);
+	expr_arr.push(`  echo 'ovs# Delete Outbound Tunnel (HW offload: ${conn.outbound_accel}): ${vpn_cfg.vpn_gw_ip}>>${conn.remote_tunnel_endpoint_ip}[${conn_ns}]'`);
 	expr_arr.push(`  echo '=================================================================='`);
 	expr_arr.push(`  ` + ovs_of_wrapper(nic_cfg, 'del-flows', `in_port=127,dl_vlan=${conn.lan_port},dl_type=0x0806,nw_src=${conn.local_subnet},nw_dst=${conn.remote_subnet}`));
 	expr_arr.push(`  ` + ovs_of_wrapper(nic_cfg, 'del-flows', `in_port=${conn.tunnel_port},dl_src=${ns_mac},dl_type=0x0806,nw_src=${conn.remote_subnet},nw_dst=${conn.local_subnet}`));
@@ -70,8 +70,8 @@ function ovs_expr_conn_add_outbound(expr_key, expr_path, expr_arr, cfg, conn_id)
 	const nic_cfg = cfg.ace_nic_config[0];
 	const vpn_cfg = cfg.vpn_gw_config[0];
 	const conn = cfg.conns[conn_id];
-	const ns = tun_ns(nic_cfg, conn);
-	const ns_mac = tun_ns_mac(nic_cfg, conn);
+	const conn_ns = vpn_conn_ns(vpn_cfg, conn);
+	const ns_mac = conn_ns_mac(nic_cfg, vpn_cfg, conn);
 
 	expr_arr.push(`#!/bin/bash`);
 	expr_arr.push(`############################`);
@@ -80,7 +80,7 @@ function ovs_expr_conn_add_outbound(expr_key, expr_path, expr_arr, cfg, conn_id)
 	expr_arr.push(`# ${expr_path}`);
 	expr_arr.push(`############################`);
 	expr_arr.push(`  sleep ${delay_long}`);
-	expr_arr.push(`  echo 'ovs# Add Outbound Tunnel (HW offload: ${conn.outbound_accel}): ${vpn_cfg.vpn_gw_ip}>>${conn.remote_tunnel_endpoint_ip}[${ns}]'`);
+	expr_arr.push(`  echo 'ovs# Add Outbound Tunnel (HW offload: ${conn.outbound_accel}): ${vpn_cfg.vpn_gw_ip}>>${conn.remote_tunnel_endpoint_ip}[${conn_ns}]'`);
 	expr_arr.push(`  echo '=================================================================='`);
 	expr_arr.push(`  ` + ovs_of_wrapper(nic_cfg, 'add-flow', `in_port=127,dl_vlan=${conn.lan_port},dl_type=0x0806,nw_src=${conn.local_subnet},nw_dst=${conn.remote_subnet}`, `strip_vlan,output:${conn.tunnel_port}`, 2000));
 	expr_arr.push(`  ` + ovs_of_wrapper(nic_cfg, 'add-flow', `in_port=${conn.tunnel_port},dl_src=${ns_mac},dl_type=0x0806,nw_src=${conn.remote_subnet},nw_dst=${conn.local_subnet}`, `push_vlan:0x8100,mod_vlan_vid=${conn.lan_port},output:127`, 2000));
@@ -91,16 +91,16 @@ function ovs_expr_conn_del_outbound_no_offload(expr_arr, cfg, conn_id) {
 	const nic_cfg = cfg.ace_nic_config[0];
 	const vpn_cfg = cfg.vpn_gw_config[0];
 	const conn = cfg.conns[conn_id];
-	const ns = tun_ns(nic_cfg, conn);
+	const conn_ns = vpn_conn_ns(vpn_cfg, conn);
 	const ns_mac = tun_ns_mac(nic_cfg, conn);
 	const gw_inst = enet_gw_inst(nic_cfg, conn.tunnel_port);
-	const ovs_shared_dir = `/shared/${gw_inst}/conns/${ns}`;
+	const ovs_shared_dir = `/shared/${gw_inst}/conns/${conn_ns}`;
 
 	expr_arr.push(`#!/bin/bash`);
 	expr_arr.push(`# enet${nic_cfg.nic_name}-vpn:${ovs_shared_dir}/ovs_del.sh'`);
 	expr_arr.push(`ovs_del() {`);
 	expr_arr.push(`  sleep ${delay_long}`);
-	expr_arr.push(`  echo 'ovs# Delete Outbound Tunnel (HW offload: ${conn.outbound_accel}): ${vpn_cfg.vpn_gw_ip}>>${conn.remote_tunnel_endpoint_ip}[${ns}]'`);
+	expr_arr.push(`  echo 'ovs# Delete Outbound Tunnel (HW offload: ${conn.outbound_accel}): ${vpn_cfg.vpn_gw_ip}>>${conn.remote_tunnel_endpoint_ip}[${conn_ns}]'`);
 	expr_arr.push(`  echo '=================================================================='`);
 	expr_arr.push(`  ` + ovs_of_wrapper(nic_cfg, 'del-flows', `in_port=127,dl_vlan=${conn.lan_port},dl_type=0x0806,nw_src=${conn.local_subnet},nw_dst=${conn.remote_subnet}`));
 	expr_arr.push(`  ` + ovs_of_wrapper(nic_cfg, 'del-flows', `in_port=${conn.tunnel_port},dl_src=${ns_mac},dl_type=0x0806,nw_src=${conn.remote_subnet},nw_dst=${conn.local_subnet}`));
@@ -151,14 +151,15 @@ function conn_dictionary_append_ovs(conn_dictionary, cfg, conn_id) {
 
 	const nic_cfg = cfg.ace_nic_config[0];
 	const conn = cfg.conns[conn_id];
-	const ns = tun_ns(nic_cfg, conn);
+	const vpn_cfg = cfg.vpn_gw_config[0];
+	const conn_ns = vpn_conn_ns(vpn_cfg, conn);
 	const gw_inst = enet_gw_inst(nic_cfg, conn.tunnel_port);
 	const vpn_inst = enet_vpn_inst(nic_cfg);
-	const expr_dir = `/shared/${gw_inst}/conns/${ns}`;
+	const expr_dir = `/shared/${gw_inst}/conns/${conn_ns}`;
 	
 	var expr_arr = [];
-	expr_arr = []; ovs_expr_conn_del_outbound(`ovs_del`, `${vpn_inst}:${expr_dir}/ovs_del`, expr_arr, cfg, conn_id); conn_dictionary[`${ns}`][`ovs_del`] = expr_arr;
-	expr_arr = []; ovs_expr_conn_add_outbound(`ovs_add`, `${vpn_inst}:${expr_dir}/ovs_add`, expr_arr, cfg, conn_id); conn_dictionary[`${ns}`][`ovs_add`] = expr_arr;
+	expr_arr = []; ovs_expr_conn_del_outbound(`ovs_del`, `${vpn_inst}:${expr_dir}/ovs_del`, expr_arr, cfg, conn_id); conn_dictionary[`${conn_ns}`][`ovs_del`] = expr_arr;
+	expr_arr = []; ovs_expr_conn_add_outbound(`ovs_add`, `${vpn_inst}:${expr_dir}/ovs_add`, expr_arr, cfg, conn_id); conn_dictionary[`${conn_ns}`][`ovs_add`] = expr_arr;
 };
 
 //////////////////////////////////////////////////////////////////////////////

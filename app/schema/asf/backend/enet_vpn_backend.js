@@ -91,17 +91,36 @@ const TUNNELS_CONFIG =
 	}
 }];
 
-var syntax_tunnel_inst = new syntax_tunnel();
+var syntax_tunnel_inst = new syntax_tunnel(`172.17.0.1`, `root`, `devops123`);
 var influxdb_stats_inst = new influxdb_stats(`172.17.0.1`, `root`, `devops123`, `172.16.10.151`, 8086, `enet_vpn_db`, `cat /tmp/blkshow.txt`);
+
+//docker exec enet0_libreswan104 ip neigh replace 192.168.22.1 lladdr cc:d3:9d:d0:00:14 dev e0ls104
 
 // Tunnel configuration:
 syntax_tunnel_inst.update_cfg(json_cfg.VPN);
 influxdb_stats_inst.update_cfg(json_cfg.VPN);
-const expr = syntax_tunnel_inst.expr_dictionary_display();
+//const expr = syntax_tunnel_inst.expr_dictionary_display();
+const expr = syntax_tunnel_inst.exec_dictionary_display();
 console.log(expr);
 
 // Tunnel creation:
-influxdb_stats_inst.update_tunnels_config(TUNNELS_CONFIG);
+function outbound_tunnel_create() {
+	
+	const ns = `10.11.11.1:192.168.22.1[t-10.0.1.0#24@105:10.0.2.0#24@104]`;
+	const env = `TUN_REMOTE_MAC='cc:d3:9d:d0:00:14' SPI=7829367 AUTH_ALGO='' AUTH_KEY=0x00 CIPHER_ALGO='AES_GCM_16' CIPHER_KEY=1111111122222222333333334444444455555555`;
+	//let TUN_REMOTE_MAC = await syntax_tunnel_inst.conn_exec(ns, ``, `tun_remote_mac_get`);
+	syntax_tunnel_inst.mea_exec(ns, env, `mea_add_outbound`);
+};
+function inbound_tunnel_create() {
+	
+	const ns = `10.11.11.1:192.168.22.1[t-10.0.1.0#24@105:10.0.2.0#24@104]`;
+	const env = `TUN_REMOTE_MAC='cc:d3:9d:d0:00:14' SPI=5592405 AUTH_ALGO='' AUTH_KEY=0x00 CIPHER_ALGO='AES_GCM_16' CIPHER_KEY=6666666655555555444444443333333322222222`;
+	//let TUN_REMOTE_MAC = await syntax_tunnel_inst.conn_exec(ns, ``, `tun_remote_mac_get`);
+	syntax_tunnel_inst.mea_exec(ns, env, `mea_add_inbound`);
+};
+outbound_tunnel_create();
+setTimeout(inbound_tunnel_create, 10000);
+//influxdb_stats_inst.update_tunnels_config(TUNNELS_CONFIG);
 
 // Periodic updates:
 function backend_stats_collect() {
@@ -109,5 +128,5 @@ function backend_stats_collect() {
 	influxdb_stats_inst.stats_collect_remote();
 };
 
-setInterval(backend_stats_collect, 2000);
+//setInterval(backend_stats_collect, 2000);
 

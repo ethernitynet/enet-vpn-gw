@@ -32,29 +32,12 @@ function influxdb_expr_stats_add(line_proto_arr, cfg, tunnel_config, stats) {
 
 function stats_collect_cmd_format(stats_collect_cmd) {
 	
-	const ws_pattern = '\\s\\s*';
-	const dec_pattern = '[0-9][0-9]*';
-	const txt_pattern = '[0-9a-zA-Z][0-9a-zA-Z]*';
 	const delimiter_line = '^------ ---------------- ---------------- ---------------- ---------------- ---------------- ---------------- ----------------$';
 	const bottom_line = '^===========================================================================================================================$';
 	const pmid_line = `^${ws_pattern}\\(${dec_pattern}\\)${ws_pattern}FwdGreen${ws_pattern}FwdYellow${ws_pattern}DisGreen${ws_pattern}DisYellow${ws_pattern}DisRed${ws_pattern}DisOther${ws_pattern}DisMtu$`;
 	const pkts_line = `^${ws_pattern}Pkt${ws_pattern}\\(${dec_pattern}\\)${ws_pattern}\\(${dec_pattern}\\)${ws_pattern}\\(${dec_pattern}\\)${ws_pattern}${txt_pattern}${ws_pattern}${txt_pattern}${ws_pattern}${txt_pattern}${ws_pattern}${txt_pattern}$`;
 	const bytes_line = `^${ws_pattern}Byte${ws_pattern}\\(${dec_pattern}\\)${ws_pattern}\\(${dec_pattern}\\)${ws_pattern}\\(${dec_pattern}\\)${ws_pattern}${txt_pattern}${ws_pattern}${txt_pattern}${ws_pattern}${txt_pattern}${ws_pattern}${txt_pattern}$`;
 	return `${stats_collect_cmd} | sed -e '/${bottom_line}/,$d' | sed -n -e '/${delimiter_line}/,$p' | grep -v '${delimiter_line}' | sed -s 's/${pmid_line}/"STATS\\1":{/g' | sed -s 's/${pkts_line}/"pkts":[\\1,\\2,\\3],/g' | sed -s 's/${bytes_line}/"bytes":[\\1,\\2,\\3]},/g'`;
-};
-
-function stats_collect(stats_collect_cmd) {
-	
-	const ws_pattern = '\\s\\s*';
-	const dec_pattern = '[0-9][0-9]*';
-	const txt_pattern = '[0-9a-zA-Z][0-9a-zA-Z]*';
-	const delimiter_line = '^------ ---------------- ---------------- ---------------- ---------------- ---------------- ---------------- ----------------$';
-	const bottom_line = '^===========================================================================================================================$';
-	const pmid_line = `^${ws_pattern}\\(${dec_pattern}\\)${ws_pattern}FwdGreen${ws_pattern}FwdYellow${ws_pattern}DisGreen${ws_pattern}DisYellow${ws_pattern}DisRed${ws_pattern}DisOther${ws_pattern}DisMtu$`;
-	const pkts_line = `^${ws_pattern}Pkt${ws_pattern}\\(${dec_pattern}\\)${ws_pattern}\\(${dec_pattern}\\)${ws_pattern}\\(${dec_pattern}\\)${ws_pattern}${txt_pattern}${ws_pattern}${txt_pattern}${ws_pattern}${txt_pattern}${ws_pattern}${txt_pattern}$`;
-	const bytes_line = `^${ws_pattern}Byte${ws_pattern}\\(${dec_pattern}\\)${ws_pattern}\\(${dec_pattern}\\)${ws_pattern}\\(${dec_pattern}\\)${ws_pattern}${txt_pattern}${ws_pattern}${txt_pattern}${ws_pattern}${txt_pattern}${ws_pattern}${txt_pattern}$`;
-	const cmd_out = sh.exec(`${stats_collect_cmd} | sed -e '/${bottom_line}/,$d' | sed -n -e '/${delimiter_line}/,$p' | grep -v '${delimiter_line}' | sed -s 's/${pmid_line}/"STATS\\1":{/g' | sed -s 's/${pkts_line}/"pkts":[\\1,\\2,\\3],/g' | sed -s 's/${bytes_line}/"bytes":[\\1,\\2,\\3]},/g'`).stdout;
-	return JSON.parse(`{${cmd_out}"sentinel":0}`);
 };
 
 function influxdb_stats_batch_update(db_ip, db_port, db_name, json_cfg, tunnels_config, stats_container) {
@@ -131,13 +114,6 @@ module.exports = function (remote_ip, remote_user, remote_password, db_ip, db_po
 	
 		this.tunnels_config = tunnels_config;
 		console.log(this.tunnels_config);
-    };
-	
-    this.stats_collect = function (tunnels_config, stats_collect_cmd) {
-	
-		const stats_container = stats_collect(stats_collect_cmd);
-		const line_proto_arr = influxdb_stats_block_parse(this.json_cfg, tunnels_config, stats_container);
-		influxdb_send_batch(this.db_ip, this.db_port, this.db_name, line_proto_arr);
     };
 	
     this.stats_collect_remote = function () {
