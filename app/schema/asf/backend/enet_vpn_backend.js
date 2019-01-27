@@ -102,6 +102,7 @@ influxdb_stats_inst.update_cfg(json_cfg.VPN);
 //const expr = syntax_tunnel_inst.expr_dictionary_display();
 const expr = syntax_tunnel_inst.exec_dictionary_display();
 console.log(expr);
+syntax_tunnel_inst.load_config();
 
 // Tunnel creation:
 function outbound_tunnel_create() {

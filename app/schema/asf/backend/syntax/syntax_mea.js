@@ -14,7 +14,7 @@ function mea_expr_forwarders_delete(expr_arr, cfg, forwarders_arr_expr) {
 
 	const nic_cfg = cfg.ace_nic_config[0];
 	
-	expr_arr.push(`  FORWARDERS_LIST="$(jq -r ${forwarders_arr_expr} <<< "\${CONN_CONFIG}")"`);
+	expr_arr.push(`  FORWARDERS_LIST="$(jq -r ${forwarders_arr_expr} <<< "\${TUNNEL_CONFIG}")"`);
 	expr_arr.push(`  if [[ "\${FORWARDERS_LIST}" != "[]" ]]`);
 	expr_arr.push(`  then`);
 	expr_arr.push(`  for FORWARDER_PATTERN in "$(jq -r .[] <<< "\${FORWARDERS_LIST}")"`);
@@ -537,11 +537,24 @@ module.exports = function (remote_ip, remote_user, remote_password) {
 	this.remote_user = remote_user;
 	this.remote_password = remote_password;
 	this.json_cfg = { };
+	this.conns_config_file = ``;
 	this.conns_config = { };
 	
     this.update_cfg = function (json_cfg) {
 	
 		this.json_cfg = json_cfg;
+		const nic_cfg = this.json_cfg.ace_nic_config[0];
+		
+		this.conns_config_file = `${enet_vpn_inst(nic_cfg)}_conns_config.json`;
+    };
+	
+    this.load_conns_config = function () {
+	
+		try {
+			this.conns_config = JSON.parse(fs.readFileSync(this.conns_config_file));
+		} catch (err) {
+			this.conns_config = { };
+		};
     };
 	
     this.port_dictionary_append = function (port_dictionary, port) {
@@ -587,6 +600,7 @@ module.exports = function (remote_ip, remote_user, remote_password) {
 					that.conns_config[`${conn_ns}`][`${conn_config_key}`] = CONN_CONFIG[`${conn_config_key}`];
 				});
 				console.log(`that.conns_config[${conn_ns}] = \n${JSON.stringify(that.conns_config[conn_ns], null, 2)};`);
+				fs.writeFileSync(that.conns_config_file, JSON.stringify(that.conns_config));
 			});
 		});
     };

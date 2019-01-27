@@ -320,6 +320,11 @@ module.exports = function (remote_ip, remote_user, remote_password) {
 		return exec_dictionary_display(this.exec_dictionary);
     };
 	
+    this.load_config = function () {
+	
+		this.mea.load_conns_config();
+    };
+	
     this.mea_exec = function (ns, env, expr_key) {
 	
 		this.mea.conn_exec(this.exec_dictionary, ns, env, expr_key);

@@ -5,8 +5,8 @@
 /////////////////////////////////////
 /////////////////////////////////////
 
-global.delay_long = 0.5;
-global.delay_short = 0.1;
+global.delay_long = 0.1;
+global.delay_short = 0.05;
 global.port_offset = 100;
 global.enet_mac_prefix = `CC:D3:9D:D`;
 
