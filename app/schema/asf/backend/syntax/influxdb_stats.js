@@ -7,27 +7,33 @@ var http_request = require('request');
 var sh = require('shelljs');
 sh.config.silent = true;
 
-function influxdb_expr_stats_add(line_proto_arr, cfg, tunnel_config, stats) {
+function influxdb_expr_stats_add(line_proto_arr, cfg, tunnel_config, stats_container) {
 	
-	const conn = cfg.conns[tunnel_config.CONN_ID];
-	const vpn_cfg = cfg.vpn_gw_config[0];
-	
-	var line_proto_expr = ``;
-	line_proto_expr += `${tunnel_config.DIRECTION}-${conn.tunnel_port},`;
-	line_proto_expr += `side=${tunnel_config.SIDE},`;
-	line_proto_expr += `remote_tunnel_endpoint_ip=${conn.remote_tunnel_endpoint_ip},`;
-	line_proto_expr += `remote_subnet=${conn.remote_subnet},`;
-	line_proto_expr += `lan_port=${conn.lan_port},`;
-	line_proto_expr += `vpn_gw_ip=${vpn_cfg.vpn_gw_ip},`;
-	line_proto_expr += `local_subnet=${conn.local_subnet},`;
-	line_proto_expr += `encryption_type=${conn.encryption_type} `;
-	line_proto_expr += `FwdGreenPkt=${stats.pkts[0]},`;
-	line_proto_expr += `FwdYellowPkt=${stats.pkts[1]},`;
-	line_proto_expr += `DisGreenPkt=${stats.pkts[2]},`;
-	line_proto_expr += `FwdGreenByte=${stats.bytes[0]},`;
-	line_proto_expr += `FwdYellowByte=${stats.bytes[1]},`;
-	line_proto_expr += `DisGreenByte=${stats.bytes[2]}`;
-	line_proto_arr.push(line_proto_expr);
+	if(tunnel_config != undefined) {
+		const stats = stats_container[tunnel_config.STATS_ID];
+		if(stats != undefined) {
+			
+			const conn = cfg.conns[tunnel_config.CONN_ID];
+			const vpn_cfg = cfg.vpn_gw_config[0];
+			
+			var line_proto_expr = ``;
+			line_proto_expr += `${tunnel_config.DIRECTION}-${conn.tunnel_port},`;
+			line_proto_expr += `side=${tunnel_config.SIDE},`;
+			line_proto_expr += `remote_tunnel_endpoint_ip=${conn.remote_tunnel_endpoint_ip},`;
+			line_proto_expr += `remote_subnet=${conn.remote_subnet},`;
+			line_proto_expr += `lan_port=${conn.lan_port},`;
+			line_proto_expr += `vpn_gw_ip=${vpn_cfg.vpn_gw_ip},`;
+			line_proto_expr += `local_subnet=${conn.local_subnet},`;
+			line_proto_expr += `encryption_type=${conn.encryption_type} `;
+			line_proto_expr += `FwdGreenPkt=${stats.pkts[0]},`;
+			line_proto_expr += `FwdYellowPkt=${stats.pkts[1]},`;
+			line_proto_expr += `DisGreenPkt=${stats.pkts[2]},`;
+			line_proto_expr += `FwdGreenByte=${stats.bytes[0]},`;
+			line_proto_expr += `FwdYellowByte=${stats.bytes[1]},`;
+			line_proto_expr += `DisGreenByte=${stats.bytes[2]}`;
+			line_proto_arr.push(line_proto_expr);
+		};
+	};
 };
 
 function stats_collect_cmd_format(stats_collect_cmd) {
@@ -40,23 +46,22 @@ function stats_collect_cmd_format(stats_collect_cmd) {
 	return `${stats_collect_cmd} | sed -e '/${bottom_line}/,$d' | sed -n -e '/${delimiter_line}/,$p' | grep -v '${delimiter_line}' | sed -s 's/${pmid_line}/"STATS\\1":{/g' | sed -s 's/${pkts_line}/"pkts":[\\1,\\2,\\3],/g' | sed -s 's/${bytes_line}/"bytes":[\\1,\\2,\\3]},/g'`;
 };
 
-function influxdb_stats_batch_update(db_ip, db_port, db_name, json_cfg, tunnels_config, stats_container) {
+function influxdb_stats_batch_update(db_ip, db_port, db_name, json_cfg, conns_config, stats_container) {
 	
-	const line_proto_arr = influxdb_stats_block_parse(json_cfg, tunnels_config, stats_container);
+	const line_proto_arr = influxdb_stats_block_parse(json_cfg, conns_config, stats_container);
 	influxdb_send_batch(db_ip, db_port, db_name, line_proto_arr);
 };
 
-function influxdb_stats_block_parse(json_cfg, tunnels_config, stats_container) {
+function influxdb_stats_block_parse(json_cfg, conns_config, stats_container) {
 	
 	var line_proto_arr = [];
-	for(var i = 0; i < tunnels_config.length; ++i) {
-		const config_lan = tunnels_config[i].LAN;
-		const stats_lan = stats_container[config_lan.STATS_ID];
-		influxdb_expr_stats_add(line_proto_arr, json_cfg, config_lan, stats_lan);
-		const config_tunnel = tunnels_config[i].TUNNEL;
-		const stats_tunnel = stats_container[config_tunnel.STATS_ID];
-		influxdb_expr_stats_add(line_proto_arr, json_cfg, config_tunnel, stats_tunnel);
-	};
+	Object.keys(conns_config).forEach(function(conn_key) {
+		
+		influxdb_expr_stats_add(line_proto_arr, json_cfg, conns_config[conn_key].OUTBOUND.LAN, stats_container);
+		influxdb_expr_stats_add(line_proto_arr, json_cfg, conns_config[conn_key].OUTBOUND.TUNNEL, stats_container);
+		influxdb_expr_stats_add(line_proto_arr, json_cfg, conns_config[conn_key].INBOUND.LAN, stats_container);
+		influxdb_expr_stats_add(line_proto_arr, json_cfg, conns_config[conn_key].INBOUND.TUNNEL, stats_container);
+	});
 	return line_proto_arr;
 };
 
@@ -64,7 +69,7 @@ function influxdb_send(db_ip, db_port, db_name, msg) {
 	
 /////////
 const influxdb_url = `http://${db_ip}:${db_port}/write?db=${db_name}`;
-console.log(influxdb_url);
+//console.log(influxdb_url);
 http_request({
 		url: influxdb_url,
 		encoding: null,
@@ -75,7 +80,7 @@ http_request({
 			console.log(`====  ${JSON.stringify(error)}  ====`);
 			console.log(`====  ${response.json({name : error})}  ====`);
 		} else {
-			console.log(`====  SUCCESS  ====`);
+			//console.log(`====  SUCCESS  ====`);
 		};
 	});
 /////////
@@ -103,23 +108,24 @@ module.exports = function (remote_ip, remote_user, remote_password, db_ip, db_po
 	this.db_name = db_name;
 	this.stats_collect_cmd = stats_collect_cmd_format(stats_collect_cmd);
 	this.json_cfg = { };
-	this.tunnels_config = { };
+	this.conns_config = { };
 	
     this.update_cfg = function (json_cfg) {
 	
 		this.json_cfg = json_cfg;
+		//console.log(this.stats_collect_cmd);
     };
 	
-    this.update_tunnels_config = function (tunnels_config) {
+    this.update_conns_config = function (conns_config) {
 	
-		this.tunnels_config = tunnels_config;
-		console.log(this.tunnels_config);
+		this.conns_config = conns_config;
+		console.log(this.conns_config);
     };
 	
     this.stats_collect_remote = function () {
 	
 		var that = this;
-		console.log(that.stats_collect_cmd);
+		//console.log(that.stats_collect_cmd);
 		ssh.connect({
 			host: that.remote_ip,
 			username: that.remote_user,
@@ -129,11 +135,11 @@ module.exports = function (remote_ip, remote_user, remote_password, db_ip, db_po
 
 			ssh.execCommand(that.stats_collect_cmd, { cwd:'/' }).then(function(result) {
 				
-				console.log('STDOUT: ' + result.stdout);
-				console.log('STDERR: ' + result.stderr);
+				//console.log('STDOUT: ' + result.stdout);
+				//console.log('STDERR: ' + result.stderr);
 				ssh.dispose();
 				const stats_container = JSON.parse(`{${result.stdout}"sentinel":0}`);
-				influxdb_stats_batch_update(that.db_ip, that.db_port, that.db_name, that.json_cfg, that.tunnels_config, stats_container);
+				influxdb_stats_batch_update(that.db_ip, that.db_port, that.db_name, that.json_cfg, that.conns_config, stats_container);
 			});
 		});
     };

@@ -227,19 +227,19 @@ global.ovs_of_wrapper = function (nic_cfg, cmd, match_expr, action_expr, priorit
 global.mea_wrapper = function (nic_cfg, expr) {
 	
 	if(nic_cfg.nic_name > 0) {
-		var expr = `meaCli top; sleep ${delay_short}; MEA_CMD='meaCli -card ${nic_cfg.nic_name} mea ${expr}'; MEA_RESULT=$(eval "\${MEA_CMD}")`;
+		var expr = `meaCli top; sleep ${delay_short}; MEA_CMD='meaCli -card ${nic_cfg.nic_name} mea '"${expr}"; MEA_RESULT=$(eval "\${MEA_CMD}")`;
 		expr += `;`;
-		expr += log_wrapper(`MEA_CMD="\${MEA_CMD}"`);
+		expr += log_wrapper(`[MEA_CMD="\${MEA_CMD}"  ]`);
 		expr += `;`;
-		expr += log_wrapper(`MEA_RESULT="\${MEA_RESULT}"`);
+		expr += log_wrapper(`[MEA_RESULT="\${MEA_RESULT}"  ]`);
 		return expr;
 	}
 	else {
-		var expr = `meaCli top; sleep ${delay_short}; MEA_CMD='meaCli mea ${expr}'; MEA_RESULT=$(eval "\${MEA_CMD}")`;
+		var expr = `meaCli top; sleep ${delay_short}; MEA_CMD='meaCli mea '"${expr}"; MEA_RESULT=$(eval "\${MEA_CMD}")`;
 		expr += `;`;
-		expr += log_wrapper(`MEA_CMD="\${MEA_CMD}"`);
+		expr += log_wrapper(`[MEA_CMD="\${MEA_CMD}"  ]`);
 		expr += `;`;
-		expr += log_wrapper(`MEA_RESULT="\${MEA_RESULT}"`);
+		expr += log_wrapper(`[MEA_RESULT="\${MEA_RESULT}"  ]`);
 		return expr;
 	};
 };

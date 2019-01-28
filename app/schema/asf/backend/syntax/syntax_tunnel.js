@@ -324,6 +324,7 @@ module.exports = function (remote_ip, remote_user, remote_password) {
 	
 		this.mea.load_ports_config();
 		this.mea.load_conns_config();
+		return this.mea.stats_collect_cmd_update();
     };
 	
     this.mea_port = function (port, env, expr_key) {

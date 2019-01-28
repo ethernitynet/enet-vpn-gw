@@ -19,7 +19,7 @@ function mea_expr_forwarders_delete(expr_arr, cfg, forwarders_arr_expr, config_o
 	expr_arr.push(`  then`);
 	expr_arr.push(`  for FORWARDER_PATTERN in "$(jq -r .[] <<< "\${FORWARDERS_LIST}")"`);
 	expr_arr.push(`  do`);
-	expr_arr.push(`    ` + mea_wrapper(nic_cfg, `forwarder delete "'\${FORWARDER_PATTERN}'"`));
+	expr_arr.push(`    ` + mea_wrapper(nic_cfg, `forwarder delete "\${FORWARDER_PATTERN}"`));
 	expr_arr.push(`  done`);
 	expr_arr.push(`  fi`);
 };
@@ -261,7 +261,6 @@ function mea_expr_conn_add_outbound_from_lan(expr_arr, cfg, conn_id) {
 	const gw_ip_hex = ip_to_hex(vpn_cfg.vpn_gw_ip);
 
 	expr_arr.push(`  ` + log_wrapper(`ACE-NIC# Add Outbound Tunnel, LAN Side (HW offload: ${conn.outbound_accel}): ${conn_ns}`));
-	expr_arr.push(`  ` + log_wrapper(`==================================================================`));
 	expr_arr.push(`  CRYPTO_PROFILES=''`);
 	expr_arr.push(`  SERVICES=''`);
 	expr_arr.push(`  ACTIONS=''`);
@@ -272,7 +271,7 @@ function mea_expr_conn_add_outbound_from_lan(expr_arr, cfg, conn_id) {
 	mea_ipsec_cipher_key_expr_append(expr_arr, 'CIPHER_KEY');
 	mea_expr_crypto_profile_add(expr_arr, cfg, `-security_type ${mea_ipsec_cipher_type_hex(conn.encryption_type)} -TFC_en 0 -ESN_en 0 -SPI \${SPI} \${AUTH_KEY} \${CIPHER_KEY}`);
 	mea_expr_action_add(expr_arr, cfg, `-pm 1 0 -ed 1 0 -hIPSec 1 1 ${vpn_cfg.vpn_gw_ip} ${conn.remote_tunnel_endpoint_ip} -hESP 1 \${PROFILE_ID} -hType 71`);
-	mea_expr_forwarder_add(expr_arr, cfg, `0 ${ns_mac} ${conn.lan_port}`, `3 1 0 1 ${conn.lan_port} -action 1 \${ACTION_ID}`);
+	mea_expr_forwarder_add(expr_arr, cfg, `0 ${ns_mac} ${conn.lan_port}`, `3 1 0 1 24 -action 1 \${ACTION_ID}`);
 	mea_expr_conn_config_output(expr_arr, cfg, conn_id, `OUTBOUND`, `LAN`);
 };
 
@@ -291,7 +290,6 @@ function mea_expr_conn_add_outbound_to_tunnel(expr_arr, cfg, conn_id) {
 	const forwarders = [ `0 ${ns_mac} ${conn.lan_port}`, `0 ${ns_mac} 24` ];
 
 	expr_arr.push(`  ` + log_wrapper(`ACE-NIC# Add Outbound Tunnel, Tunnel Side (HW offload: ${conn.outbound_accel}): ${conn_ns}`));
-	expr_arr.push(`  ` + log_wrapper(`==================================================================`));
 	expr_arr.push(`  CRYPTO_PROFILES=''`);
 	expr_arr.push(`  SERVICES=''`);
 	expr_arr.push(`  ACTIONS=''`);
@@ -353,7 +351,6 @@ function mea_expr_conn_add_inbound_from_tunnel(expr_arr, cfg, conn_id) {
 	const gw_ip_hex = ip_to_hex(vpn_cfg.vpn_gw_ip);
 
 	expr_arr.push(`  ` + log_wrapper(`ACE-NIC# Add Inbound Tunnel, Tunnel Side (HW offload: ${conn.inbound_accel}): ${conn_ns}`));
-	expr_arr.push(`  ` + log_wrapper(`==================================================================`));
 	expr_arr.push(`  CRYPTO_PROFILES=''`);
 	expr_arr.push(`  SERVICES=''`);
 	expr_arr.push(`  ACTIONS=''`);
@@ -382,7 +379,6 @@ function mea_expr_conn_add_inbound_to_lan(expr_arr, cfg, conn_id) {
 	const gw_ip_hex = ip_to_hex(vpn_cfg.vpn_gw_ip);
 
 	expr_arr.push(`  ` + log_wrapper(`ACE-NIC# Add Inbound Tunnel, LAN Side (HW offload: ${conn.outbound_accel}): ${conn_ns}`));
-	expr_arr.push(`  ` + log_wrapper(`==================================================================`));
 	expr_arr.push(`  CRYPTO_PROFILES=''`);
 	expr_arr.push(`  SERVICES=''`);
 	expr_arr.push(`  ACTIONS=''`);
@@ -458,8 +454,7 @@ function mea_expr_port_add_outbound(expr_key, expr_path, expr_arr, cfg, port) {
 	expr_arr.push(`  ACTIONS=''`);
 	expr_arr.push(`  FORWARDERS=''`);
 	expr_arr.push(`  PM_ID=''`);
-	expr_arr.push(`  ` + log_wrapper(`ACE-NIC# Add Port Outbound Classification ${gw_inst}:'`));
-	expr_arr.push(`  ` + log_wrapper(`=================================================================='`));
+	expr_arr.push(`  ` + log_wrapper(`ACE-NIC# Add Port Outbound Classification ${gw_inst}:`));
 	//mea_expr_service_add(expr_arr, cfg, `${port} FF000  FF000  D.C 0 1 0 1000000000 0 64000 0 0 0 -f 1 0 -ra 0 -l2Type 1 -v ${port} -h 0 0 0 0 -lmid 1 0 1 0 -r ${gw_mac} 00:00:00:00:00:00 0000 -hType 0`);
 	mea_expr_service_add(expr_arr, cfg, `${port} FFF000 FFF000 D.C 0 1 0 1000000000 0 64000 0 0 0 -f 1 0 -ra 0 -l2Type 0 -v ${port} -p 0 -h 0 0 0 0`);
 	mea_expr_port_config_output(expr_arr, cfg, port);
@@ -482,8 +477,7 @@ function mea_expr_fwd_add_inbound(expr_key, expr_path, expr_arr, cfg, port) {
 	expr_arr.push(`  ACTIONS=''`);
 	expr_arr.push(`  FORWARDERS=''`);
 	expr_arr.push(`  PM_ID=''`);
-	expr_arr.push(`  ` + log_wrapper(`ACE-NIC# Add Inbound Forwarders:'`));
-	expr_arr.push(`  ` + log_wrapper(`=================================================================='`));
+	expr_arr.push(`  ` + log_wrapper(`ACE-NIC# Add Inbound Forwarders:`));
 	
 	expr_arr.push(`  while IFS= read -r FWD_MAPPING`);
 	expr_arr.push(`  do`);
@@ -492,6 +486,21 @@ function mea_expr_fwd_add_inbound(expr_key, expr_path, expr_arr, cfg, port) {
 	mea_expr_forwarder_add(expr_arr, cfg, `6 \${LAN_IP} 0 0x\${CONN_NS_ID}`, `3 1 0 1 \${LAN_PORT} -action 1 \${ACTION_ID}`);
 	expr_arr.push(`  done < <(echo "\${FWD_MAPPINGS}")`);
 	mea_expr_port_config_output(expr_arr, cfg, port);
+};
+
+function mea_expr_stats_collect(expr_key, expr_path, expr_arr, cfg) {
+
+	const nic_cfg = cfg.ace_nic_config[0];
+	const vpn_inst = enet_vpn_inst(nic_cfg);
+	const gw_inst = enet_gw_inst(nic_cfg, port);
+	
+	expr_arr.push(`############################`);
+	expr_arr.push(`# ${expr_key}`);
+	expr_arr.push(`############################`);
+	expr_arr.push(`# ${expr_path}`);
+	expr_arr.push(`############################`);
+	expr_arr.push(`  ` + mea_wrapper(nic_cfg, `counter pm blk 0`));
+	expr_arr.push(`  ` + mea_wrapper(nic_cfg, `counter pm BLKshow 0`));
 };
 
 
@@ -539,6 +548,7 @@ module.exports = function (remote_ip, remote_user, remote_password) {
 	this.conns_config_file = ``;
 	this.ports_config = { };
 	this.conns_config = { };
+	this.stats_collect_cmd = ``;
 	
     this.update_cfg = function (json_cfg) {
 	
@@ -583,6 +593,17 @@ module.exports = function (remote_ip, remote_user, remote_password) {
 		this.conns_config[`${conn_ns}`] = { OUTBOUND: {}, INBOUND: {} };
     };
 	
+    this.stats_collect_cmd_update = function () {
+	
+		const nic_cfg = this.json_cfg.ace_nic_config[0];
+		
+		this.stats_collect_cmd = ``;
+		this.stats_collect_cmd += mea_wrapper(nic_cfg, `counter pm blk 0`) + `;`;
+		this.stats_collect_cmd += mea_wrapper(nic_cfg, `counter pm BLKshow 0`) + `;`;
+		this.stats_collect_cmd += `echo "\${MEA_RESULT}"`;
+		return this.stats_collect_cmd;
+    };
+	
     this.port_exec = function (exec_dictionary, port, env, expr_key) {
 	
 		if(this.ports_config[`${port}`] == undefined) {
@@ -604,17 +625,18 @@ module.exports = function (remote_ip, remote_user, remote_password) {
 
 			ssh.execCommand(exec_cmd, { cwd:'/' }).then(function(result) {
 				
-				console.log(`STDOUT: \n${result.stdout}`);
-				console.log(`STDERR: \n${result.stderr}`);
+				console.log(`===========  ${expr_key} STDOUT:  ===========\n${result.stdout}`);
+				console.log(`===========  ${expr_key} STDERR:  ===========\n${result.stderr}`);
+				console.log(`=============================================================\n`);
 				ssh.dispose();
-				console.log(`result.stdout: ${result.stdout}`);
-				console.log(`that.ports_config: ${JSON.stringify(that.ports_config)}`);
+				//console.log(`result.stdout: ${result.stdout}`);
+				//console.log(`that.ports_config: ${JSON.stringify(that.ports_config)}`);
 				const PORT_CONFIG = JSON.parse(result.stdout);
 				Object.keys(PORT_CONFIG).forEach(function(port_config_key) {
 					
 					that.ports_config[`${port}`][`${port_config_key}`] = PORT_CONFIG[`${port_config_key}`];
 				});
-				console.log(`that.ports_config[${port}] = \n${JSON.stringify(that.ports_config[port], null, 2)};`);
+				console.log(`ports_config[${port}] = \n${JSON.stringify(that.ports_config[port], null, 2)};`);
 				fs.writeFileSync(that.ports_config_file, JSON.stringify(that.ports_config));
 			});
 		});
@@ -638,16 +660,17 @@ module.exports = function (remote_ip, remote_user, remote_password) {
 
 			ssh.execCommand(exec_cmd, { cwd:'/' }).then(function(result) {
 				
-				console.log(`STDOUT: \n${result.stdout}`);
-				console.log(`STDERR: \n${result.stderr}`);
+				console.log(`===========  ${expr_key} STDOUT:  ===========\n${result.stdout}`);
+				console.log(`===========  ${expr_key} STDERR:  ===========\n${result.stderr}`);
+				console.log(`=============================================================\n`);
 				ssh.dispose();
-				console.log(`result.stdout: ${result.stdout}`);
+				//console.log(`result.stdout: ${result.stdout}`);
 				const CONN_CONFIG = JSON.parse(result.stdout);
 				Object.keys(CONN_CONFIG).forEach(function(conn_config_key) {
 					
 					that.conns_config[`${conn_ns}`][`${conn_config_key}`] = CONN_CONFIG[`${conn_config_key}`];
 				});
-				console.log(`that.conns_config[${conn_ns}] = \n${JSON.stringify(that.conns_config[conn_ns], null, 2)};`);
+				console.log(`conns_config[${conn_ns}] = \n${JSON.stringify(that.conns_config[conn_ns], null, 2)};`);
 				fs.writeFileSync(that.conns_config_file, JSON.stringify(that.conns_config));
 			});
 		});
@@ -675,16 +698,17 @@ module.exports = function (remote_ip, remote_user, remote_password) {
 
 			ssh.execCommand(exec_cmd, { cwd:'/' }).then(function(result) {
 				
-				console.log(`STDOUT: \n${result.stdout}`);
-				console.log(`STDERR: \n${result.stderr}`);
+				console.log(`===========  ${expr_key} STDOUT:  ===========\n${result.stdout}`);
+				console.log(`===========  ${expr_key} STDERR:  ===========\n${result.stderr}`);
+				console.log(`=============================================================\n`);
 				ssh.dispose();
-				console.log(`result.stdout: ${result.stdout}`);
+				//console.log(`result.stdout: ${result.stdout}`);
 				const PORT_CONFIG = JSON.parse(result.stdout);
 				Object.keys(PORT_CONFIG).forEach(function(port_config_key) {
 					
 					that.ports_config[`${gw_port}`][`${port_config_key}`] = PORT_CONFIG[`${port_config_key}`];
 				});
-				console.log(`that.ports_config[${gw_port}] = \n${JSON.stringify(that.ports_config[gw_port], null, 2)};`);
+				console.log(`gw ports_config[${gw_port}] = \n${JSON.stringify(that.ports_config[gw_port], null, 2)};`);
 				fs.writeFileSync(that.ports_config_file, JSON.stringify(that.ports_config));
 			});
 		});

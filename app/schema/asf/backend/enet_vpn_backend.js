@@ -92,17 +92,17 @@ const TUNNELS_CONFIG =
 }];
 
 var syntax_tunnel_inst = new syntax_tunnel(`172.17.0.1`, `root`, `devops123`);
-var influxdb_stats_inst = new influxdb_stats(`172.17.0.1`, `root`, `devops123`, `172.16.10.151`, 8086, `enet_vpn_db`, `cat /tmp/blkshow.txt`);
 
 //docker exec enet0_libreswan104 ip neigh replace 192.168.22.1 lladdr cc:d3:9d:d0:00:14 dev e0ls104
 
 // Tunnel configuration:
 syntax_tunnel_inst.update_cfg(json_cfg.VPN);
-influxdb_stats_inst.update_cfg(json_cfg.VPN);
 //const expr = syntax_tunnel_inst.expr_dictionary_display();
 const expr = syntax_tunnel_inst.exec_dictionary_display();
-console.log(expr);
-syntax_tunnel_inst.load_config();
+//console.log(expr);
+const stats_collect_cmd = syntax_tunnel_inst.load_config();
+var influxdb_stats_inst = new influxdb_stats(`172.17.0.1`, `root`, `devops123`, `172.16.10.151`, 8086, `enet_vpn_db`, stats_collect_cmd);
+influxdb_stats_inst.update_cfg(json_cfg.VPN);
 
 // Initialization:
 function enet_vpn_gw_port_add() {
@@ -130,14 +130,19 @@ function inbound_tunnel_create() {
 	syntax_tunnel_inst.mea_conn(ns, env, `mea_add_inbound`);
 };
 setTimeout(outbound_tunnel_create, 5000);
-setTimeout(inbound_tunnel_create, 10000);
-//influxdb_stats_inst.update_tunnels_config(TUNNELS_CONFIG);
+//setTimeout(inbound_tunnel_create, 7000);
 
 // Periodic updates:
 function backend_stats_collect() {
 	
 	influxdb_stats_inst.stats_collect_remote();
 };
+function influxdb_update() {
+	
+	const conns_config = syntax_tunnel_inst.mea.conns_config;
+	influxdb_stats_inst.update_conns_config(conns_config);
+	setInterval(backend_stats_collect, 1000);
+};
+setTimeout(influxdb_update, 9000);
 
-//setInterval(backend_stats_collect, 2000);
 
