@@ -523,7 +523,7 @@ function mea_expr_fwd_add_inbound(expr_key, expr_path, expr_arr, cfg, port) {
 	expr_arr.push(`  while IFS= read -r FWD_MAPPING`);
 	expr_arr.push(`  do`);
 	expr_arr.push(`    eval "\${FWD_MAPPING}"`);
-	mea_expr_action_add(expr_arr, cfg, `-pm 1 0 -ed 1 0 -h 0 0 0 0 -lmid 1 0 1 0 -r \${LAN_MAC} \${CONN_NS_MAC} 0000 -hType 3`);
+	mea_expr_action_add(expr_arr, cfg, `-ed 1 0 -h 0 0 0 0 -lmid 1 0 1 0 -r \${LAN_MAC} \${CONN_NS_MAC} 0000 -hType 3`);
 	mea_expr_forwarder_add(expr_arr, cfg, `6 \${LAN_IP} 0 0x\${CONN_NS_TAG}`, `3 1 0 1 ${port_out} -action 1 \${ACTION_ID}`);
 	expr_arr.push(`  done < <(echo "\${FWD_MAPPINGS}")`);
 	mea_expr_port_config_output(expr_arr, cfg, port);

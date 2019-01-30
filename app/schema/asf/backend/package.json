@@ -9,6 +9,7 @@
   "author": "Erez Buchnik",
   "license": "MIT",
   "dependencies": {
+    "microseconds": "^0.1.0",
     "node-ssh": "^5.1.2",
     "node-ssh-forward": "^0.4.6",
     "request": "^2.88.0",

@@ -7,13 +7,15 @@ var http_request = require('request');
 var sh = require('shelljs');
 sh.config.silent = true;
 
-function influxdb_expr_stats_add(line_proto_arr, cfg, tunnel_config, stats_container) {
+function influxdb_expr_stats_add(line_proto_arr, cfg, tunnel_config, stats_container, timestamp_usec) {
 	
 	if(tunnel_config != undefined) {
 		const stats = stats_container[tunnel_config.STATS_ID];
 		if(stats != undefined) {
 			
 			const conn = cfg.conns[tunnel_config.CONN_ID];
+			const nic_cfg = cfg.ace_nic_config[0];
+			const vpn_inst = enet_vpn_inst(nic_cfg);
 			const vpn_cfg = cfg.vpn_gw_config[0];
 			
 			var line_proto_expr = ``;
@@ -30,7 +32,8 @@ function influxdb_expr_stats_add(line_proto_arr, cfg, tunnel_config, stats_conta
 			line_proto_expr += `DisGreenPkt=${stats.pkts[2]},`;
 			line_proto_expr += `FwdGreenByte=${stats.bytes[0]},`;
 			line_proto_expr += `FwdYellowByte=${stats.bytes[1]},`;
-			line_proto_expr += `DisGreenByte=${stats.bytes[2]}`;
+			line_proto_expr += `DisGreenByte=${stats.bytes[2]} `;
+			line_proto_expr += `${timestamp_usec * 1000}`;
 			line_proto_arr.push(line_proto_expr);
 		};
 	};
@@ -55,17 +58,18 @@ function influxdb_stats_batch_update(db_ip, db_port, db_name, json_cfg, conns_co
 function influxdb_stats_block_parse(json_cfg, conns_config, stats_container) {
 	
 	var line_proto_arr = [];
+	var usec_now = (1000 * new Date().getTime());
 	Object.keys(conns_config).forEach(function(conn_key) {
 		
 		const conn_config = conns_config[conn_key];
 		if(conn_config != undefined) {
 			if(conn_config.OUTBOUND != undefined) {
-				influxdb_expr_stats_add(line_proto_arr, json_cfg, conn_config.OUTBOUND.LAN, stats_container);
-				influxdb_expr_stats_add(line_proto_arr, json_cfg, conn_config.OUTBOUND.TUNNEL, stats_container);
+				influxdb_expr_stats_add(line_proto_arr, json_cfg, conn_config.OUTBOUND.LAN, stats_container, ++usec_now);
+				influxdb_expr_stats_add(line_proto_arr, json_cfg, conn_config.OUTBOUND.TUNNEL, stats_container, ++usec_now);
 			};
 			if(conn_config.INBOUND != undefined) {
-				influxdb_expr_stats_add(line_proto_arr, json_cfg, conn_config.INBOUND.LAN, stats_container);
-				influxdb_expr_stats_add(line_proto_arr, json_cfg, conn_config.INBOUND.TUNNEL, stats_container);
+				influxdb_expr_stats_add(line_proto_arr, json_cfg, conn_config.INBOUND.LAN, stats_container, ++usec_now);
+				influxdb_expr_stats_add(line_proto_arr, json_cfg, conn_config.INBOUND.TUNNEL, stats_container, ++usec_now);
 			};
 		};
 	});
