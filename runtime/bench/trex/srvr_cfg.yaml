@@ -6,7 +6,7 @@
   port_info:
       - dest_mac: 3c:fd:fe:ab:ca:41 # MAC OF LOOPBACK TO IT'S DUAL INTERFACE
         src_mac:  3c:fd:fe:ab:ca:40
-      - dest_mac: 3c:fd:fe:ab:ca:40 # MAC OF LOOPBACK TO IT'S DUAL INTERFACE
+      - dest_mac: cc:d3:9d:d5:6e:04 # 3c:fd:fe:ab:ca:40 # MAC OF LOOPBACK TO IT'S DUAL INTERFACE
         src_mac:  3c:fd:fe:ab:ca:41
 
       - dest_mac: 3c:fd:fe:ab:ca:43 # MAC OF LOOPBACK TO IT'S DUAL INTERFACE

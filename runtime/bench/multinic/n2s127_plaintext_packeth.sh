@@ -3,7 +3,7 @@
 
 tgen_dir=$(pwd)/packETH/cli
 
-tx_if=enp65s0f1
+tx_if=ACENIC1_127
 delay_usec=10
 packeth_cmd=${tgen_dir}/packETHcli
 pcap_file=$(pwd)/multinic/n2s_plaintext.pcap

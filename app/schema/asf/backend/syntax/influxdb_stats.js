@@ -57,10 +57,17 @@ function influxdb_stats_block_parse(json_cfg, conns_config, stats_container) {
 	var line_proto_arr = [];
 	Object.keys(conns_config).forEach(function(conn_key) {
 		
-		influxdb_expr_stats_add(line_proto_arr, json_cfg, conns_config[conn_key].OUTBOUND.LAN, stats_container);
-		influxdb_expr_stats_add(line_proto_arr, json_cfg, conns_config[conn_key].OUTBOUND.TUNNEL, stats_container);
-		influxdb_expr_stats_add(line_proto_arr, json_cfg, conns_config[conn_key].INBOUND.LAN, stats_container);
-		influxdb_expr_stats_add(line_proto_arr, json_cfg, conns_config[conn_key].INBOUND.TUNNEL, stats_container);
+		const conn_config = conns_config[conn_key];
+		if(conn_config != undefined) {
+			if(conn_config.OUTBOUND != undefined) {
+				influxdb_expr_stats_add(line_proto_arr, json_cfg, conn_config.OUTBOUND.LAN, stats_container);
+				influxdb_expr_stats_add(line_proto_arr, json_cfg, conn_config.OUTBOUND.TUNNEL, stats_container);
+			};
+			if(conn_config.INBOUND != undefined) {
+				influxdb_expr_stats_add(line_proto_arr, json_cfg, conn_config.INBOUND.LAN, stats_container);
+				influxdb_expr_stats_add(line_proto_arr, json_cfg, conn_config.INBOUND.TUNNEL, stats_container);
+			};
+		};
 	});
 	return line_proto_arr;
 };
@@ -69,7 +76,7 @@ function influxdb_send(db_ip, db_port, db_name, msg) {
 	
 /////////
 const influxdb_url = `http://${db_ip}:${db_port}/write?db=${db_name}`;
-//console.log(influxdb_url);
+	console.log(`${influxdb_url} => ${msg}`);
 http_request({
 		url: influxdb_url,
 		encoding: null,
@@ -92,7 +99,7 @@ function influxdb_send_batch(db_ip, db_port, db_name, line_proto_arr) {
 	for(var rec_id = 0; rec_id < line_proto_arr.length; ++rec_id) {
 		line_proto_str += `${line_proto_arr[rec_id]}\n`;
 	};
-	influxdb_send(`172.16.10.151`, 8086, `enet_vpn_db`, line_proto_str);
+	influxdb_send(`172.16.10.151`, 8086, db_name, line_proto_str);
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -119,13 +126,13 @@ module.exports = function (remote_ip, remote_user, remote_password, db_ip, db_po
     this.update_conns_config = function (conns_config) {
 	
 		this.conns_config = conns_config;
-		console.log(this.conns_config);
+		console.log(JSON.stringify(this.conns_config));
     };
 	
     this.stats_collect_remote = function () {
 	
 		var that = this;
-		//console.log(that.stats_collect_cmd);
+		console.log(that.stats_collect_cmd);
 		ssh.connect({
 			host: that.remote_ip,
 			username: that.remote_user,
@@ -135,8 +142,8 @@ module.exports = function (remote_ip, remote_user, remote_password, db_ip, db_po
 
 			ssh.execCommand(that.stats_collect_cmd, { cwd:'/' }).then(function(result) {
 				
-				//console.log('STDOUT: ' + result.stdout);
-				//console.log('STDERR: ' + result.stderr);
+				console.log('STDOUT: ' + result.stdout);
+				console.log('STDERR: ' + result.stderr);
 				ssh.dispose();
 				const stats_container = JSON.parse(`{${result.stdout}"sentinel":0}`);
 				influxdb_stats_batch_update(that.db_ip, that.db_port, that.db_name, that.json_cfg, that.conns_config, stats_container);

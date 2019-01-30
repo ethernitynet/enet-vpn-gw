@@ -152,6 +152,17 @@ enet_vpn_disconnect_libreswan() {
 	enet_vpn_disconnect_libreswan_inst ${ACENIC_ID} 107
 }
 
+enet_vpn_init() {
+
+	enet_exec port ingress set all -a 1 -c 0
+	enet_exec port egress set all -a 1 -c 1
+	enet_exec IPSec global set ttl 40
+	enet_exec forwarder delete all
+	enet_exec action set delete all
+	enet_exec service set delete all
+	enet_exec IPSec ESP set delete all
+}
+
 enet_vpn_start() {
 
 	#enet_run
@@ -162,6 +173,7 @@ enet_vpn_start() {
 	ip link del dev ${OVS_VPN_BR}
 	#ovs_run
 	enet_ovs_attach ${OVS_VPN_BR}
+	enet_vpn_init
 	enet_vpn_deploy_libreswan
 	enet_vpn_connect_libreswan
 }

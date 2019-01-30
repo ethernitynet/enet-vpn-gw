@@ -40,6 +40,29 @@ ENET_INSTALL_DIR=$(jq -r .VPN.ace_nic_config[0].install_dir <<< "${ENET_VPN_CONF
 DATAPLANE_TYPE=$(jq -r .VPN.ace_nic_config[0].dataplane <<< "${ENET_VPN_CONFIG}")
 ENET_NIC_INTERFACE=$( printf 'ACENIC%u_127' $(( ${ACENIC_ID} + 1 )) )
 
+# Old ver.
+#####################################################
+if false
+then
+ENET_INSTALL_DIR=/home/devops/ENET_SmartNic_ver_1.31A
+
+enet_restart_old() {
+
+	cd /home/devops/ENET_SmartNic_ver_1.31A/AceNic_output
+	if [[ ${ACENIC_ID} == 0 ]]
+	then
+		pkill SmartNic
+		sleep 1
+		./AppInit_AceNic
+	elif [[ ${ACENIC_ID} == 1 ]]
+	then
+		pkill SmartNic
+		sleep 1
+		./AppInit_AceNic2
+	fi
+	cd -
+}
+fi
 
 enet_restart() {
 

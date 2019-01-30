@@ -76,12 +76,12 @@ global.str_hash = function (str, mask_bits) {
 global.ntoh_32_expr_append = function (expr_arr, var_name) {
 
 	expr_arr.push(`  VAR_HEX=$(printf '%08x' \${${var_name}})`);
-	expr_arr.push(`  ${var_name}=$(printf '%u' "0x\${VAR_HEX:6:2}\${VAR_HEX:4:2}\${VAR_HEX:2:2}\${VAR_HEX:0:2}")`);
+	expr_arr.push(`  ${var_name}_NTOH=$(printf '%u' "0x\${VAR_HEX:6:2}\${VAR_HEX:4:2}\${VAR_HEX:2:2}\${VAR_HEX:0:2}")`);
 };
 
 global.uint32_hex_expr_append = function (expr_arr, var_name) {
 
-	expr_arr.push(`  ${var_name}=$(printf '%08x' \${${var_name}})`);
+	expr_arr.push(`  ${var_name}_HEX=$(printf '%08x' \${${var_name}})`);
 };
 
 global.ip_to_dec = function (ip) {
@@ -138,11 +138,20 @@ global.conn_ns_hash = function (vpn_cfg, conn) {
 	return str_hash(`${conn_ns}`, 24);
 };
 
-global.conn_ns_dev = function (vpn_cfg, conn) {
+global.conn_ns_tag_hex = function (vpn_cfg, conn) {
 	
 	const hash_str = conn_ns_hash(vpn_cfg, conn);
 	
-	return `macv${conn.lan_port - port_offset}${hash_str.substring(4, 6)}`;
+	//return `${conn.lan_port - port_offset - 4}${hash_str.substring(4, 6)}`;
+	return `0${hash_str.substring(4, 6)}`;
+};
+
+global.conn_ns_dev = function (vpn_cfg, conn) {
+	
+	const hash_str = conn_ns_hash(vpn_cfg, conn);
+	const ns_tag_hex = conn_ns_tag_hex(vpn_cfg, conn);
+	
+	return `macv${ns_tag_hex}`;
 };
 
 global.conn_ns_mac = function (nic_cfg, vpn_cfg, conn) {
@@ -182,6 +191,11 @@ global.tun_ns_mac = function (nic_cfg, conn) {
 	return `${enet_mac_prefix}${conn.lan_port - port_offset}:${hash_str.substring(4, 6)}:${nic_cfg.nic_name}${conn.tunnel_port - port_offset}`;
 };
 */
+
+global.internal_port_mac = function (nic_cfg, internal_port) {
+	
+	return `${enet_mac_prefix}0:00:${parseInt(nic_cfg.nic_name, 10) + 2}${internal_port - 20}`;
+};
 
 global.gw_port_mac = function (nic_cfg, port) {
 	

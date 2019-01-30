@@ -15,7 +15,7 @@
 				"remote_tunnel_endpoint_ip": "10.11.11.1",
 				"local_subnet": "10.0.2.0/24",
 				"remote_subnet": "10.0.1.0/24",
-				"lan_port": "105",
+				"lan_port": "106",
 				"tunnel_port": "104",
 				"inbound_routes": "10.0.2.1",
 				"libreswan_specific": "type=tunnel\nauthby=secret\nike=aes-sha1;modp2048\nikev2=insist\nnarrowing=yes"
@@ -30,7 +30,7 @@
 				"local_subnet": "30.0.2.0/24",
 				"remote_subnet": "30.0.1.0/24",
 				"inbound_routes": "30.0.2.1",
-				"lan_port": "105",
+				"lan_port": "106",
 				"tunnel_port": "104",
 				"libreswan_specific": "type=tunnel\nauthby=secret\nike=aes-sha1;modp2048\nikev2=insist\nnarrowing=yes"
 			}
