@@ -66,7 +66,20 @@ fi
 
 enet_restart() {
 
+	ACENIC_LABEL="ACENIC$(( ${ACENIC_ID} + 1 ))_LABEL"
+	ACENIC_XIL_SLOT="ACENIC$(( ${ACENIC_ID} + 1 ))_XIL_SLOT"
+	echo "Rebooting ${ACENIC_LABEL}:"
 	cd ${ENET_INSTALL_DIR}/Ethernity/lib/pcicard
+	ENV_SETUP="$(./env_setup.sh)"
+	echo "${ENV_SETUP}"
+	ACENIC_CHECK=$(grep "${ACENIC_XIL_SLOT}" <<< "${ENV_SETUP}")
+	if [[ ${ACENIC_CHECK} == "" ]]
+	then
+		echo "${ACENIC_LABEL} not present. Aborting."
+		cd -
+		exit
+	fi
+	
 	if [[ ${ACENIC_ID} == 0 ]]
 	then
 		pkill pcicard_mea.ex
@@ -79,6 +92,7 @@ enet_restart() {
 		./AppInit_Nic2
 	fi
 	cd -
+	echo "${ACENIC_LABEL} reboot Done."
 }
 
 kmod_install() {
