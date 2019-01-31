@@ -143,7 +143,18 @@ global.conn_ns_tag_hex = function (vpn_cfg, conn) {
 	const hash_str = conn_ns_hash(vpn_cfg, conn);
 	
 	//return `${conn.lan_port - port_offset - 4}${hash_str.substring(4, 6)}`;
-	return `0${hash_str.substring(4, 6)}`;
+	return `${hash_str.substring(4, 6)}`;
+};
+
+
+global.conn_ns_tag_dec = function (vpn_cfg, conn) {
+	
+	const ns_tag_hex = conn_ns_tag_hex(vpn_cfg, conn);
+	var char_code_high = (ns_tag_hex.charCodeAt(0) - 48);
+	char_code_high = (char_code_high > 9) ? (char_code_high - 7) : char_code_high;
+	var char_code_low = (ns_tag_hex.charCodeAt(1) - 48);
+	char_code_low = (char_code_low > 9) ? (char_code_low - 7) : char_code_low;
+	return ((char_code_high * 16) + char_code_low);
 };
 
 global.conn_ns_dev = function (vpn_cfg, conn) {
@@ -151,7 +162,7 @@ global.conn_ns_dev = function (vpn_cfg, conn) {
 	const hash_str = conn_ns_hash(vpn_cfg, conn);
 	const ns_tag_hex = conn_ns_tag_hex(vpn_cfg, conn);
 	
-	return `macv${ns_tag_hex}`;
+	return `macv1${ns_tag_hex}`;
 };
 
 global.conn_ns_mac = function (nic_cfg, vpn_cfg, conn) {

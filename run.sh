@@ -66,7 +66,7 @@ fi
 
 enet_restart() {
 
-	ACENIC_LABEL="ACENIC$(( ${ACENIC_ID} + 1 ))_LABEL"
+	ACENIC_LABEL="ACENIC$(( ${ACENIC_ID} + 1 ))_127"
 	ACENIC_XIL_SLOT="ACENIC$(( ${ACENIC_ID} + 1 ))_XIL_SLOT"
 	echo "Rebooting ${ACENIC_LABEL}:"
 	cd ${ENET_INSTALL_DIR}/Ethernity/lib/pcicard

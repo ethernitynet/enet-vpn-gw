@@ -2,7 +2,7 @@
 
 set -x
 
-pktlen=600
+pktlen=800
 
 north_net="10.0.1.0"
 north_ip="10.0.1.5"
@@ -19,8 +19,8 @@ south_ip_cidr="${south_ip}/${south_maskbits}"
 north_gw_mac='CC:D3:9D:D5:6E:04'
 south_gw_mac='CC:D3:9D:D6:7C:14'
 
-n2s_pcap_file='./multinic/n2s_plaintext_600.pcap'
-s2n_pcap_file='./multinic/s2n_plaintext_600.pcap'
+n2s_pcap_file='./multinic/n2s_plaintext_800.pcap'
+s2n_pcap_file='./multinic/s2n_plaintext_800.pcap'
 
 ns_cleanup() {
 

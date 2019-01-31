@@ -370,7 +370,7 @@ function mea_expr_conn_add_inbound_from_tunnel(expr_arr, cfg, conn_id) {
 	const conn = cfg.conns[conn_id];
 	const conn_ns = vpn_conn_ns(vpn_cfg, conn);
 	const ns_tag_hex = conn_ns_tag_hex(vpn_cfg, conn);
-	const ns_mac = conn_ns_mac(nic_cfg, vpn_cfg, conn);
+	//const ns_mac = conn_ns_mac(nic_cfg, vpn_cfg, conn);
 	const gw_dev = tun_gw_dev(nic_cfg, conn);
 	const vpn_inst = enet_vpn_inst(nic_cfg);
 	const remote_tunnel_endpoint_ip_hex = ip_to_hex(conn.remote_tunnel_endpoint_ip);
@@ -379,6 +379,7 @@ function mea_expr_conn_add_inbound_from_tunnel(expr_arr, cfg, conn_id) {
 	
 	const port_in = (MEA_DEBUG.INBOUND.MODE == `nodebug`) ? conn.tunnel_port : MEA_DEBUG.INBOUND.debug_port_in;
 	const port_mid = (MEA_DEBUG.INBOUND.MODE == `nodebug`) ? 27 : MEA_DEBUG.INBOUND.debug_port_mid;
+	const port_in_mac = gw_port_mac(nic_cfg, port_in);
 
 	expr_arr.push(`  ` + log_wrapper(`ACE-NIC# Add Inbound Tunnel, Tunnel Side (HW offload: ${conn.inbound_accel}): ${conn_ns}`));
 	expr_arr.push(`  CRYPTO_PROFILES=''`);
@@ -391,7 +392,8 @@ function mea_expr_conn_add_inbound_from_tunnel(expr_arr, cfg, conn_id) {
 	mea_ipsec_cipher_key_expr_append(expr_arr, 'CIPHER_KEY');
 	mea_expr_crypto_profile_add(expr_arr, cfg, `-security_type ${mea_ipsec_cipher_type_hex(conn.encryption_type)} -TFC_en 0 -ESN_en 0 -SPI \${SPI_NTOH} \${AUTH_KEY} \${CIPHER_KEY}`);
 	uint32_hex_expr_append(expr_arr, 'SPI_NTOH');
-	mea_expr_service_add(expr_arr, cfg, `${port_in} ${remote_tunnel_endpoint_ip_hex} ${remote_tunnel_endpoint_ip_hex} D.C 0 1 0 1000000000 0 64000 0 0 1 ${port_mid} -ra 0 -inf 1 0x\${SPI_NTOH_HEX} -l2Type 0 -subType 19 -h 81000${ns_tag_hex} 0 0 0 -hType 1 -hESP 2 \${PROFILE_ID}`);
+	mea_expr_service_add(expr_arr, cfg, `${port_in} ${remote_tunnel_endpoint_ip_hex} ${remote_tunnel_endpoint_ip_hex} D.C 0 1 0 1000000000 0 64000 0 0 1 ${port_mid} -ra 0 -inf 1 0x\${SPI_NTOH_HEX} -l2Type 0 -subType 19 -h 810001${ns_tag_hex} 0 0 0 -hType 1 -hESP 2 \${PROFILE_ID} -lmid 1 0 1 0 -r ${port_in_mac} 00:00:00:00:00:00 0000`);
+	//mea_expr_service_add(expr_arr, cfg, `${port_in} ${remote_tunnel_endpoint_ip_hex} ${remote_tunnel_endpoint_ip_hex} D.C 0 1 0 1000000000 0 64000 0 0 1 ${port_mid} -ra 0 -inf 1 0x\${SPI_NTOH_HEX} -l2Type 0 -subType 19 -h 81000${ns_tag_hex} 0 0 0 -hType 1 -hESP 2 \${PROFILE_ID}`);
 	mea_expr_conn_config_output(expr_arr, cfg, conn_id, `INBOUND`, `TUNNEL`);
 };
 
@@ -402,7 +404,8 @@ function mea_expr_conn_add_inbound_to_lan(expr_arr, cfg, conn_id) {
 	const conn = cfg.conns[conn_id];
 	const conn_ns = vpn_conn_ns(vpn_cfg, conn);
 	const ns_tag_hex = conn_ns_tag_hex(vpn_cfg, conn);
-	const ns_mac = conn_ns_mac(nic_cfg, vpn_cfg, conn);
+	const ns_tag_dec = conn_ns_tag_dec(vpn_cfg, conn);
+	//const ns_mac = conn_ns_mac(nic_cfg, vpn_cfg, conn);
 	const gw_dev = tun_gw_dev(nic_cfg, conn);
 	const vpn_inst = enet_vpn_inst(nic_cfg);
 	const gw_inst = enet_gw_inst(nic_cfg, conn.tunnel_port);
@@ -417,7 +420,7 @@ function mea_expr_conn_add_inbound_to_lan(expr_arr, cfg, conn_id) {
 	expr_arr.push(`  ACTIONS=''`);
 	expr_arr.push(`  FORWARDERS=''`);
 	expr_arr.push(`  PM_ID=''`);
-	mea_expr_service_add(expr_arr, cfg,	`${port_mid} FF${ns_tag_hex} FF${ns_tag_hex} D.C 0 1 0 1000000000 0 64000 0 0 1 127 -f 1 6 -v 124 -l4port_mask 1 -ra 0 -l2Type 1 -h 0 0 0 0 -lmid 1 0 1 0 -r ${port_mid_mac} 00:00:00:00:00:00 0000 -hType 0`);
+	mea_expr_service_add(expr_arr, cfg,	`${port_mid} FF1${ns_tag_hex} FF1${ns_tag_hex} D.C 0 1 0 1000000000 0 64000 0 0 1 127 -f 1 6 -v ${ns_tag_dec} -l4port_mask 1 -ra 0 -l2Type 1 -h 0 0 0 0 -lmid 1 0 1 0 -r ${port_mid_mac} 00:00:00:00:00:00 0000 -hType 0`);
 	//mea_expr_service_add(expr_arr, cfg, `${port_mid} FF${ns_tag_hex} FF${ns_tag_hex} D.C 0 1 0 1000000000 0 64000 0 0 0     -f 1 6 -v 0x${ns_tag_hex} -l4port_mask 1 -ra 0 -l2Type 1`);
 	mea_expr_conn_config_output(expr_arr, cfg, conn_id, `INBOUND`, `LAN`);
 };
@@ -428,7 +431,7 @@ function mea_expr_conn_add_inbound(expr_key, expr_path, expr_arr, cfg, conn_id) 
 	const vpn_cfg = cfg.vpn_gw_config[0];
 	const conn = cfg.conns[conn_id];
 	const conn_ns = vpn_conn_ns(vpn_cfg, conn);
-	const ns_mac = conn_ns_mac(nic_cfg, vpn_cfg, conn);
+	//const ns_mac = conn_ns_mac(nic_cfg, vpn_cfg, conn);
 	const gw_dev = tun_gw_dev(nic_cfg, conn);
 	const vpn_inst = enet_vpn_inst(nic_cfg);
 	const gw_inst = enet_gw_inst(nic_cfg, conn.tunnel_port);
@@ -480,6 +483,8 @@ function mea_expr_port_add_outbound(expr_key, expr_path, expr_arr, cfg, lan_port
 	
 	const port_in = (MEA_DEBUG.OUTBOUND.MODE == `nodebug`) ? lan_port : MEA_DEBUG.OUTBOUND.debug_port_in;
 	const port_mid = (MEA_DEBUG.OUTBOUND.MODE == `nodebug`) ? 24 : MEA_DEBUG.OUTBOUND.debug_port_mid;
+	const port_in_mac = gw_port_mac(nic_cfg, port_in);
+	const port_mid_mac = internal_port_mac(nic_cfg, port_mid);
 
 	expr_arr.push(`############################`);
 	expr_arr.push(`# ${expr_key}`);
@@ -492,9 +497,9 @@ function mea_expr_port_add_outbound(expr_key, expr_path, expr_arr, cfg, lan_port
 	expr_arr.push(`  FORWARDERS=''`);
 	expr_arr.push(`  PM_ID=''`);
 	expr_arr.push(`  ` + log_wrapper(`ACE-NIC# Add Port Outbound Classification ${gw_inst}:`));
-	expr_arr.push(`  ` + mea_wrapper(nic_cfg, `global set my_Ipsec_Ipv4 ${vpn_cfg.vpn_gw_ip}`));
-	mea_expr_service_add(expr_arr, cfg, `${port_mid} FFF000 FFF000 D.C 0 1 0 1000000000 0 64000 0 0 0 -f 1 0 -ra 0 -l2Type 0 -v ${port_mid} -p 0 -h 0 0 0 0`);
-	mea_expr_service_add(expr_arr, cfg,		`${port_in} FFF000 FFF000 D.C 0 1 0 1000000000 0 64000 0 0 1 127 -f 1 0 -ra 0 -l2Type 0 -v ${port_in} -h 0 0 0 0      -lmid 1 0 1 0 -r ${gw_mac} 00:00:00:00:00:00 0000 -hType 0`);
+	expr_arr.push(`  ` + mea_wrapper(nic_cfg, `IPSec global set my_Ipsec_Ipv4 ${vpn_cfg.vpn_gw_ip}`));
+	mea_expr_service_add(expr_arr, cfg, `${port_mid} FFF000 FFF000 D.C 0 1 0 1000000000 0 64000 0 0 0 -f 1 0 -ra 0 -l2Type 0 -v ${port_mid} -p 0 -h 0 0 0 0      -lmid 1 0 1 0 -r ${port_mid_mac} 00:00:00:00:00:00 0000 -hType 0`);
+	mea_expr_service_add(expr_arr, cfg,		`${port_in} FFF000 FFF000 D.C 0 1 0 1000000000 0 64000 0 0 1 127 -f 1 0 -ra 0 -l2Type 0 -v ${port_in} -h 0 0 0 0      -lmid 1 0 1 0 -r ${port_in_mac} 00:00:00:00:00:00 0000 -hType 0`);
 	//mea_expr_service_add(expr_arr, cfg,	`${port_in} FFF000 FFF000 D.C 0 1 0 1000000000 0 64000 0 0 0     -f 1 0 -ra 0 -l2Type 0 -v ${port_in} -h 0 0 0 0 -p 0`);
 	mea_expr_port_config_output(expr_arr, cfg, port_in);
 	expr_arr.push(`  printf '%s' "\${PORT_CONFIG}"`);
