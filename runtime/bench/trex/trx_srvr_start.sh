@@ -7,7 +7,7 @@ pushd ${trx_root}
 	./dpdk_nic_bind.py -u ${p105_north_pci}
 	./dpdk_nic_bind.py -u ${p105_south_pci}
 	echo "Waiting for T-Rex server to start:"
-	./t-rex-64 -i --no-scapy-server --cfg ${srvr_cfg_file} &
+	./t-rex-64 -i --prom --no-scapy-server --cfg ${srvr_cfg_file} &
 	for i in $(seq 10)
 	do
 		echo "TRex"
