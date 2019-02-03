@@ -13,7 +13,7 @@
   <style type="text/css">
   
   .textarea_high { 
-    height: 100px;
+    height: 500px;
   }
   
   .spinner {
@@ -254,7 +254,7 @@ function toggle_debug() {
 <div class="col-md-12">
   <h1>ENET VPN GW</h1>
   <div class="row">
-    <div class="col-sm-4">
+    <div class="col-sm-5">
 
       <form name="ngform"  sf-model="modelData" sf-form="form" sf-schema="schema" ng-submit="submitForm(ngform,modelData)"></form>
 <!--
@@ -271,7 +271,7 @@ function toggle_debug() {
       <h3 id="model_title" style="display:none;">Model</h3>
       <pre id="model_content" style="display:none;" ng-cloak>{{pretty()}}</pre>
     </div>
-    <div class="col-sm-8">
+    <div class="col-sm-7">
       <h3>Select Configuration Template</h3>
         <div class="form-group">
         <select class="form-control" id="selectTest"
@@ -288,9 +288,9 @@ function toggle_debug() {
 
       <div class="row">
 		<div class="col-sm-8">
-		<iframe width="1600px" height="600px" src="https://erezbuchnik.grafana.net/d/TCk_00Qiz/enet-vpn-gw?orgId=1&refresh=2s&from=1547703466367&to=1547725066368">
-		<p>Your browser does not support iframes.</p>
-		</iframe>	  
+			<iframe id="charts_view" width="151%" height="750px" src="">
+			<p>Your browser does not support iframes.</p>
+			</iframe>	  
 		</div>
       </div>
 	  
@@ -424,6 +424,19 @@ app.controller('TestCtrl', function($scope, $http, $location, $q) {
       $scope.schemaJson = res.files['schema.json'].content;
       $scope.formJson   = res.files['form.json'].content;
       $scope.modelData  = JSON.parse(res.files['model.json'].content);
+      try {
+		const nic_name = $scope.modelData.ace_nic_config[0].nic_name;
+		switch(nic_name) {
+		case "0":
+			document.getElementById("charts_view").src = "http://172.16.10.151:3000/d/b7C7iCliz/enet0-vpn-gw?orgId=1&from=1548872581582&to=1548874686889&kiosk";
+		break;
+		case "1":
+			document.getElementById("charts_view").src = "http://172.16.10.151:3000/d/Xz9Dijlmz/enet1-vpn-gw?orgId=1&from=1548872362182&to=1548874864554&kiosk";
+		break;
+		};
+      } catch (e){
+ 			document.getElementById("charts_view").src = "";
+      };
       $scope.LibreSwan_conf  = libreswan_expr_cfg_build($scope.modelData);
     }).error(function() {
       $scope.loadedData = 'dummy';
@@ -479,6 +492,19 @@ app.controller('TestCtrl', function($scope, $http, $location, $q) {
     $scope.schemaJson = JSON.stringify($scope.schema,undefined,2);
     $scope.formJson   = JSON.stringify($scope.form,undefined,2);
     $scope.modelData = res_model.data.VPN || res_data.data.model || {};
+	  try {
+		const nic_name = $scope.modelData.ace_nic_config[0].nic_name;
+		switch(nic_name) {
+		case "0":
+			document.getElementById("charts_view").src = "http://172.16.10.151:3000/d/b7C7iCliz/enet0-vpn-gw?orgId=1&from=1548872581582&to=1548874686889&kiosk";
+		break;
+		case "1":
+			document.getElementById("charts_view").src = "http://172.16.10.151:3000/d/Xz9Dijlmz/enet1-vpn-gw?orgId=1&from=1548872362182&to=1548874864554&kiosk";
+		break;
+		};
+	  } catch (e){
+			document.getElementById("charts_view").src = "";
+	  };
     $scope.LibreSwan_conf  = libreswan_expr_cfg_build($scope.modelData);
   };
 

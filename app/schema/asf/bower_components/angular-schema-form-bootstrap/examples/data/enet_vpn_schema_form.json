@@ -101,7 +101,7 @@
 							]
 						},
 						"inbound_routes": {
-							"title": "Inbound Static Routes",
+							"title": "LAN Next-Hop Routes",
 							"type": "string",
 							"description": "(list of next-hop IP addresses)"
 						},
@@ -382,7 +382,7 @@
 				{
 					"key": "conns[].libreswan_specific",
 					"type": "textarea",
-					"fieldHtmlClass": "textarea_high"
+					"htmlClass": "textarea_high"
 				}
 			]
 		},
