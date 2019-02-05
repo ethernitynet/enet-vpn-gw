@@ -6,9 +6,9 @@ enet_vpn_update_env() {
 	
 	export ACENIC_ID=$(jq -r .VPN.ace_nic_config[0].nic_name <<< "${enet_vpn_config}")
 	export ENET_OVS_DATAPLANE=$(jq -r .VPN.ace_nic_config[0].dataplane <<< "${enet_vpn_config}")
-	export ENET_NIC_PCI=$(jq -r .VPN.ace_nic_config[0].nic_pci <<< "${enet_vpn_config}")
+	export ACENIC_710_SLOT=$(jq -r .VPN.ace_nic_config[0].nic_pci <<< "${enet_vpn_config}")
 	
-	export ENET_NIC_INTERFACE=$( printf 'ACENIC%u_127' $(( ${ACENIC_ID} + 1 )) )
+	export ACENIC_LABEL=$( printf 'ACENIC%u_127' $(( ${ACENIC_ID} + 1 )) )
 	export ENET_NIC_BR="enet${ACENIC_ID}"
 	export OVS_VPN_BR="ovsvpn${ACENIC_ID}"
 	
@@ -109,7 +109,7 @@ enet_vpn_connect_libreswan_inst() {
 	sleep 2
 	ovs_dpdk add-docker-port \
 		$OVS_VPN_BR ${dev_name} ${libreswan_inst} \
-		--ipaddress=${ENET_IPSEC_LOCAL_IP}/8 \
+		--ipaddress=${ENET_IPSEC_LOCAL_IP}/24 \
 		--macaddress=${libreswan_inst_mac}
 	sleep 2
 	ovs_dpdk set-docker-port-id ${libreswan_inst} ${dev_name} ${nic_port}

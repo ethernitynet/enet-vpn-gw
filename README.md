@@ -42,5 +42,5 @@ docker run \
         ethernity/enet-vpn-gw
 ```
 # Configuration (single NIC)
-Assuming 172.16.10.152 to be the server IP, go to:
-http://172.16.10.152:44443/enet_vpn_config.html
+Assuming 172.16.11.152 to be the server IP, go to:
+http://172.16.11.152:44443/enet_vpn_config.html

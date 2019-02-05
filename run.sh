@@ -1,8 +1,8 @@
 #!/bin/bash
 
 ACENIC_ID=${1:-0}
-ENET_NIC_INTERFACE=${2:-ens1}
-ENET_NIC_PCI=${2:-0000:3d:00.0}
+ACENIC_LABEL=${2:-ACENIC1_127}
+ACENIC_710_SLOT=${2:-3d:00.0}
 IMG_DOMAIN=${2:-local}
 OVS_VERSION=${3:-v2.10.1}
 LIBRESWAN_VERSION=${4:-v3.27}
@@ -30,15 +30,17 @@ case ${IMG_DOMAIN} in
 	;;
 esac
 
-mkdir -p $(pwd)/shared/$DOCKER_INST
-
 docker kill $DOCKER_INST
 docker rm $DOCKER_INST
 
-ENET_VPN_CONFIG=$(cat shared/${DOCKER_INST}/enet_vpn_config.json)
+SHARED_DIR=$(pwd)/shared/$DOCKER_INST
+mkdir -p $SHARED_DIR
+
+ENET_VPN_CONFIG=$(cat $SHARED_DIR/enet_vpn_config.json)
+ACENIC_LABEL=$( printf 'ACENIC%u_127' $(( ${ACENIC_ID} + 1 )) )
+ACENIC_710_SLOT=$(jq -r .VPN.ace_nic_config[0].nic_pci <<< "${ENET_VPN_CONFIG}")
 ENET_INSTALL_DIR=$(jq -r .VPN.ace_nic_config[0].install_dir <<< "${ENET_VPN_CONFIG}")
 DATAPLANE_TYPE=$(jq -r .VPN.ace_nic_config[0].dataplane <<< "${ENET_VPN_CONFIG}")
-ENET_NIC_INTERFACE=$( printf 'ACENIC%u_127' $(( ${ACENIC_ID} + 1 )) )
 
 # Old ver.
 #####################################################
@@ -95,10 +97,25 @@ enet_restart() {
 	echo "${ACENIC_LABEL} reboot Done."
 }
 
+acenic_bind() {
+
+	local driver_name=$1
+	
+	if false
+	then
+		${dpdk_install_dir}/usertools/dpdk-devbind.py -b ${driver_name} ${ACENIC_710_SLOT}
+	else
+		cd /home/trx/v2.51
+		./dpdk_nic_bind.py -b ${driver_name} ${ACENIC_710_SLOT}
+		cd -
+	fi
+}
+
 kmod_install() {
 
 	local dpdk_install_dir=/root/ETHERNITY/GITHUB/dpdk-v17.11-rc4/dpdk
 
+	acenic_bind i40e
 	sleep 1
 	[[ $(lsmod | grep -c "^openvswitch") == 0 ]] && modprobe openvswitch
 	[[ $(lsmod | grep -c "^af_key") == 0 ]] && modprobe af-key
@@ -109,7 +126,7 @@ kmod_install() {
 		[[ $(lsmod | grep -c "^uio") == 0 ]] && modprobe uio
 		[[ $(lsmod | grep -c "^igb_uio") == 0 ]] && insmod ${dpdk_install_dir}/x86_64-native-linuxapp-gcc/kmod/igb_uio.ko
 		sleep 1
-		${dpdk_install_dir}/usertools/dpdk-devbind.py -b igb_uio ${ENET_NIC_INTERFACE}
+		acenic_bind igb_uio
 	fi
 }
 
@@ -125,10 +142,10 @@ docker run \
 	--privileged \
 	-v /mnt/huge:/mnt/huge \
 	--device=/dev/uio0:/dev/uio0 \
-	-v ${ENET_INSTALL_DIR}/shared/$DOCKER_INST:/shared \
+	-v $SHARED_DIR:/shared \
 	--env ACENIC_ID=$ACENIC_ID \
-	--env ENET_NIC_INTERFACE=$ENET_NIC_INTERFACE \
-	--env ENET_NIC_PCI=$ENET_NIC_PCI \
+	--env ACENIC_LABEL=$ACENIC_LABEL \
+	--env ACENIC_710_SLOT=$ACENIC_710_SLOT \
 	--env DOCKER_INST=$DOCKER_INST \
 	--hostname=$DOCKER_INST \
 	--name=$DOCKER_INST \
