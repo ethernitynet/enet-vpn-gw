@@ -1,5 +1,5 @@
 
-ARG IMG_BASE=ethernitynet/enet-ovs-dpdk:v2.10.1
+ARG IMG_BASE=ethernity/enet-ovs-dpdk:v2.10.1
 
 FROM $IMG_BASE
 

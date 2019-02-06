@@ -17,7 +17,7 @@ DOCKER_INST="enet${ACENIC_ID}-vpn"
 
 case ${IMG_DOMAIN} in
 	"hub")
-	IMG_TAG=ethernitynet/enet-vpn-gw:$LIBRESWAN_VERSION
+	IMG_TAG=ethernity/enet-vpn-gw:$LIBRESWAN_VERSION
 	docker pull $IMG_TAG
 	;;
 	*)
