@@ -637,6 +637,7 @@ module.exports = function (remote_ip, remote_user, remote_password) {
 	
     this.port_exec = function (exec_dictionary, port, env, expr_key) {
 	
+		console.log(`port_exec[${this.remote_user}:${this.remote_password}@${this.remote_ip}]: ${port} ${env} ${expr_key}`);
 		if(this.ports_config[`${port}`] == undefined) {
 			this.ports_config[`${port}`] = { };
 		};
@@ -677,6 +678,7 @@ module.exports = function (remote_ip, remote_user, remote_password) {
 	
     this.conn_exec = function (exec_dictionary, conn_ns, env, expr_key) {
 	
+		console.log(`conn_exec[${this.remote_user}:${this.remote_password}@${this.remote_ip}]: ${conn_ns} ${env} ${expr_key}`);
 		if(exec_dictionary[`${conn_ns}`] == undefined) {
 			return;
 		};
@@ -689,7 +691,7 @@ module.exports = function (remote_ip, remote_user, remote_password) {
 		var exec_cmd = `${env}\n`;
 		exec_cmd += `CONN_CONFIG='${JSON.stringify(conn_config)}'\n`;
 		exec_cmd += exec_dictionary[`${conn_ns}`][`${expr_key}`];
-		//console.log(exec_cmd);
+		ssh.dispose();
 		ssh.connect({
 			host: that.remote_ip,
 			username: that.remote_user,
@@ -717,6 +719,7 @@ module.exports = function (remote_ip, remote_user, remote_password) {
 	
     this.gw_exec = function (exec_dictionary, gw_port, env, expr_key) {
 	
+		console.log(`gw_exec[${this.remote_user}:${this.remote_password}@${this.remote_ip}]: ${gw_port} ${env} ${expr_key}`);
 		const nic_cfg = this.json_cfg.ace_nic_config[0];
 		const gw_inst = enet_gw_inst(nic_cfg, gw_port);
 		const port_config = this.ports_config[`${gw_port}`];

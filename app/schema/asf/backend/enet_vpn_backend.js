@@ -145,7 +145,7 @@ const expr = syntax_tunnel_inst.exec_dictionary_display();
 //console.log(expr);
 const stats_collect_cmd = syntax_tunnel_inst.load_config();
 const nic_cfg = json_cfg.VPN.ace_nic_config[0];
-var influxdb_stats_inst = new influxdb_stats(`172.17.0.1`, `root`, `devops123`, `172.16.11.151`, 8086, `enet${nic_cfg.nic_name}_vpn_db`, stats_collect_cmd);
+var influxdb_stats_inst = new influxdb_stats(`172.17.0.1`, `root`, `devops123`, `172.16.11.152`, 8086, `enet${nic_cfg.nic_name}_vpn_db`, stats_collect_cmd);
 influxdb_stats_inst.update_cfg(json_cfg.VPN);
 
 // Initialization:
@@ -193,11 +193,11 @@ function enet0_inbound_tunnel_create() {
 };
 
 if(nic_cfg.nic_name == 0) {
-	setTimeout(enet0_outbound_tunnel_create, 2000);
+	setTimeout(enet0_outbound_tunnel_create, 3000);
 }
 else {
-	setTimeout(enet1_inbound_tunnel_create, 3000);
-	setTimeout(enet1_inbound_fwd_create, 4000);
+	setTimeout(enet1_inbound_tunnel_create, 4000);
+	setTimeout(enet1_inbound_fwd_create, 5000);
 };
 
 // Periodic updates:

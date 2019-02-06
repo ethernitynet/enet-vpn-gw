@@ -328,17 +328,20 @@ module.exports = function (remote_ip, remote_user, remote_password) {
     };
 	
     this.mea_port = function (port, env, expr_key) {
-	
+
+		console.log(`mea_port: ${port} ${env} ${expr_key}`);
 		this.mea.port_exec(this.exec_dictionary, port, env, expr_key);
     };
 	
     this.mea_conn = function (ns, env, expr_key) {
 	
+		console.log(`mea_conn: ${ns} ${env} ${expr_key}`);
 		this.mea.conn_exec(this.exec_dictionary, ns, env, expr_key);
     };
 	
     this.libreswan_exec = function (ns, env, expr_key) {
 	
+		console.log(`libreswan_exec: ${ns} ${env} ${expr_key}`);
 		this.libreswan.conn_exec(this.exec_dictionary, ns, env, expr_key);
     };
 };
