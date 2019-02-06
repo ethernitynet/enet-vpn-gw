@@ -25,9 +25,11 @@ case ${IMG_DOMAIN} in
 	*)
 	IMG_TAG=local/enet-vpn-gw:$LIBRESWAN_VERSION
 	IMG_BASE=local/enet-ovs-dpdk:$OVS_VERSION
+	IMG_LIBRESWAN_TAG=local/libreswan:$LIBRESWAN_VERSION
 	docker build \
 		-t $IMG_TAG \
 		--build-arg IMG_BASE=$IMG_BASE \
+		--build-arg IMG_LIBRESWAN_TAG=$IMG_LIBRESWAN_TAG \
 		./
 	;;
 esac

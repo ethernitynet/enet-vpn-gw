@@ -56,7 +56,6 @@ enet_vpn_reboot_libreswan_inst() {
 
 	local nic_id=$1
 	local nic_port=$2
-	local img_name="local/enet-libreswan:v3.27"
 	local libreswan_inst="${ENET_NIC_BR}_libreswan${nic_port}"
 	local shared_dir="${TGT_SRC_DIR}/enet-vpn-gw/shared/${DOCKER_INST}/${libreswan_inst}"
 	local shared_conn_dir="${TGT_SRC_DIR}/enet-vpn-gw/shared/${DOCKER_INST}/conn"
@@ -91,7 +90,7 @@ enet_vpn_reboot_libreswan_inst() {
 		${shared_dir}/ipsec.conf \
 		${shared_dir}/ipsec.secrets \
 		${shared_conn_dir} \
-		${img_name})
+		${LIBRESWAN_TAG})
 	################################
 	sleep 2
 	exec_tgt '/' "${exec_cmd}"

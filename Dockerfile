@@ -3,6 +3,9 @@ ARG IMG_BASE=ethernity/enet-ovs-dpdk:v2.10.1
 
 FROM $IMG_BASE
 
+ARG IMG_LIBRESWAN_TAG="ethernity/libreswan:v3.27"
+
+ENV LIBRESWAN_TAG=$IMG_LIBRESWAN_TAG
 ENV ENET_VPN_DIR=${SRC_DIR}/enet/vpn
 
 COPY app/ ${SRC_DIR}/
