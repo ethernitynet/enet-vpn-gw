@@ -1,11 +1,13 @@
 #!/bin/bash
 
+set +x
+
 ACENIC_ID=${1:-0}
 ACENIC_LABEL=${2:-ACENIC1_127}
-ACENIC_710_SLOT=${2:-3d:00.0}
-IMG_DOMAIN=${2:-local}
-OVS_VERSION=${3:-v2.10.1}
-LIBRESWAN_VERSION=${4:-v3.27}
+ACENIC_710_SLOT=${3:-3d:00.0}
+IMG_DOMAIN=${4:-local}
+OVS_VERSION=${5:-v2.10.1}
+LIBRESWAN_VERSION=${6:-v3.27}
 
 docker volume rm $(docker volume ls -qf dangling=true)
 #docker network rm $(docker network ls | grep "bridge" | awk '/ / { print $1 }')
@@ -42,7 +44,10 @@ ACENIC_710_SLOT=$(jq -r .VPN.ace_nic_config[0].nic_pci <<< "${ENET_VPN_CONFIG}")
 ENET_INSTALL_DIR=$(jq -r .VPN.ace_nic_config[0].install_dir <<< "${ENET_VPN_CONFIG}")
 DATAPLANE_TYPE=$(jq -r .VPN.ace_nic_config[0].dataplane <<< "${ENET_VPN_CONFIG}")
 
+#####################################################
+#####################################################
 # Old ver.
+#####################################################
 #####################################################
 if false
 then
@@ -65,6 +70,8 @@ enet_restart_old() {
 	cd -
 }
 fi
+#####################################################
+#####################################################
 
 enet_restart() {
 
@@ -151,3 +158,5 @@ docker run \
 	--name=$DOCKER_INST \
 	$IMG_TAG \
 	/bin/bash
+
+set +x
