@@ -5,15 +5,16 @@
 /////////////////////////////////////
 /////////////////////////////////////
 
-function ovs_expr_conn_add_ctl(expr_arr, cfg, port) {
+function ovs_expr_port_add_ctl(expr_arr, cfg, port) {
 
 	const nic_cfg = cfg.ace_nic_config[0];
 	const vpn_cfg = cfg.vpn_gw_config[0];
+	const vpn_inst = enet_vpn_inst(nic_cfg);
 	const gw_inst = enet_gw_inst(nic_cfg, port);
-	const ovs_shared_dir = `/shared/${gw_inst}`;
+	const port_shared_dir = enet_port_shared_dir(nic_cfg, port);
 
 	expr_arr.push(`#!/bin/bash`);
-	expr_arr.push(`# enet${nic_cfg.nic_name}-vpn:${ovs_shared_dir}/ovs_add_ctl.sh'`);
+	expr_arr.push(`# ${vpn_inst}:${port_shared_dir}/ovs_add_ctl.sh'`);
 	expr_arr.push(`ovs_add_ctl_by_vlan() {`);
 	expr_arr.push(`  sleep ${delay_long}`);
 	expr_arr.push(`  echo 'ovs# Add Control-Plane Forwarding (by VLAN): ${vpn_cfg.vpn_gw_ip}@${port}'`);
@@ -42,12 +43,13 @@ function ovs_expr_conn_del_outbound(expr_arr, cfg, conn_id) {
 	const ns = tun_ns(nic_cfg, conn);
 	const ns_dev = tun_ns_dev(nic_cfg, conn);
 	const ns_mac = tun_ns_mac(nic_cfg, conn);
+	const vpn_inst = enet_vpn_inst(nic_cfg);
 	const gw_inst = enet_gw_inst(nic_cfg, conn.tunnel_port);
 	const gw_dev = tun_gw_dev(nic_cfg, conn);
-	const ovs_shared_dir = `/shared/${gw_inst}/conns/${ns}`;
+	const conn_shared_dir = enet_conn_shared_dir(nic_cfg, conn);
 
 	expr_arr.push(`#!/bin/bash`);
-	expr_arr.push(`# enet${nic_cfg.nic_name}-vpn:${ovs_shared_dir}/ovs_del.sh'`);
+	expr_arr.push(`# ${vpn_inst}:${conn_shared_dir}/ovs_del.sh'`);
 	expr_arr.push(`ovs_del() {`);
 	expr_arr.push(`  sleep ${delay_long}`);
 	expr_arr.push(`  echo 'ovs# Delete Outbound Tunnel (HW offload: ${conn.outbound_accel}): ${vpn_cfg.vpn_gw_ip}>>${conn.remote_tunnel_endpoint_ip}[${ns}]'`);
@@ -64,11 +66,12 @@ function ovs_expr_conn_add_outbound(expr_arr, cfg, conn_id) {
 	const conn = cfg.conns[conn_id];
 	const ns = tun_ns(nic_cfg, conn);
 	const ns_mac = tun_ns_mac(nic_cfg, conn);
+	const vpn_inst = enet_vpn_inst(nic_cfg);
 	const gw_inst = enet_gw_inst(nic_cfg, conn.tunnel_port);
-	const ovs_shared_dir = `/shared/${gw_inst}/conns/${ns}`;
+	const conn_shared_dir = enet_conn_shared_dir(nic_cfg, conn);
 
 	expr_arr.push(`#!/bin/bash`);
-	expr_arr.push(`# enet${nic_cfg.nic_name}-vpn:${ovs_shared_dir}/ovs_add.sh'`);
+	expr_arr.push(`# ${vpn_inst}:${conn_shared_dir}/ovs_add.sh'`);
 	expr_arr.push(`ovs_add() {`);
 	expr_arr.push(`  sleep ${delay_long}`);
 	expr_arr.push(`  echo 'ovs# Add Outbound Tunnel (HW offload: ${conn.outbound_accel}): ${vpn_cfg.vpn_gw_ip}>>${conn.remote_tunnel_endpoint_ip}[${ns}]'`);
@@ -85,11 +88,12 @@ function ovs_expr_conn_del_outbound_no_offload(expr_arr, cfg, conn_id) {
 	const conn = cfg.conns[conn_id];
 	const ns = tun_ns(nic_cfg, conn);
 	const ns_mac = tun_ns_mac(nic_cfg, conn);
+	const vpn_inst = enet_vpn_inst(nic_cfg);
 	const gw_inst = enet_gw_inst(nic_cfg, conn.tunnel_port);
-	const ovs_shared_dir = `/shared/${gw_inst}/conns/${ns}`;
+	const conn_shared_dir = enet_conn_shared_dir(nic_cfg, conn);
 
 	expr_arr.push(`#!/bin/bash`);
-	expr_arr.push(`# enet${nic_cfg.nic_name}-vpn:${ovs_shared_dir}/ovs_del.sh'`);
+	expr_arr.push(`# ${vpn_inst}:${conn_shared_dir}/ovs_del.sh'`);
 	expr_arr.push(`ovs_del() {`);
 	expr_arr.push(`  sleep ${delay_long}`);
 	expr_arr.push(`  echo 'ovs# Delete Outbound Tunnel (HW offload: ${conn.outbound_accel}): ${vpn_cfg.vpn_gw_ip}>>${conn.remote_tunnel_endpoint_ip}[${ns}]'`);
@@ -108,11 +112,12 @@ function ovs_expr_conn_add_outbound_no_offload(expr_arr, cfg, conn_id) {
 	const conn = cfg.conns[conn_id];
 	const ns = tun_ns(nic_cfg, conn);
 	const ns_mac = tun_ns_mac(nic_cfg, conn);
+	const vpn_inst = enet_vpn_inst(nic_cfg);
 	const gw_inst = enet_gw_inst(nic_cfg, conn.tunnel_port);
-	const ovs_shared_dir = `/shared/${gw_inst}/conns/${ns}`;
+	const conn_shared_dir = enet_conn_shared_dir(nic_cfg, conn);
 
 	expr_arr.push(`#!/bin/bash`);
-	expr_arr.push(`# enet${nic_cfg.nic_name}-vpn:${ovs_shared_dir}/ovs_add.sh'`);
+	expr_arr.push(`# ${vpn_inst}:${conn_shared_dir}/ovs_add.sh'`);
 	expr_arr.push(`ovs_add() {`);
 	expr_arr.push(`  sleep ${delay_long}`);
 	expr_arr.push(`  echo 'ovs# Add Outbound Tunnel (HW offload: ${conn.outbound_accel}): ${vpn_cfg.vpn_gw_ip}>>${conn.remote_tunnel_endpoint_ip}[${ns}]'`);
@@ -131,7 +136,7 @@ function ovs_expr_conn_add_outbound_no_offload(expr_arr, cfg, conn_id) {
 function port_dictionary_append_ovs(port_dictionary, cfg, port) {
 
 	var expr_arr = [];
-	expr_arr = []; ovs_expr_conn_add_ctl(expr_arr, cfg, port); port_dictionary[`${port}`][`ovs_add_ctl`] = expr_arr;
+	expr_arr = []; ovs_expr_port_add_ctl(expr_arr, cfg, port); port_dictionary[`${port}`][`ovs_add_ctl`] = expr_arr;
 };
 
 function conn_dictionary_append_ovs(conn_dictionary, cfg, conn_id) {

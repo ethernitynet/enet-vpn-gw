@@ -1,4 +1,4 @@
-	
+
 /////////////////////////////////////
 /////////////////////////////////////
 // common
@@ -58,7 +58,7 @@ global.mask_arr = [
 global.uint32_mask = function (num, mask_bits) {
 	
 	return (num & mask_arr[mask_bits]) >>> 0;
-},
+};
 
 global.str_hash = function (str, mask_bits) {
 	
@@ -226,6 +226,34 @@ global.tun_ns_ip = function (nic_cfg, conn) {
 global.enet_gw_inst = function (nic_cfg, port) {
 	
 	return `enet${nic_cfg.nic_name}_libreswan${port}`;
+};
+
+global.enet_port_shared_dir = function (nic_cfg, port) {
+	
+	const gw_inst = enet_gw_inst(nic_cfg, port);
+	
+	return `${process.env.VPN_SHARED_DIR}/${gw_inst}`;
+};
+
+global.enet_conn_shared_dir = function (nic_cfg, conn) {
+	
+	const conn_ns = vpn_conn_ns(vpn_cfg, conn);
+	
+	return `${process.env.VPN_SHARED_DIR}/conns/${conn_ns}`;
+};
+
+global.enet_port_host_dir = function (nic_cfg, port) {
+	
+	const gw_inst = enet_gw_inst(nic_cfg, port);
+	
+	return `${process.env.HOST_SHARED_DIR}/${gw_inst}`;
+};
+
+global.enet_conn_host_dir = function (nic_cfg, conn) {
+	
+	const conn_ns = vpn_conn_ns(vpn_cfg, conn);
+	
+	return `${process.env.HOST_SHARED_DIR}/conns/${conn_ns}`;
 };
 
 global.enet_vpn_inst = function (nic_cfg) {

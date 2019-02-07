@@ -5,11 +5,19 @@
 /////////////////////////////////////
 /////////////////////////////////////
 
-const delay_long = 0.5;
-const delay_short = 0.1;
-
+const delay_long = 0.1;
+const delay_short = 0.05;
 const port_offset = 100;
 const enet_mac_prefix = `CC:D3:9D:D`;
+
+const ws_pattern = '\\s\\s*';
+const dec_pattern = '[0-9][0-9]*';
+const txt_pattern = '[0-9a-zA-Z][0-9a-zA-Z]*';
+
+var log_wrapper = function (expr) {
+
+	return `(>&2 echo "${expr}")`;
+};
 
 const mask_arr = [
 	0x0000000000000000,
@@ -47,12 +55,12 @@ const mask_arr = [
 	0x00000000FFFFFFFF
     ];
 
-function uint32_mask(num, mask_bits) {
+var uint32_mask = function (num, mask_bits) {
 	
 	return (num & mask_arr[mask_bits]) >>> 0;
 };
 
-function str_hash(str, mask_bits) {
+var str_hash = function (str, mask_bits) {
 	
 	var hash = 5381;
 	var i = str.length;
@@ -62,21 +70,21 @@ function str_hash(str, mask_bits) {
 	};
 	const hash_32 = hash >>> 0;
 	const hash_32_masked = uint32_mask(hash_32, mask_bits);
-	return hash_32_masked.toString(16);
+	return hash_32_masked.toString(16).toUpperCase();
 };
 
-function ntoh_32_expr_append(expr_arr, var_name) {
+var ntoh_32_expr_append = function (expr_arr, var_name) {
 
 	expr_arr.push(`  VAR_HEX=$(printf '%08x' \${${var_name}})`);
-	expr_arr.push(`  ${var_name}=$(printf '%u' "0x\${VAR_HEX:6:2}\${VAR_HEX:4:2}\${VAR_HEX:2:2}\${VAR_HEX:0:2}")`);
+	expr_arr.push(`  ${var_name}_NTOH=$(printf '%u' "0x\${VAR_HEX:6:2}\${VAR_HEX:4:2}\${VAR_HEX:2:2}\${VAR_HEX:0:2}")`);
 };
 
-function uint32_hex_expr_append(expr_arr, var_name) {
+var uint32_hex_expr_append = function (expr_arr, var_name) {
 
-	expr_arr.push(`  ${var_name}=$(printf '%08x' \${${var_name}})`);
+	expr_arr.push(`  ${var_name}_HEX=$(printf '%08x' \${${var_name}})`);
 };
 
-function ip_to_dec(ip) {
+var ip_to_dec = function (ip) {
 	
 	// a not-perfect regex for checking a valid ip address
 	// It checks for (1) 4 numbers between 0 and 3 digits each separated by dots (IPv4)
@@ -104,54 +112,108 @@ function ip_to_dec(ip) {
 	return 0;
 };
 
-function uint32_to_hex(num) {
+var uint32_to_hex = function (num) {
 	
 	var num_hex = '00000000' + num.toString(16);
 	num_hex = num_hex.substring(num_hex.length - 8);	
 	return num_hex;
 };
 
-function ip_to_hex(ip) {
+var ip_to_hex = function (ip) {
 	
 	const ip_dec = ip_to_dec(ip);
 	return uint32_to_hex(ip_dec);
 };
 
-function tun_ns(nic_cfg, conn) {
+var vpn_conn_ns = function (vpn_cfg, conn) {
+	
+	const conn_ns = `${vpn_cfg.vpn_gw_ip}:${conn.remote_tunnel_endpoint_ip}[t-${conn.local_subnet}@${conn.lan_port}:${conn.remote_subnet}@${conn.tunnel_port}]`;
+	return conn_ns.replace(/\//g, '#');
+};
+
+var conn_ns_hash = function (vpn_cfg, conn) {
+	
+	const conn_ns = vpn_conn_ns(vpn_cfg, conn);
+	
+	return str_hash(`${conn_ns}`, 24);
+};
+
+var conn_ns_tag_hex = function (vpn_cfg, conn) {
+	
+	const hash_str = conn_ns_hash(vpn_cfg, conn);
+	
+	//return `${conn.lan_port - port_offset - 4}${hash_str.substring(4, 6)}`;
+	return `${hash_str.substring(4, 6)}`;
+};
+
+
+var conn_ns_tag_dec = function (vpn_cfg, conn) {
+	
+	const ns_tag_hex = conn_ns_tag_hex(vpn_cfg, conn);
+	var char_code_high = (ns_tag_hex.charCodeAt(0) - 48);
+	char_code_high = (char_code_high > 9) ? (char_code_high - 7) : char_code_high;
+	var char_code_low = (ns_tag_hex.charCodeAt(1) - 48);
+	char_code_low = (char_code_low > 9) ? (char_code_low - 7) : char_code_low;
+	return ((char_code_high * 16) + char_code_low);
+};
+
+var conn_ns_dev = function (vpn_cfg, conn) {
+	
+	const hash_str = conn_ns_hash(vpn_cfg, conn);
+	const ns_tag_hex = conn_ns_tag_hex(vpn_cfg, conn);
+	
+	return `macv1${ns_tag_hex}`;
+};
+
+var conn_ns_mac = function (nic_cfg, vpn_cfg, conn) {
+	
+	const hash_str = conn_ns_hash(vpn_cfg, conn);
+	
+	return `${enet_mac_prefix}${conn.lan_port - port_offset}:${hash_str.substring(4, 6)}:${nic_cfg.nic_name}${conn.tunnel_port - port_offset}`;
+};
+
+/*
+var tun_ns = function (nic_cfg, conn) {
 	
 	const ns_name = `o-${conn.local_subnet}@${conn.lan_port}:${conn.remote_subnet}@${conn.tunnel_port}`;
 	return ns_name.replace(/\//g, '#');
 };
 
-function tun_inbound_ns(nic_cfg, conn) {
+var tun_inbound_ns = function (nic_cfg, conn) {
 	
 	const ns_name = `i-${conn.remote_subnet}@${conn.tunnel_port}:${conn.local_subnet}@${conn.lan_port}`;
 	return ns_name.replace(/\//g, '#');
 };
 
-function tun_ns_hash(nic_cfg, conn) {
+var tun_ns_hash = function (nic_cfg, conn) {
 	
 	return str_hash(conn.local_subnet + '>>' + conn.remote_subnet, 24);
 };
 
-function tun_ns_dev(nic_cfg, conn) {
+var tun_ns_dev = function (nic_cfg, conn) {
 	
 	const hash_str = tun_ns_hash(nic_cfg, conn);
 	return `macv${conn.lan_port - port_offset}${hash_str.substring(4, 6)}`;
 };
 
-function gw_port_mac(nic_cfg, port) {
-	
-	return `${enet_mac_prefix}0:00:${nic_cfg.nic_name}${port - port_offset}`;
-};
-
-function tun_ns_mac(nic_cfg, conn) {
+var tun_ns_mac = function (nic_cfg, conn) {
 	
 	const hash_str = tun_ns_hash(nic_cfg, conn);
 	return `${enet_mac_prefix}${conn.lan_port - port_offset}:${hash_str.substring(4, 6)}:${nic_cfg.nic_name}${conn.tunnel_port - port_offset}`;
 };
+*/
 
-function tun_ns_ip(nic_cfg, conn) {
+var internal_port_mac = function (nic_cfg, internal_port) {
+	
+	return `${enet_mac_prefix}0:00:${parseInt(nic_cfg.nic_name, 10) + 2}${internal_port - 20}`;
+};
+
+var gw_port_mac = function (nic_cfg, port) {
+	
+	return `${enet_mac_prefix}0:00:${nic_cfg.nic_name}${port - port_offset}`;
+};
+
+var tun_ns_ip = function (nic_cfg, conn) {
 
 	const cidr = conn.local_subnet.split('/');
 	const ns_net_dec = uint32_mask(ip_to_dec(cidr[0]), cidr[1]);
@@ -161,22 +223,50 @@ function tun_ns_ip(nic_cfg, conn) {
 	return ns_ip;
 };
 
-function enet_gw_inst(nic_cfg, port) {
+var enet_gw_inst = function (nic_cfg, port) {
 	
 	return `enet${nic_cfg.nic_name}_libreswan${port}`;
 };
 
-function enet_vpn_inst(nic_cfg) {
+var enet_port_shared_dir = function (nic_cfg, port) {
+	
+	const gw_inst = enet_gw_inst(nic_cfg, port);
+	
+	return `${process.env.VPN_SHARED_DIR}/${gw_inst}`;
+};
+
+var enet_conn_shared_dir = function (nic_cfg, conn) {
+	
+	const conn_ns = vpn_conn_ns(vpn_cfg, conn);
+	
+	return `${process.env.VPN_SHARED_DIR}/conns/${conn_ns}`;
+};
+
+var enet_port_host_dir = function (nic_cfg, port) {
+	
+	const gw_inst = enet_gw_inst(nic_cfg, port);
+	
+	return `${process.env.HOST_SHARED_DIR}/${gw_inst}`;
+};
+
+var enet_conn_host_dir = function (nic_cfg, conn) {
+	
+	const conn_ns = vpn_conn_ns(vpn_cfg, conn);
+	
+	return `${process.env.HOST_SHARED_DIR}/conns/${conn_ns}`;
+};
+
+var enet_vpn_inst = function (nic_cfg) {
 	
 	return `enet${nic_cfg.nic_name}-vpn`;
 };
 
-function tun_gw_dev(nic_cfg, conn) {
+var tun_gw_dev = function (nic_cfg, conn) {
 	
 	return `e${nic_cfg.nic_name}ls${conn.tunnel_port}`;
 };
 
-function ovs_of_wrapper(nic_cfg, cmd, match_expr, action_expr, priority) {
+var ovs_of_wrapper = function (nic_cfg, cmd, match_expr, action_expr, priority) {
 	
 	if((cmd == 'add-flow') && (action_expr != undefined) && (priority != undefined)) {
 		return `sleep ${delay_short}; ovs-ofctl -O OpenFlow13 add-flow vpnbr${nic_cfg.nic_name} priority=${priority},${match_expr},actions=${action_expr}`;
@@ -187,27 +277,37 @@ function ovs_of_wrapper(nic_cfg, cmd, match_expr, action_expr, priority) {
 	return '';
 };
 
-function mea_wrapper(nic_cfg, expr) {
+var mea_wrapper = function (nic_cfg, expr) {
 	
 	if(nic_cfg.nic_name > 0) {
-		return `meaCli top; sleep ${delay_short}; MEA_RESULT=$(meaCli -card ${nic_cfg.nic_name} mea ${expr})`;
+		var expr = `meaCli top; sleep ${delay_short}; MEA_CMD='meaCli -card ${nic_cfg.nic_name} mea '"${expr}"; MEA_RESULT=$(eval "\${MEA_CMD}")`;
+		expr += `;`;
+		expr += log_wrapper(`[MEA_CMD="\${MEA_CMD}"  ]`);
+		expr += `;`;
+		expr += log_wrapper(`[MEA_RESULT="\${MEA_RESULT}"  ]`);
+		return expr;
 	}
 	else {
-		return `meaCli top; sleep ${delay_short}; MEA_RESULT=$(meaCli mea ${expr})`;
+		var expr = `meaCli top; sleep ${delay_short}; MEA_CMD='meaCli mea '"${expr}"; MEA_RESULT=$(eval "\${MEA_CMD}")`;
+		expr += `;`;
+		expr += log_wrapper(`[MEA_CMD="\${MEA_CMD}"  ]`);
+		expr += `;`;
+		expr += log_wrapper(`[MEA_RESULT="\${MEA_RESULT}"  ]`);
+		return expr;
 	};
 };
 
-function docker_wrapper(nic_cfg, conn, docker_env, expr) {
+var docker_wrapper = function (nic_cfg, conn, docker_env, expr) {
 	
 	return `DOCKER_RESULT=$(docker exec enet${nic_cfg.nic_name}_libreswan${conn.tunnel_port} ${docker_env} ${expr})`;
 };
 
-function ssh_wrapper_append(expr_arr, nic_cfg, conn, ssh_env, expr) {
+var ssh_wrapper_append = function (expr_arr, nic_cfg, conn, ssh_env, expr) {
 	
 	expr_arr.push(`sshpass -p \${TGT_PASS} ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no \${TGT_USER}@\${TGT_IP} /bin/bash -c "${ssh_env} ${expr}"`);
 };
 
-function expr_arr_serialize(expr_arr) {
+var expr_arr_serialize = function (expr_arr) {
 	
 	var expr = '';
 	const expr_lines = expr_arr.length;
@@ -216,9 +316,4 @@ function expr_arr_serialize(expr_arr) {
 	};
 
 	return expr;	
-};
-
-function log_wrapper(expr) {
-
-	return `(>&2 echo "expr")`;
 };

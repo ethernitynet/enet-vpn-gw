@@ -93,11 +93,12 @@ function ovs_expr_conn_del_outbound_no_offload(expr_arr, cfg, conn_id) {
 	const conn = cfg.conns[conn_id];
 	const conn_ns = vpn_conn_ns(vpn_cfg, conn);
 	const ns_mac = tun_ns_mac(nic_cfg, conn);
+	const vpn_inst = enet_vpn_inst(nic_cfg);
 	const gw_inst = enet_gw_inst(nic_cfg, conn.tunnel_port);
-	const ovs_shared_dir = `/shared/${gw_inst}/conns/${conn_ns}`;
+	const conn_shared_dir = enet_conn_shared_dir(nic_cfg, conn);
 
 	expr_arr.push(`#!/bin/bash`);
-	expr_arr.push(`# enet${nic_cfg.nic_name}-vpn:${ovs_shared_dir}/ovs_del.sh'`);
+	expr_arr.push(`# ${vpn_inst}:${conn_shared_dir}/ovs_del.sh'`);
 	expr_arr.push(`ovs_del() {`);
 	expr_arr.push(`  sleep ${delay_long}`);
 	expr_arr.push(`  echo 'ovs# Delete Outbound Tunnel (HW offload: ${conn.outbound_accel}): ${vpn_cfg.vpn_gw_ip}>>${conn.remote_tunnel_endpoint_ip}[${conn_ns}]'`);
@@ -116,11 +117,12 @@ function ovs_expr_conn_add_outbound_no_offload(expr_arr, cfg, conn_id) {
 	const conn = cfg.conns[conn_id];
 	const ns = tun_ns(nic_cfg, conn);
 	const ns_mac = tun_ns_mac(nic_cfg, conn);
+	const vpn_inst = enet_vpn_inst(nic_cfg);
 	const gw_inst = enet_gw_inst(nic_cfg, conn.tunnel_port);
-	const ovs_shared_dir = `/shared/${gw_inst}/conns/${ns}`;
+	const conn_shared_dir = enet_conn_shared_dir(nic_cfg, conn);
 
 	expr_arr.push(`#!/bin/bash`);
-	expr_arr.push(`# enet${nic_cfg.nic_name}-vpn:${ovs_shared_dir}/ovs_add.sh'`);
+	expr_arr.push(`# ${vpn_inst}:${conn_shared_dir}/ovs_del.sh'`);
 	expr_arr.push(`ovs_add() {`);
 	expr_arr.push(`  sleep ${delay_long}`);
 	expr_arr.push(`  echo 'ovs# Add Outbound Tunnel (HW offload: ${conn.outbound_accel}): ${vpn_cfg.vpn_gw_ip}>>${conn.remote_tunnel_endpoint_ip}[${ns}]'`);
@@ -141,7 +143,7 @@ function port_dictionary_append_ovs(port_dictionary, cfg, port) {
 	const nic_cfg = cfg.ace_nic_config[0];
 	const gw_inst = enet_gw_inst(nic_cfg, port);
 	const vpn_inst = enet_vpn_inst(nic_cfg);
-	const expr_dir = `/shared/${gw_inst}`;
+	const expr_dir = enet_port_host_dir(nic_cfg, port);
 	
 	var expr_arr = [];
 	expr_arr = []; ovs_expr_conn_add_ctl(`ovs_add_ctl`, `${vpn_inst}:${expr_dir}/ovs_add_ctl`, expr_arr, cfg, port); port_dictionary[`${port}`][`ovs_add_ctl`] = expr_arr;
@@ -155,7 +157,7 @@ function conn_dictionary_append_ovs(conn_dictionary, cfg, conn_id) {
 	const conn_ns = vpn_conn_ns(vpn_cfg, conn);
 	const gw_inst = enet_gw_inst(nic_cfg, conn.tunnel_port);
 	const vpn_inst = enet_vpn_inst(nic_cfg);
-	const expr_dir = `/shared/${gw_inst}/conns/${conn_ns}`;
+	const expr_dir = enet_conn_host_dir(nic_cfg, conn);
 	
 	var expr_arr = [];
 	expr_arr = []; ovs_expr_conn_del_outbound(`ovs_del`, `${vpn_inst}:${expr_dir}/ovs_del`, expr_arr, cfg, conn_id); conn_dictionary[`${conn_ns}`][`ovs_del`] = expr_arr;

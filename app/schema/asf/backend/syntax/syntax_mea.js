@@ -311,7 +311,6 @@ function mea_expr_conn_add_outbound_to_tunnel(expr_arr, cfg, conn_id) {
 	const vpn_inst = enet_vpn_inst(nic_cfg);
 	const gw_inst = enet_gw_inst(nic_cfg, conn.tunnel_port);
 	const gw_ip_hex = ip_to_hex(vpn_cfg.vpn_gw_ip);
-	const mea_shared_dir = `${nic_cfg.install_dir}/shared/${vpn_inst}/${gw_inst}/conns/${conn_ns}`;
 	const forwarders = [ `0 ${ns_mac} ${conn.lan_port}`, `0 ${ns_mac} 24` ];
 	
 	const port_mid = (MEA_DEBUG.OUTBOUND.MODE == `nodebug`) ? 24 : MEA_DEBUG.OUTBOUND.debug_port_mid;
@@ -542,7 +541,7 @@ function port_dictionary_append_mea(port_dictionary, cfg, port) {
 	const nic_cfg = cfg.ace_nic_config[0];
 	const vpn_inst = enet_vpn_inst(nic_cfg);
 	const gw_inst = enet_gw_inst(nic_cfg, port);
-	const expr_dir = `${nic_cfg.install_dir}/shared/${vpn_inst}/${gw_inst}/conns`;
+	const expr_dir = enet_port_host_dir(nic_cfg, port);
 
 	var expr_arr = [];
 	expr_arr = []; mea_expr_gw_ip_get(`mea_gw_ip_get`, `[host]:${expr_dir}/mea_gw_ip_get`, expr_arr, cfg, port); port_dictionary[`${port}`][`mea_gw_ip_get`] = expr_arr;
@@ -558,7 +557,7 @@ function conn_dictionary_append_mea(conn_dictionary, cfg, conn_id) {
 	const conn = cfg.conns[conn_id];
 	const gw_inst = enet_gw_inst(nic_cfg, conn.tunnel_port);
 	const conn_ns = vpn_conn_ns(vpn_cfg, conn);
-	const expr_dir = `${nic_cfg.install_dir}/shared/${vpn_inst}/${gw_inst}/conns/${conn_ns}`;
+	const expr_dir = enet_conn_host_dir(nic_cfg, conn);
 	
 	var expr_arr = [];
 	expr_arr = []; mea_expr_conn_add_outbound(`mea_add_outbound`, `[host]:${expr_dir}/mea_add_outbound`, expr_arr, cfg, conn_id); conn_dictionary[`${conn_ns}`][`mea_add_outbound`] = expr_arr;

@@ -2,7 +2,7 @@
 
 enet_vpn_update_env() {
 
-	local enet_vpn_config=$(</shared/enet_vpn_config.json)
+	local enet_vpn_config=$(<$VPN_SHARED_DIR/enet_vpn_config.json)
 	
 	export ACENIC_ID=$(jq -r .VPN.ace_nic_config[0].nic_name <<< "${enet_vpn_config}")
 	export ENET_OVS_DATAPLANE=$(jq -r .VPN.ace_nic_config[0].dataplane <<< "${enet_vpn_config}")
@@ -18,11 +18,11 @@ enet_vpn_update_env() {
 enet_vpn_config_mngr_start() {
 
 	pkill node
-	ln -s /shared/enet_vpn_config.json ${SRC_DIR}/schema/enet_vpn_config.json
-	mkdir -p /shared/enet${ACENIC_ID}_libreswan104/conns
-	mkdir -p /shared/enet${ACENIC_ID}_libreswan105/conns
-	mkdir -p /shared/enet${ACENIC_ID}_libreswan106/conns
-	mkdir -p /shared/enet${ACENIC_ID}_libreswan107/conns
+	ln -s $VPN_SHARED_DIR/enet_vpn_config.json ${SRC_DIR}/schema/enet_vpn_config.json
+	mkdir -p $VPN_SHARED_DIR/enet${ACENIC_ID}_libreswan104/conns
+	mkdir -p $VPN_SHARED_DIR/enet${ACENIC_ID}_libreswan105/conns
+	mkdir -p $VPN_SHARED_DIR/enet${ACENIC_ID}_libreswan106/conns
+	mkdir -p $VPN_SHARED_DIR/enet${ACENIC_ID}_libreswan107/conns
 	cd ${SRC_DIR}/config
 	npm start &
 	cd -
@@ -57,8 +57,8 @@ enet_vpn_reboot_libreswan_inst() {
 	local nic_id=$1
 	local nic_port=$2
 	local libreswan_inst="${ENET_NIC_BR}_libreswan${nic_port}"
-	local shared_dir="${TGT_SRC_DIR}/enet-vpn-gw/shared/${DOCKER_INST}/${libreswan_inst}"
-	local shared_conn_dir="${TGT_SRC_DIR}/enet-vpn-gw/shared/${DOCKER_INST}/conn"
+	local libreswan_shared_dir="$VPN_SHARED_DIR/${libreswan_inst}"
+	local libreswan_host_dir="$HOST_SHARED_DIR/${libreswan_inst}"
 	
 	################################
 	enet_vpn_disconnect_libreswan_inst ${nic_id} ${nic_port}
@@ -78,18 +78,19 @@ enet_vpn_reboot_libreswan_inst() {
 		--name=%s \
 		-v %s:/etc/ipsec.conf \
 		-v %s:/etc/ipsec.secrets \
-		-v %s:/shared/conn \
+		-v %s:%s \
 		%s"
 	local exec_cmd=$(\
 	printf "${exec_pattern}" \
-		${shared_dir} \
+		${libreswan_host_dir} \
 		${nic_id} \
 		${libreswan_inst} \
 		${libreswan_inst} \
 		${libreswan_inst} \
-		${shared_dir}/ipsec.conf \
-		${shared_dir}/ipsec.secrets \
-		${shared_conn_dir} \
+		${libreswan_host_dir}/ipsec.conf \
+		${libreswan_host_dir}/ipsec.secrets \
+		${libreswan_host_dir}/conns \
+		${libreswan_shared_dir}/conns \
 		${LIBRESWAN_TAG})
 	################################
 	sleep 2
@@ -166,7 +167,7 @@ enet_vpn_start() {
 
 	#enet_run
 	enet_vpn_config_mngr_start
-	curl -X POST -H "Content-Type: application/json" -d @/shared/enet_vpn_config.json "http://127.0.0.1:${ENET_VPN_CONFIG_PORT}"
+	curl -X POST -H "Content-Type: application/json" -d @$VPN_SHARED_DIR/enet_vpn_config.json "http://127.0.0.1:${ENET_VPN_CONFIG_PORT}"
 	enet_vpn_update_env
 	exec_tgt '/' "mkdir -p /tmp/${DOCKER_INST}"
 	ip link del dev ${OVS_VPN_BR}

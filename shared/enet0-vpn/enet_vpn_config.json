@@ -42,7 +42,7 @@
 			"hw_ver": "1302.1.11.5   (Date 08/01/19: hour 18:00 )",
 			"log_file": "/tmp/enet_vpn.log",
 			"install_dir": "/home/devops/ethernity/enet-driver/R450_08_122A",
-			"nic_pci": "0000:0a:00.0"
+			"nic_pci": "0000:3d:00.0"
 		}],
 		"dpdk_config": [{
 			"dpdk_ver": "v17.11-rc4",

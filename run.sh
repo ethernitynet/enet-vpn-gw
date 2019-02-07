@@ -37,10 +37,11 @@ esac
 docker kill $DOCKER_INST
 docker rm $DOCKER_INST
 
-SHARED_DIR=$(pwd)/shared/$DOCKER_INST
-mkdir -p $SHARED_DIR
+VPN_SHARED_DIR=/shared/$DOCKER_INST
+HOST_SHARED_DIR=$(pwd)${VPN_SHARED_DIR}
+mkdir -p $HOST_SHARED_DIR
 
-ENET_VPN_CONFIG=$(cat $SHARED_DIR/enet_vpn_config.json)
+ENET_VPN_CONFIG=$(cat $HOST_SHARED_DIR/enet_vpn_config.json)
 ACENIC_LABEL=$( printf 'ACENIC%u_127' $(( ${ACENIC_ID} + 1 )) )
 ACENIC_710_SLOT=$(jq -r .VPN.ace_nic_config[0].nic_pci <<< "${ENET_VPN_CONFIG}")
 ENET_INSTALL_DIR=$(jq -r .VPN.ace_nic_config[0].install_dir <<< "${ENET_VPN_CONFIG}")
@@ -151,11 +152,13 @@ docker run \
 	--privileged \
 	-v /mnt/huge:/mnt/huge \
 	--device=/dev/uio0:/dev/uio0 \
-	-v $SHARED_DIR:/shared \
+	-v $HOST_SHARED_DIR:$VPN_SHARED_DIR \
 	--env ACENIC_ID=$ACENIC_ID \
 	--env ACENIC_LABEL=$ACENIC_LABEL \
 	--env ACENIC_710_SLOT=$ACENIC_710_SLOT \
 	--env DOCKER_INST=$DOCKER_INST \
+	--env HOST_SHARED_DIR=$HOST_SHARED_DIR \
+	--env VPN_SHARED_DIR=$VPN_SHARED_DIR \
 	--hostname=$DOCKER_INST \
 	--name=$DOCKER_INST \
 	$IMG_TAG \
