@@ -8,8 +8,8 @@ global.mea_ipsec_format_keys = function (auth_key, cipher_key) {
 	var tunnel_keys = {
 		integrity_key: `0x0000000000000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000`,
 		integrity_iv: `0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000`,
-		confidentiality_key: `0x11111111 0x22222222 0x33333333 0x44444444 0x00000000 0x00000000 0x00000000 0x00000000`,
-		confidentiality_iv: `0x55555555 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000`
+		confidentiality_key: `0x${cipher_key.substring(0, 8)} 0x${cipher_key.substring(8, 16)} 0x${cipher_key.substring(16, 24)} 0x${cipher_key.substring(24, 32)} 0x00000000 0x00000000 0x00000000 0x00000000`,
+		confidentiality_iv: `0x${cipher_key.substring(32, 40)} 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000`
 	};
 	return tunnel_keys;
 };
@@ -19,9 +19,87 @@ global.mea_ipsec_format_security_type = function (auth_algo, cipher_algo) {
 	return `0xCA`;
 };
 
-global.mea_tunnel_mac = function (cfg, conn_id) {
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
+
+global.mask_arr = [
+	0x0000000000000000,
+	0x0000000080000000,
+	0x00000000C0000000,
+	0x00000000E0000000,
+	0x00000000F0000000,
+	0x00000000F8000000,
+	0x00000000FC000000,
+	0x00000000FE000000,
+	0x00000000FF000000,
+	0x00000000FF800000,
+	0x00000000FFC00000,
+	0x00000000FFE00000,
+	0x00000000FFF00000,
+	0x00000000FFF80000,
+	0x00000000FFFC0000,
+	0x00000000FFFE0000,
+	0x00000000FFFF0000,
+	0x00000000FFFF8000,
+	0x00000000FFFFC000,
+	0x00000000FFFFE000,
+	0x00000000FFFFF000,
+	0x00000000FFFFF800,
+	0x00000000FFFFFC00,
+	0x00000000FFFFFE00,
+	0x00000000FFFFFF00,
+	0x00000000FFFFFF80,
+	0x00000000FFFFFFC0,
+	0x00000000FFFFFFE0,
+	0x00000000FFFFFFF0,
+	0x00000000FFFFFFF8,
+	0x00000000FFFFFFFC,
+	0x00000000FFFFFFFE,
+	0x00000000FFFFFFFF
+    ];
+
+global.uint32_mask = function (num, mask_bits) {
 	
-	return `CC:D3:9D:D5:6E:04`;
+	return (num & mask_arr[mask_bits]) >>> 0;
+};
+
+global.str_hash = function (str, mask_bits) {
+	
+	var hash = 5381;
+	var i = str.length;
+
+	while(i) {
+		hash = (hash * 33) ^ str.charCodeAt(--i);
+	};
+	const hash_32 = hash >>> 0;
+	const hash_32_masked = uint32_mask(hash_32, mask_bits);
+	return hash_32_masked.toString(16).toUpperCase();
+};
+
+global.vpn_conn_ns = function (cfg, conn_id) {
+	
+	const vpn_cfg = cfg.vpn_gw_config[0];
+	const conn_cfg = cfg.conns[conn_id];
+	
+	const conn_ns = `${vpn_cfg.vpn_gw_ip}:${conn_cfg.remote_tunnel_endpoint_ip}[v-${conn_cfg.local_subnet}@${conn_cfg.lan_port}:${conn_cfg.remote_subnet}@${conn_cfg.tunnel_port}]`;
+	return conn_ns.replace(/\//g, '#');
+};
+
+global.vpn_conn_hash = function (cfg, conn_id) {
+	
+	const conn_ns = vpn_conn_ns(cfg, conn_id);
+	
+	return str_hash(`${conn_ns}`, 24);
+};
+
+global.vpn_conn_mac = function (cfg, conn_id) {
+	
+	const hash_str = vpn_conn_hash(cfg, conn_id);
+	const nic_id = cfg.ace_nic_config[0].nic_name;
+	const conn_cfg = cfg.conns[conn_id];
+	
+	return `CC:D3:9D:D${conn_cfg.lan_port - 100}:${hash_str.substring(4, 6)}:${nic_id}${conn_cfg.tunnel_port - 100}`;
 };
 
 /////////////////////////////////////////////////

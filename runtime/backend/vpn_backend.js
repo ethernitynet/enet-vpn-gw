@@ -32,9 +32,9 @@ module.exports = function (host_profile, gw_profiles) {
 	this.dump_tunnel_states = function () {
 		
 		console.log(`==  ${new Date().getTime()}  ==`);
-		console.log(`===================`);
+		console.log(`=====================`);
 		console.log(JSON.stringify(this.tunnel_states, null, 2));
-		console.log(`===================`);
+		console.log(`=====================`);
 	};
 	
 	this.vpn_init = function (cfg) {
@@ -54,26 +54,26 @@ module.exports = function (host_profile, gw_profiles) {
 		this.gw_config.host_cmd();
 	};
 	
-	this.outbound_tunnel_add = function (cfg, conn_id) {
-		
+	this.conn_init = function (cfg, conn_id, remote_tunnel_mac) {
+
 		const nic_id = cfg.ace_nic_config[0].nic_name;
 		
+		this.tunnel_states[`nic${nic_id}.conn${conn_id}.out`] = {
+			nic_id: nic_id,
+			id: conn_id,
+			tunnel: {
+				local_tunnel_mac: vpn_conn_mac(cfg, conn_id),
+				remote_tunnel_mac: remote_tunnel_mac
+			}
+		};
+	};
+	
+	this.outbound_tunnel_add = function (cfg, conn_id, ipsec_cfg) {
+		
+		const nic_id = cfg.ace_nic_config[0].nic_name;		
 		const tunnel_key = `nic${nic_id}.conn${conn_id}.out`;
-		this.tunnel_states[tunnel_key] = { nic_id: nic_id, id: conn_id };
 		
-		this.tunnel_states[tunnel_key].ipsec = {
-			spi: 4294901760,
-			auth_algo: null,
-			cipher_algo: `aes_gcm128-null`,
-			auth_key: `00`,
-			cipher_key: `1111111122222222333333334444444455555555`
-		};
-		
-		this.tunnel_states[tunnel_key].tunnel = {
-			local_tunnel_mac: `CC:D3:9D:D5:6E:04`,
-			remote_tunnel_mac: `cc:d3:9d:d6:7c:14`
-		};
-		
+		this.tunnel_states[tunnel_key].ipsec = ipsec_cfg;
 		this.gw_config.host_cmds_append([
 			{
 				key: tunnel_key,
