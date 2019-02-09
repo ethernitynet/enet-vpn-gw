@@ -1,43 +1,11 @@
-	
-global.mea_cli = function (nic_id) {
-	
-	if(nic_id > 0) {
-		return `meaCli -card ${nic_id} mea`;
-	}
-	else {
-		return `meaCli mea`;
-	};
-};
-	
-global.mea_init_expr = function (nic_id) {
-	
-	const mea_cmd = mea_cli(nic_id);
-	
-	var expr = ``;
-	expr += `${mea_cmd} port ingress set all -a 1 -c 0\n`;
-	expr += `${mea_cmd} port egress set all -a 1 -c 1\n`;
-	expr += `${mea_cmd} IPSec global set ttl 40\n`;
-	expr += `${mea_cmd} forwarder delete all\n`;
-	expr += `${mea_cmd} action set delete all\n`;
-	expr += `${mea_cmd} service set delete all\n`;
-	expr += `${mea_cmd} IPSec ESP set delete all\n`;
-	return expr;
-};
-	
-global.mea_ports_init_expr = function (nic_id) {
-	
-	const mea_cmd = mea_cli(nic_id);
-	
-	var expr = ``;
-	expr += `${mea_cmd} service set create 24 FFF000 FFF000 D.C 0 1 0 1000000000 0 64000 0 0 0 -f 1 0 -ra 0 -l2Type 0 -v 24 -p 0 -h 0 0 0 0 -lmid 1 0 1 0 -r CC:D3:9D:D0:00:24 00:00:00:00:00:00 0000 -hType 0\n`;
-	expr += `${mea_cmd} service set create 104 FFF000 FFF000 D.C 0 1 0 1000000000 0 64000 0 0 1 127 -f 1 0 -ra 0 -l2Type 0 -v 104 -h 0 0 0 0 -lmid 1 0 1 0 -r CC:D3:9D:D0:00:04 00:00:00:00:00:00 0000 -hType 0\n`;
-	expr += `${mea_cmd} service set create 105 FFF000 FFF000 D.C 0 1 0 1000000000 0 64000 0 0 1 127 -f 1 0 -ra 0 -l2Type 0 -v 105 -h 0 0 0 0 -lmid 1 0 1 0 -r CC:D3:9D:D0:00:05 00:00:00:00:00:00 0000 -hType 0\n`;
-	expr += `${mea_cmd} service set create 106 FFF000 FFF000 D.C 0 1 0 1000000000 0 64000 0 0 1 127 -f 1 0 -ra 0 -l2Type 0 -v 106 -h 0 0 0 0 -lmid 1 0 1 0 -r CC:D3:9D:D0:00:06 00:00:00:00:00:00 0000 -hType 0\n`;
-	expr += `${mea_cmd} service set create 107 FFF000 FFF000 D.C 0 1 0 1000000000 0 64000 0 0 1 127 -f 1 0 -ra 0 -l2Type 0 -v 107 -h 0 0 0 0 -lmid 1 0 1 0 -r CC:D3:9D:D0:00:07 00:00:00:00:00:00 0000 -hType 0\n`;
-	return expr;
-};
 
+var mea_expr = require('./mea_expr.js');
 var GW_CONFIG = require('./gw_config.js');
+
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
+
 
 module.exports = function (host_profile, gw_profiles) {
 
@@ -62,16 +30,54 @@ module.exports = function (host_profile, gw_profiles) {
 	
 	this.vpn_init = function (nic_id) {
 		
-		var cmd = mea_init_expr(nic_id);
-		cmd += mea_ports_init_expr(nic_id);
-		this.gw_config.host_cmd(this.output_processor, nic_id, `init`, cmd);
+		var cmds_arr = [
+			{
+				key: `init`,
+				expr: mea_init_expr(nic_id) + mea_ports_init_expr(nic_id),
+				delay: 100
+			}
+		];
+		this.gw_config.host_cmd(this.output_processor, nic_id, cmds_arr);
+	};
+	
+	this.outbound_tunnel_add = function (nic_id, conn_id) {
+		
+		const lan_port = 105;
+		const tunnel_port = 104;
+		const local_tunnel_mac = `CC:D3:9D:D5:6E:04`;
+		const remote_tunnel_mac = `cc:d3:9d:d6:7c:14`;
+		const local_tunnel_ip = `10.11.11.1`;
+		const remote_tunnel_ip = `192.168.22.1`;
+		const spi = 4294901760;
+		const auth_algo = null;
+		const cipher_algo = `aes_gcm128-null`;
+		const auth_key = `00`;
+		const cipher_key = `1111111122222222333333334444444455555555`;
+		
+		const profile_id = 0;
+		const mid_port_action = 65537;
+		const lan_port_action = 65538;
+		
+		var cmds_arr = [
+			{
+				key: `outprep${conn_id}`,
+				expr: mea_ipsec_outbound_tunnel_prepare_expr(nic_id, local_tunnel_mac, remote_tunnel_mac, spi, auth_algo, cipher_algo, auth_key, cipher_key),
+				delay: 2000
+			},
+			{
+				key: `outadd${conn_id}`,
+				expr: mea_ipsec_outbound_tunnel_add_expr(nic_id, lan_port, tunnel_port, local_tunnel_mac, remote_tunnel_mac, local_tunnel_ip, remote_tunnel_ip, profile_id, lan_port_action, mid_port_action),
+				delay: 100
+			}
+		];
+		this.gw_config.host_cmd(this.output_processor, nic_id, cmds_arr);
 	};
 	
 	this.gw_connect = function (nic_id, gw_port) {
 		
-		this.gw_config.gw_cmd(this.output_processor, nic_id, `conn1`, 104, `ip neigh`);
-		this.gw_config.host_cmd(this.output_processor, nic_id, `gw${gw_port}`, `uptime`);
-		this.gw_config.vpn_cmd(this.output_processor, nic_id, `enet0-vpn`, `ovs-vsctl show`);
-		this.gw_config.host_cmd(this.output_processor, nic_id, `pm${gw_port}`, `cat /tmp/blkshow.txt`);
+		//this.gw_config.gw_cmd(this.output_processor, nic_id, `conn1`, 104, `ip neigh`);
+		//this.gw_config.host_cmd(this.output_processor, nic_id, `gw${gw_port}`, `uptime`);
+		//this.gw_config.vpn_cmd(this.output_processor, nic_id, `enet0-vpn`, `ovs-vsctl show`);
+		//this.gw_config.host_cmd(this.output_processor, nic_id, `pm${gw_port}`, `cat /tmp/blkshow.txt`);
 	};
 };

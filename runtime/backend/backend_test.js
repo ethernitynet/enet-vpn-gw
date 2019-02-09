@@ -1,6 +1,11 @@
 
 var VPN_BACKEND = require('./vpn_backend.js');
 
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
+
+
 var vpn_backend = new VPN_BACKEND(
 	{
 		host: `172.17.0.1`,
@@ -16,7 +21,8 @@ var vpn_backend = new VPN_BACKEND(
 	});
 
 vpn_backend.vpn_init(0);
-vpn_backend.gw_connect(0, 104);
+vpn_backend.outbound_tunnel_add(0, 5);
+//vpn_backend.gw_connect(0, 104);
 //console.log(`5. ${new Date().getTime()}: ${JSON.stringify(vpn_backend.output_processor)}`);
 vpn_backend.dump_output_processor(0);
 var i = 6;
