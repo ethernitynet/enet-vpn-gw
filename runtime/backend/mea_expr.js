@@ -353,15 +353,16 @@ global.mea_ipsec_inbound_add_expr = function (cmd) {
 	const conn_cfg = cmd.cfg.conns[cmd.state.id];
 	const mea_top = mea_cli_top(nic_id);
 	const ipsec_add = mea_ipsec_profile_add(nic_id);
+	const service_add = mea_service_add(nic_id);
 	const remote_ip_hex = ip_to_hex(conn_cfg.remote_tunnel_endpoint_ip);
-	const conn_tag_hex = vpn_conn_tag_hex(cfg, conn_id);
-	const conn_tag = vpn_conn_tag(cfg, conn_id);
+	const conn_tag_hex = vpn_conn_tag_hex(cmd.cfg, cmd.state.id);
+	const conn_tag = vpn_conn_tag(cmd.cfg, cmd.state.id);
 	const port_macs = mea_port_macs[nic_id];
 	
 	var expr = `${mea_top}\n`;
 	if(cmd.state.services.in_l3fwd === undefined) {
-		const security_type = mea_ipsec_format_security_type(cmd.state[`ipsec`][`auth_algo`], cmd.state[`ipsec`][`cipher_algo`]);
-		const tunnel_keys = mea_ipsec_format_keys(cmd.state[`ipsec`][`auth_key`], cmd.state[`ipsec`][`cipher_key`]);
+		const security_type = mea_ipsec_format_security_type(cmd.state.ipsec.auth_algo, cmd.state.ipsec.cipher_algo);
+		const tunnel_keys = mea_ipsec_format_keys(cmd.state.ipsec.auth_key, cmd.state.ipsec.cipher_key);
 		const tunnel_keys_str = `-Integrity_key ${tunnel_keys.integrity_key} -Integrity_IV ${tunnel_keys.integrity_iv} -Confident_key ${tunnel_keys.confidentiality_key} -Confident_IV ${tunnel_keys.confidentiality_iv}`;
 
 		expr += `${ipsec_add} auto -security_type ${security_type} -TFC_en 0 -ESN_en 0 -SPI ${cmd.state.ipsec.spi} ${tunnel_keys_str}\n`;
@@ -382,17 +383,20 @@ global.mea_ipsec_inbound_add_parse = function (cmd) {
 		cmd.state.forwarders = {};
 		cmd.state.pms = {};
 		cmd.output_processor[cmd.key] = {};
+		return true;
 	}
 	else if(cmd.state.services.in_l3fwd === undefined) {
 		const prev_output = cmd.output_processor[cmd.key].stdout;
 		cmd.output_processor[cmd.key] = {};
 		mea_ipsec_add_parse(cmd.state, `inbound_profile_id`, prev_output);
 		mea_service_add_parse(cmd.state, `in_l3fwd`, prev_output);
+		return true;
 	}
 	else if(cmd.state.services.in_decrypt === undefined) {
 		const prev_output = cmd.output_processor[cmd.key].stdout;
 		cmd.output_processor[cmd.key] = {};
 		mea_service_add_parse(cmd.state, `in_decrypt`, prev_output);
+		return false;
 	};
 };
 
@@ -478,8 +482,10 @@ global.mea_expr_inbound_fwd_add = function (cmd) {
 
 global.mea_expr_inbound_tunnel_add = function (cmd) {
 
-	mea_ipsec_inbound_add_parse(cmd);
-	return mea_ipsec_inbound_add_expr(cmd);
+	if(mea_ipsec_inbound_add_parse(cmd)) {
+		return mea_ipsec_inbound_add_expr(cmd);
+	};
+	return `exit`;
 };
 
 global.mea_expr_outbound_tunnel_add = function (cmd) {

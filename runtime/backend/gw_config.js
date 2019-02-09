@@ -18,7 +18,7 @@ var output_merge = function (output_processor, cmd_key, output) {
 
 var host_cmd_exec = function (gw_config_inst) {
 	
-	console.log(`host_cmds_arr: ${JSON.stringify(gw_config_inst.host_cmds_arr, null, 2)}`);
+	//console.log(`host_cmds_arr: ${JSON.stringify(gw_config_inst.host_cmds_arr, null, 2)}`);
 	if(gw_config_inst.host_cmds_arr.length > 0) {
 		const cmd = gw_config_inst.host_cmds_arr[0];
 		gw_config_inst.host_cmds_arr.shift();

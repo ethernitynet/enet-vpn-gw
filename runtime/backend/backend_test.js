@@ -158,6 +158,13 @@ vpn_backend.outbound_tunnel_add(enet0_json_cfg.VPN, 0, {
 	auth_key: `00`,
 	cipher_key: `6666666600000000333333331111111155555555`
 });
+vpn_backend.inbound_tunnel_add(enet0_json_cfg.VPN, 0, {
+	spi: 286387950,
+	auth_algo: null,
+	cipher_algo: `aes_gcm128-null`,
+	auth_key: `00`,
+	cipher_key: `3333333311111111000000002222222288888888`
+});
 //vpn_backend.gw_connect(0, 104);
 //console.log(`5. ${new Date().getTime()}: ${JSON.stringify(vpn_backend.output_processor)}`);
 vpn_backend.dump_output_processor(0);
