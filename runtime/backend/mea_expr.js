@@ -19,6 +19,11 @@ global.mea_ipsec_format_security_type = function (auth_algo, cipher_algo) {
 	return `0xCA`;
 };
 
+global.mea_tunnel_mac = function (cfg, conn_id) {
+	
+	return `CC:D3:9D:D5:6E:04`;
+};
+
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
@@ -83,8 +88,9 @@ global.mea_ipsec_profile_add = function (nic_id) {
 	return `${mea_cli(nic_id)} IPSec ESP set create`;
 };
 	
-global.mea_init_expr = function (nic_id) {
+global.mea_init_expr = function (cfg) {
 	
+	const nic_id = cfg.ace_nic_config[0].nic_name;
 	const mea_top = mea_cli_top(nic_id);
 	const mea_cmd = mea_cli(nic_id);
 	
@@ -98,9 +104,35 @@ global.mea_init_expr = function (nic_id) {
 	expr += `${mea_cmd} IPSec ESP set delete all\n`;
 	return expr;
 };
+
+global.mea_ipsec_add_parse = function (conn_state, profile_key, prev_output) {
 	
-global.mea_ports_init_expr = function (nic_id) {
+	var ipsec_profile_regex = /Done\s+create\s+IPSecESP\s+with\s+Id\s+=\s+(\d+)/;
+	prev_output.replace(ipsec_profile_regex, function(match, profile_id) {
+		
+		if (profile_id) {
+			conn_state[`profiles`][profile_key] = profile_id;
+		};
+	});
+};
+
+global.mea_action_add_parse = function (conn_state, action_key, prev_output) {
 	
+	var action_regex = /Done.\s+ActionId=(\d+)\s+\(PmId=([YESNO]+)\/([^,]+),tmId=[YESNO]+\/[^,]+,edId=[YESNO]+\/[^,]+\)/;
+	prev_output.replace(action_regex, function(match, action_id, pm_flag, pm_id) {
+		
+		if(action_id) {
+			conn_state[`actions`][action_key] = action_id;
+			if (pm_flag && (pm_flag === `YES`) && pm_id) {
+				conn_state[`pms`][action_key] = pm_id;
+			};
+		};
+	});
+};
+
+global.mea_ports_init_expr = function (cfg) {
+	
+	const nic_id = cfg.ace_nic_config[0].nic_name;
 	const mea_top = mea_cli_top(nic_id);
 	const service_add = mea_service_add(nic_id);
 	const port_macs = mea_port_macs[nic_id];
@@ -114,30 +146,89 @@ global.mea_ports_init_expr = function (nic_id) {
 	return expr;
 };
 
-global.mea_ipsec_outbound_tunnel_prepare_expr = function (nic_id, local_tunnel_mac, remote_tunnel_mac, spi, auth_algo, cipher_algo, auth_key, cipher_key) {
+global.mea_ipsec_outbound_add_expr = function (cmd) {
 	
-	const mea_top = mea_cli_top(nic_id);
-	const action_add = mea_action_add(nic_id);
-	const ipsec_add = mea_ipsec_profile_add(nic_id);
-	const security_type = mea_ipsec_format_security_type(auth_algo, cipher_algo);
-	const tunnel_keys = mea_ipsec_format_keys(auth_key, cipher_key);
-	const tunnel_keys_str = `-Integrity_key ${tunnel_keys.integrity_key} -Integrity_IV ${tunnel_keys.integrity_iv} -Confident_key ${tunnel_keys.confidentiality_key} -Confident_IV ${tunnel_keys.confidentiality_iv}`;
-	
-	var expr = `${mea_top}\n`;
-	expr += `${action_add} -pm 1 0 -ed 1 0 -h 0 0 0 0 -lmid 1 0 1 0 -r ${remote_tunnel_mac} ${local_tunnel_mac} 0000\n`;
-	expr += `${ipsec_add} auto -security_type ${security_type} -TFC_en 0 -ESN_en 0 -SPI ${spi} ${tunnel_keys_str}\n`;
-	return expr;
-};
-
-global.mea_ipsec_outbound_tunnel_add_expr = function (nic_id, lan_port, tunnel_port, local_tunnel_mac, remote_tunnel_mac, local_tunnel_ip, remote_tunnel_ip, profile_id, lan_port_action, mid_port_action) {
-	
+	const nic_id = cmd.cfg.ace_nic_config[0].nic_name;
+	const conn_cfg = cmd.cfg.conns[cmd.state.id];
 	const mea_top = mea_cli_top(nic_id);
 	const action_add = mea_action_add(nic_id);
 	const forwarder_add = mea_forwarder_add(nic_id);
-	
+	const ipsec_add = mea_ipsec_profile_add(nic_id);
 	var expr = `${mea_top}\n`;
-	expr += `${action_add} -pm 1 0 -ed 1 0 -hIPSec 1 1 ${local_tunnel_ip} ${remote_tunnel_ip} -hESP 1 ${profile_id} -hType 71\n`;
-	expr += `${forwarder_add} 0 ${remote_tunnel_mac} 24 3 1 0 1 ${tunnel_port} -action 1 ${mid_port_action}\n`;
-	expr += `${forwarder_add} 0 ${local_tunnel_mac} ${lan_port} 3 1 0 1 24 -action 1 ${lan_port_action}\n`;
+	if(cmd.state[`actions`][`l3fwd`] === undefined) {
+		const security_type = mea_ipsec_format_security_type(cmd.state[`ipsec`][`auth_algo`], cmd.state[`ipsec`][`cipher_algo`]);
+		const tunnel_keys = mea_ipsec_format_keys(cmd.state[`ipsec`][`auth_key`], cmd.state[`ipsec`][`cipher_key`]);
+		const tunnel_keys_str = `-Integrity_key ${tunnel_keys.integrity_key} -Integrity_IV ${tunnel_keys.integrity_iv} -Confident_key ${tunnel_keys.confidentiality_key} -Confident_IV ${tunnel_keys.confidentiality_iv}`;
+		
+		expr += `${ipsec_add} auto -security_type ${security_type} -TFC_en 0 -ESN_en 0 -SPI ${cmd.state.ipsec.spi} ${tunnel_keys_str}\n`;
+		expr += `${action_add} -pm 1 0 -ed 1 0 -h 0 0 0 0 -lmid 1 0 1 0 -r ${cmd.state.tunnel.remote_tunnel_mac} ${cmd.state.tunnel.local_tunnel_mac} 0000\n`;
+	}
+	else if(cmd.state[`actions`][`encrypt`] === undefined) {
+		const vpn_cfg = cmd.cfg.vpn_gw_config[0];
+		
+		expr += `${action_add} -pm 1 0 -ed 1 0 -hIPSec 1 1 ${vpn_cfg.vpn_gw_ip} ${conn_cfg.remote_tunnel_endpoint_ip} -hESP 1 ${cmd.state.profiles.outbound_profile_id} -hType 71\n`;
+	}
+	else {
+		expr += `${forwarder_add} 0 ${cmd.state.tunnel.remote_tunnel_mac} 24 3 1 0 1 ${conn_cfg.tunnel_port} -action 1 ${cmd.state.actions.encrypt}\n`;
+		expr += `${forwarder_add} 0 ${cmd.state.tunnel.local_tunnel_mac} ${conn_cfg.lan_port} 3 1 0 1 24 -action 1 ${cmd.state.actions.l3fwd}\n`;
+	};
 	return expr;
 };
+
+global.mea_ipsec_outbound_add_parse = function (cmd) {
+
+	if(cmd.state[`actions`] === undefined) {
+		cmd.state[`actions`] = {};
+		cmd.state[`profiles`] = {};
+		cmd.state[`pms`] = {};
+		cmd.output_processor[cmd.key] = {};
+	}
+	else if(cmd.state[`actions`][`l3fwd`] === undefined) {
+		const prev_output = cmd.output_processor[cmd.key].stdout;
+		cmd.output_processor[cmd.key] = {};
+		mea_ipsec_add_parse(cmd.state, `outbound_profile_id`, prev_output);
+		mea_action_add_parse(cmd.state, `l3fwd`, prev_output);
+	}
+	else if(cmd.state[`actions`][`encrypt`] === undefined) {
+		const prev_output = cmd.output_processor[cmd.key].stdout;
+		cmd.output_processor[cmd.key] = {};
+		mea_action_add_parse(cmd.state, `encrypt`, prev_output);
+	};
+};
+
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
+
+global.mea_expr_init = function (cmd) {
+
+	return mea_init_expr(cmd.cfg) + mea_ports_init_expr(cmd.cfg);
+};
+
+global.mea_expr_outbound_tunnel_add = function (cmd) {
+
+	mea_ipsec_outbound_add_parse(cmd);
+	return mea_ipsec_outbound_add_expr(cmd);
+};
+
+module.exports = function () {
+
+	this.expr_init = function (cfg, output_processor) {
+
+		return mea_init_expr(cfg) + mea_ports_init_expr(cfg);
+	};
+	
+	this.expr_outbound_tunnel_prepare = function (cfg, conn_state, output_processor) {
+
+		return mea_ipsec_outbound_tunnel_prepare_expr(cfg, conn_state);
+	};
+	
+	this.expr_outbound_tunnel_add = function (cfg, conn_state, output_processor) {
+
+		const prev_output = output_processor[`outprep${conn_state.id}`].stdout;
+		delete output_processor[`outprep${conn_state.id}`];
+		mea_ipsec_outbound_add_parse(conn_state, prev_output);
+		return mea_ipsec_outbound_tunnel_add_expr(cfg, conn_state);
+	};
+};
+
