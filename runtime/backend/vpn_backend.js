@@ -98,6 +98,14 @@ module.exports = function (host_profile, gw_profiles) {
 				output_processor: this.output_processor,
 				expr_builder: mea_expr_outbound_tunnel_add,
 				delay: 1000
+			},
+			{
+				key: tunnel_key,
+				cfg: cfg,
+				state: this.tunnel_states[tunnel_key],
+				output_processor: this.output_processor,
+				expr_builder: mea_expr_outbound_tunnel_add,
+				delay: 100
 			}
 		]);
 		this.gw_config.host_cmd();
