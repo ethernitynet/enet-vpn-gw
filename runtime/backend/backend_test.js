@@ -165,6 +165,16 @@ vpn_backend.inbound_tunnel_add(enet0_json_cfg.VPN, 0, {
 	auth_key: `00`,
 	cipher_key: `3333333311111111000000002222222288888888`
 });
+vpn_backend.inbound_fwd_add(enet0_json_cfg.VPN, 0, [
+	{
+		ip: `10.0.2.5`,
+		mac: `6a:5f:ee:92:21:33`
+	},
+	{
+		ip: `10.0.2.8`,
+		mac: `6a:00:ee:00:21:11`
+	}
+]);
 //vpn_backend.gw_connect(0, 104);
 //console.log(`5. ${new Date().getTime()}: ${JSON.stringify(vpn_backend.output_processor)}`);
 vpn_backend.dump_output_processor(0);

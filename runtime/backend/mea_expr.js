@@ -312,38 +312,58 @@ global.mea_ipsec_inbound_fwd_add_expr = function (cmd) {
 	const mea_top = mea_cli_top(nic_id);
 	const action_add = mea_action_add(nic_id);
 	const forwarder_add = mea_forwarder_add(nic_id);
-	const conn_tag_hex = vpn_conn_tag_hex(cfg, conn_id);
-	const next_hop = cmd.state.fwd.next_hops[cmd.state.fwd.next_hops.length - 1];
+	const conn_tag_hex = vpn_conn_tag_hex(cmd.cfg, cmd.state.id);
+	const next_hops_count = cmd.state.fwd.next_hops.length;
+	const actions_count = Object.keys(cmd.state.fwd.actions).length;
 	
 	var expr = `${mea_top}\n`;
-	if(cmd.state[`actions`][next_hop.ip] === undefined) {
-		expr += `${action_add} -ed 1 0 -h 0 0 0 0 -lmid 1 0 1 0 -r ${next_hop.mac} ${cmd.state.tunnel.local_tunnel_mac} 0000 -hType 3\n`;
-	}
-	else {
-		expr += `${forwarder_add} 6 ${next_hop.ip} 0 0x0${conn_tag_hex} 3 1 0 1 ${conn_cfg.lan_port} -action 1 ${cmd.state.actions[next_hop.ip]}\n`;
+	if(actions_count < next_hops_count) {
+		const next_hop_idx = actions_count;
+		const next_hop = cmd.state.fwd.next_hops[next_hop_idx];
+		if(cmd.state.fwd.actions[next_hop.ip] = -1) {
+			expr += `${action_add} -ed 1 0 -h 0 0 0 0 -lmid 1 0 1 0 -r ${next_hop.mac} ${cmd.state.tunnel.local_tunnel_mac} 0000 -hType 3\n`;
+		}
+		else if(cmd.state.fwd.forwarders[next_hop.ip] === ``) {
+			expr += `${forwarder_add} 6 ${next_hop.ip} 0 0x1${conn_tag_hex} 3 1 0 1 ${conn_cfg.lan_port} -action 1 ${cmd.state.fwd.actions[next_hop.ip]}\n`;
+		};
 	};
 	return expr;
 };
 
 global.mea_ipsec_inbound_fwd_add_parse = function (cmd) {
 
-	const next_hop = cmd.state.fwd.next_hops[cmd.state.fwd.next_hops.length - 1];
-	const conn_tag_hex = vpn_conn_tag_hex(cfg, conn_id);
+	console.log(`cmd.output_processor[${cmd.key}]: ${JSON.stringify(cmd.output_processor[cmd.key], null, 2)}`);
+	const next_hops_count = cmd.state.fwd.next_hops.length;
+	const actions_count = Object.keys(cmd.state.fwd.actions).length;
+	const forwarders_count = Object.keys(cmd.state.fwd.forwarders).length;
+	const conn_tag_hex = vpn_conn_tag_hex(cmd.cfg, cmd.state.id);
 	
-	if(cmd.state.actions[next_hop.ip] === undefined) {
-		cmd.state.actions[next_hop.ip] = -1;
-		cmd.output_processor[cmd.key] = {};
-	}
-	else if(cmd.state.forwarders[next_hop.ip] === undefined) {
-		cmd.state.forwarders[next_hop.ip] = ``;
-		const prev_output = cmd.output_processor[cmd.key].stdout;
-		cmd.output_processor[cmd.key] = {};
-		mea_action_add_parse(cmd.state, `${next_hop.ip}`, prev_output);
+	if(forwarders_count < next_hops_count) {
+		const next_hop_idx = actions_count;
+		const next_hop = cmd.state.fwd.next_hops[next_hop_idx];
+		if(cmd.state.fwd.actions[next_hop.ip] === undefined) {
+			cmd.state.fwd.actions[next_hop.ip] = -1;
+			cmd.output_processor[cmd.key] = {};
+			return true;
+		}
+		else if(cmd.state.fwd.actions[next_hop.ip] === -1) {
+			cmd.state.fwd.forwarders[next_hop.ip] = ``;
+			const prev_output = cmd.output_processor[cmd.key].stdout;
+			cmd.output_processor[cmd.key] = {};
+			mea_action_add_parse(cmd.state.fwd, `${next_hop.ip}`, prev_output);
+			return true;
+		}
+		else if(cmd.state.fwd.forwarders[next_hop.ip] === ``) {
+			const prev_output = cmd.output_processor[cmd.key].stdout;
+			cmd.output_processor[cmd.key] = {};
+			mea_forwarder_add_parse(cmd.state, `${next_hop.ip}`, `6 ${next_hop.ip} 0 0x1${conn_tag_hex}`, prev_output);
+			return false;
+		};
 	}
 	else {
 		const prev_output = cmd.output_processor[cmd.key].stdout;
 		cmd.output_processor[cmd.key] = {};
-		mea_forwarder_add_parse(cmd.state, `${next_hop.ip}`, `6 ${next_hop.ip} 0 0x0${conn_tag_hex}`, prev_output);
+		return false;
 	};
 };
 
@@ -476,8 +496,10 @@ global.mea_expr_init = function (cmd) {
 
 global.mea_expr_inbound_fwd_add = function (cmd) {
 
-	mea_ipsec_inbound_fwd_add_parse(cmd);
-	return mea_ipsec_inbound_fwd_add_expr(cmd);
+	if(mea_ipsec_inbound_fwd_add_parse(cmd)) {
+		return mea_ipsec_inbound_fwd_add_expr(cmd);
+	};
+	return `exit`;
 };
 
 global.mea_expr_inbound_tunnel_add = function (cmd) {
@@ -494,26 +516,5 @@ global.mea_expr_outbound_tunnel_add = function (cmd) {
 		return mea_ipsec_outbound_add_expr(cmd);
 	};
 	return `exit`;
-};
-
-module.exports = function () {
-
-	this.expr_init = function (cfg, output_processor) {
-
-		return mea_init_expr(cfg) + mea_ports_init_expr(cfg);
-	};
-	
-	this.expr_outbound_tunnel_prepare = function (cfg, conn_state, output_processor) {
-
-		return mea_ipsec_outbound_tunnel_prepare_expr(cfg, conn_state);
-	};
-	
-	this.expr_outbound_tunnel_add = function (cfg, conn_state, output_processor) {
-
-		const prev_output = output_processor[`outprep${conn_state.id}`].stdout;
-		delete output_processor[`outprep${conn_state.id}`];
-		mea_ipsec_outbound_add_parse(conn_state, prev_output);
-		return mea_ipsec_outbound_tunnel_add_expr(cfg, conn_state);
-	};
 };
 

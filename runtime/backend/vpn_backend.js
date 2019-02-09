@@ -76,6 +76,76 @@ module.exports = function (host_profile, gw_profiles) {
 		};
 	};
 	
+	this.inbound_fwd_add = function (cfg, conn_id, next_hops) {
+		
+		const nic_id = cfg.ace_nic_config[0].nic_name;		
+		const tunnel_key = `nic${nic_id}.conn${conn_id}.in`;
+		
+		this.tunnel_states[tunnel_key].fwd = { next_hops: next_hops, actions: {}, forwarders: {} };
+		this.gw_config.host_cmds_append([
+			{
+				key: tunnel_key,
+				cfg: cfg,
+				state: this.tunnel_states[tunnel_key],
+				output_processor: this.output_processor,
+				expr_builder: mea_expr_inbound_fwd_add,
+				delay: 1000
+			},
+			{
+				key: tunnel_key,
+				cfg: cfg,
+				state: this.tunnel_states[tunnel_key],
+				output_processor: this.output_processor,
+				expr_builder: mea_expr_inbound_fwd_add,
+				delay: 1000
+			},
+			{
+				key: tunnel_key,
+				cfg: cfg,
+				state: this.tunnel_states[tunnel_key],
+				output_processor: this.output_processor,
+				expr_builder: mea_expr_inbound_fwd_add,
+				delay: 100
+			}
+		]);
+		this.gw_config.host_cmd();
+	};
+	
+	this.inbound_tunnel_add = function (cfg, conn_id, ipsec_cfg) {
+		
+		const nic_id = cfg.ace_nic_config[0].nic_name;		
+		const tunnel_key = `nic${nic_id}.conn${conn_id}.in`;
+		
+		this.tunnel_states[tunnel_key].ipsec = ipsec_cfg;
+		this.gw_config.host_cmds_append([
+			{
+				key: tunnel_key,
+				cfg: cfg,
+				state: this.tunnel_states[tunnel_key],
+				output_processor: this.output_processor,
+				expr_builder: mea_expr_inbound_tunnel_add,
+				delay: 1000
+			},
+			{
+				key: tunnel_key,
+				cfg: cfg,
+				state: this.tunnel_states[tunnel_key],
+				output_processor: this.output_processor,
+				expr_builder: mea_expr_inbound_tunnel_add,
+				delay: 1000
+			},
+			{
+				key: tunnel_key,
+				cfg: cfg,
+				state: this.tunnel_states[tunnel_key],
+				output_processor: this.output_processor,
+				expr_builder: mea_expr_inbound_tunnel_add,
+				delay: 100
+			}
+		]);
+		this.gw_config.host_cmd();
+	};
+	
 	this.outbound_tunnel_add = function (cfg, conn_id, ipsec_cfg) {
 		
 		const nic_id = cfg.ace_nic_config[0].nic_name;		
@@ -113,41 +183,6 @@ module.exports = function (host_profile, gw_profiles) {
 				state: this.tunnel_states[tunnel_key],
 				output_processor: this.output_processor,
 				expr_builder: mea_expr_outbound_tunnel_add,
-				delay: 100
-			}
-		]);
-		this.gw_config.host_cmd();
-	};
-	
-	this.inbound_tunnel_add = function (cfg, conn_id, ipsec_cfg) {
-		
-		const nic_id = cfg.ace_nic_config[0].nic_name;		
-		const tunnel_key = `nic${nic_id}.conn${conn_id}.in`;
-		
-		this.tunnel_states[tunnel_key].ipsec = ipsec_cfg;
-		this.gw_config.host_cmds_append([
-			{
-				key: tunnel_key,
-				cfg: cfg,
-				state: this.tunnel_states[tunnel_key],
-				output_processor: this.output_processor,
-				expr_builder: mea_expr_inbound_tunnel_add,
-				delay: 1000
-			},
-			{
-				key: tunnel_key,
-				cfg: cfg,
-				state: this.tunnel_states[tunnel_key],
-				output_processor: this.output_processor,
-				expr_builder: mea_expr_inbound_tunnel_add,
-				delay: 1000
-			},
-			{
-				key: tunnel_key,
-				cfg: cfg,
-				state: this.tunnel_states[tunnel_key],
-				output_processor: this.output_processor,
-				expr_builder: mea_expr_inbound_tunnel_add,
 				delay: 100
 			}
 		]);
