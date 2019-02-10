@@ -24,6 +24,8 @@ Boot the ACE-NIC according to the documented procedure. Locate ```ENET_INSTALL_D
 ```
 ACENIC1_ID=0
 DOCKER_INST=enet0-vpn
+VPN_SHARED_DIR=/shared/$DOCKER_INST
+HOST_SHARED_DIR=$(pwd)${VPN_SHARED_DIR}
 docker run \
         -t \
         -d \
@@ -32,14 +34,17 @@ docker run \
         --privileged \
         -v /mnt/huge:/mnt/huge \
         --device=/dev/uio0:/dev/uio0 \
-        -v $ENET_INSTALL_DIR/shared/$DOCKER_INST:/shared \
-        --env ACENIC_ID=$ACENIC1_ID \
-        --env ACENIC_LABEL=$ACENIC1_LABEL \
-        --env ACENIC_710_SLOT=$ACENIC1_710_SLOT \
+        -v $HOST_SHARED_DIR:$VPN_SHARED_DIR \
+        --env ACENIC_ID=$ACENIC_ID \
+        --env ACENIC_LABEL=$ACENIC_LABEL \
+        --env ACENIC_710_SLOT=$ACENIC_710_SLOT \
         --env DOCKER_INST=$DOCKER_INST \
+        --env HOST_SHARED_DIR=$HOST_SHARED_DIR \
+        --env VPN_SHARED_DIR=$VPN_SHARED_DIR \
         --hostname=$DOCKER_INST \
         --name=$DOCKER_INST \
-        ethernity/enet-vpn-gw
+        $IMG_TAG \
+        /bin/bash
 ```
 # Configuration (single NIC)
 Assuming 172.16.10.152 to be the server IP, go to:
