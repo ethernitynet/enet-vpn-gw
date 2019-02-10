@@ -17,10 +17,10 @@ This Docker image deploys and orchestrates a cluster of LibreSwan VPN gateways o
 
 # Installation
 ```
-docker push ethernity/enet-vpn-gw
+docker pull ethernity/enet-vpn-gw
 ```
 # Booting the VPN GW (single NIC)
-Boot the ACE-NIC according to the documented procedure. Locate ```ENET_INSTALL_DIR``` and run the following:
+Boot the ACE-NIC according to the documented procedure. Run the following:
 ```
 ACENIC1_ID=0
 DOCKER_INST=enet0-vpn
