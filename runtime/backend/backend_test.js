@@ -222,16 +222,15 @@ var vpn_backend = new VPN_BACKEND(
 vpn_backend.vpn_init(enet0_json_cfg.VPN);
 
 
-vpn_backend.conn_init(enet0_json_cfg.VPN, 0, `cc:d3:9d:d6:7c:14`);
 ////////////////////////////////////////////////////////
-vpn_backend.outbound_tunnel_add(enet0_json_cfg.VPN, 0, {
+vpn_backend.outbound_tunnel_add(enet0_json_cfg.VPN, 0, `cc:d3:9d:d6:7c:14`, {
 	spi: 4294901760,
 	auth_algo: null,
 	cipher_algo: `aes_gcm128-null`,
 	auth_key: `00`,
 	cipher_key: `6666666600000000333333331111111155555555`
 });
-vpn_backend.inbound_tunnel_add(enet0_json_cfg.VPN, 0, {
+vpn_backend.inbound_tunnel_add(enet0_json_cfg.VPN, 0, `cc:d3:9d:d6:7c:14`, {
 	spi: 286387950,
 	auth_algo: null,
 	cipher_algo: `aes_gcm128-null`,
@@ -251,16 +250,15 @@ vpn_backend.inbound_fwd_add(enet0_json_cfg.VPN, 0, [
 ////////////////////////////////////////////////////////
 
 
-vpn_backend.conn_init(enet0_json_cfg.VPN, 1, `cc:d3:9d:d6:7c:14`);
 ////////////////////////////////////////////////////////
-vpn_backend.outbound_tunnel_add(enet0_json_cfg.VPN, 1, {
+vpn_backend.outbound_tunnel_add(enet0_json_cfg.VPN, 1, `cc:d3:9d:d6:7c:14`, {
 	spi: 65535,
 	auth_algo: null,
 	cipher_algo: `aes_gcm128-null`,
 	auth_key: `00`,
 	cipher_key: `7777777700000000666666661111111199999999`
 });
-vpn_backend.inbound_tunnel_add(enet0_json_cfg.VPN, 1, {
+vpn_backend.inbound_tunnel_add(enet0_json_cfg.VPN, 1, `cc:d3:9d:d6:7c:14`, {
 	spi: 1024,
 	auth_algo: null,
 	cipher_algo: `aes_gcm128-null`,
@@ -280,16 +278,15 @@ vpn_backend.inbound_fwd_add(enet0_json_cfg.VPN, 1, [
 ////////////////////////////////////////////////////////
 
 
-vpn_backend.conn_init(enet0_json_cfg.VPN, 2, `cc:d3:9d:d6:7c:14`);
 ////////////////////////////////////////////////////////
-vpn_backend.outbound_tunnel_add(enet0_json_cfg.VPN, 2, {
+vpn_backend.outbound_tunnel_add(enet0_json_cfg.VPN, 2, `cc:d3:9d:d6:7c:14`, {
 	spi: 22,
 	auth_algo: null,
 	cipher_algo: `aes_gcm128-null`,
 	auth_key: `00`,
 	cipher_key: `2222222200000000666666660000000022222222`
 });
-vpn_backend.inbound_tunnel_add(enet0_json_cfg.VPN, 2, {
+vpn_backend.inbound_tunnel_add(enet0_json_cfg.VPN, 2, `cc:d3:9d:d6:7c:14`, {
 	spi: 2200,
 	auth_algo: null,
 	cipher_algo: `aes_gcm128-null`,
@@ -309,16 +306,15 @@ vpn_backend.inbound_fwd_add(enet0_json_cfg.VPN, 2, [
 ////////////////////////////////////////////////////////
 
 
-vpn_backend.conn_init(enet0_json_cfg.VPN, 3, `cc:d3:9d:d6:7c:14`);
 ////////////////////////////////////////////////////////
-vpn_backend.outbound_tunnel_add(enet0_json_cfg.VPN, 3, {
+vpn_backend.outbound_tunnel_add(enet0_json_cfg.VPN, 3, `cc:d3:9d:d6:7c:14`, {
 	spi: 33,
 	auth_algo: null,
 	cipher_algo: `aes_gcm128-null`,
 	auth_key: `00`,
 	cipher_key: `3333333300000000666666660000000033333333`
 });
-vpn_backend.inbound_tunnel_add(enet0_json_cfg.VPN, 3, {
+vpn_backend.inbound_tunnel_add(enet0_json_cfg.VPN, 3, `cc:d3:9d:d6:7c:14`, {
 	spi: 3300,
 	auth_algo: null,
 	cipher_algo: `aes_gcm128-null`,
@@ -338,16 +334,15 @@ vpn_backend.inbound_fwd_add(enet0_json_cfg.VPN, 3, [
 ////////////////////////////////////////////////////////
 
 
-vpn_backend.conn_init(enet0_json_cfg.VPN, 4, `cc:d3:9d:d6:7c:14`);
 ////////////////////////////////////////////////////////
-vpn_backend.outbound_tunnel_add(enet0_json_cfg.VPN, 4, {
+vpn_backend.outbound_tunnel_add(enet0_json_cfg.VPN, 4, `cc:d3:9d:d6:7c:14`, {
 	spi: 44,
 	auth_algo: null,
 	cipher_algo: `aes_gcm128-null`,
 	auth_key: `00`,
 	cipher_key: `4444444400000000666666660000000044444444`
 });
-vpn_backend.inbound_tunnel_add(enet0_json_cfg.VPN, 4, {
+vpn_backend.inbound_tunnel_add(enet0_json_cfg.VPN, 4, `cc:d3:9d:d6:7c:14`, {
 	spi: 4400,
 	auth_algo: null,
 	cipher_algo: `aes_gcm128-null`,
@@ -367,16 +362,15 @@ vpn_backend.inbound_fwd_add(enet0_json_cfg.VPN, 4, [
 ////////////////////////////////////////////////////////
 
 
-vpn_backend.conn_init(enet0_json_cfg.VPN, 5, `cc:d3:9d:d6:7c:14`);
 ////////////////////////////////////////////////////////
-vpn_backend.outbound_tunnel_add(enet0_json_cfg.VPN, 5, {
+vpn_backend.outbound_tunnel_add(enet0_json_cfg.VPN, 5, `cc:d3:9d:d6:7c:14`, {
 	spi: 55,
 	auth_algo: null,
 	cipher_algo: `aes_gcm128-null`,
 	auth_key: `00`,
 	cipher_key: `5555555500000000666666660000000055555555`
 });
-vpn_backend.inbound_tunnel_add(enet0_json_cfg.VPN, 5, {
+vpn_backend.inbound_tunnel_add(enet0_json_cfg.VPN, 5, `cc:d3:9d:d6:7c:14`, {
 	spi: 5500,
 	auth_algo: null,
 	cipher_algo: `aes_gcm128-null`,
