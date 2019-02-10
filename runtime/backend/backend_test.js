@@ -1,12 +1,158 @@
 
-var VPN_BACKEND = require('./vpn_backend.js');
+var VPN_BACKEND_SERVICE = require('./vpn_backend_service.js');
+const request = require('request');
+var fs = require('fs');
 
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
 
+var vpn_backend_service = new VPN_BACKEND_SERVICE(
+	{
+		host: `172.17.0.1`,
+		username: `root`,
+		password: `devops123`
+	},
+	{
+		104: {
+			host: `172.17.0.2`,
+			username: `root`,
+			password: `root`
+		}
+	}
+);
 
+var enet0_load_vpn_cfg = function () {
+	
+	const enet_json_cfg = fs.readFileSync(`/shared/enet0-vpn/enet_vpn_config.json`, `utf8`);
+	const post_content = {
+		op: `load_vpn_cfg`,
+		vpn_cfg: JSON.parse(enet_json_cfg)
+	};
 
+	request.post('http://172.17.0.1:3000', { json: post_content }, (error, res, body) => {
+		
+		if(error) {
+			console.error(error);
+		}
+		else {
+			console.log(`enet0_load_vpn_cfg statusCode: ${res.statusCode}`);
+			console.log(body);
+		};
+	});
+};
+
+var enet0_outbound_tunnel_add = function (id) {
+	
+	const post_content = {
+		op: `add_outbound_tunnel`,
+		tunnel_spec: {
+			"local_subnet": `${10 + id}.0.1.0/24`,
+			"remote_subnet": `${10 + id}.0.2.0/24`,
+			"lan_port": "105",
+			"tunnel_port": "104"
+		},
+		ipsec_cfg: {
+			spi: (1000 + id),
+			auth_algo: null,
+			cipher_algo: `aes_gcm128-null`,
+			auth_key: `00`,
+			cipher_key: `666666660000000033333333111111115555${1000 + id}`
+		}
+	};
+
+	request.post('http://172.17.0.1:3000', { json: post_content }, (error, res, body) => {
+		
+		if(error) {
+			console.error(error);
+		}
+		else {
+			console.log(`enet0_outbound_tunnel_add statusCode: ${res.statusCode}`);
+			console.log(body);
+		};
+	});
+};
+
+var enet0_inbound_tunnel_add = function (id) {
+	
+	const post_content = {
+		op: `add_inbound_tunnel`,
+		tunnel_spec: {
+			"local_subnet": `${10 + id}.0.1.0/24`,
+			"remote_subnet": `${10 + id}.0.2.0/24`,
+			"lan_port": "105",
+			"tunnel_port": "104"
+		},
+		ipsec_cfg: {
+			spi: (2000 + id),
+			auth_algo: null,
+			cipher_algo: `aes_gcm128-null`,
+			auth_key: `00`,
+			cipher_key: `666666660000000033333333111111115555${2000 + id}`
+		}
+	};
+
+	request.post('http://172.17.0.1:3000', { json: post_content }, (error, res, body) => {
+		
+		if(error) {
+			console.error(error);
+		}
+		else {
+			console.log(`enet0_inbound_tunnel_add statusCode: ${res.statusCode}`);
+			console.log(body);
+		};
+	});
+};
+
+var enet0_inbound_fwd_add = function (id) {
+	
+	const post_content = {
+		op: `add_inbound_fwd`,
+		tunnel_spec: {
+			"local_subnet": `${10 + id}.0.1.0/24`,
+			"remote_subnet": `${10 + id}.0.2.0/24`,
+			"lan_port": "105",
+			"tunnel_port": "104"
+		},
+		next_hops: [
+			{
+				ip: `${10 + id}.0.2.5`,
+				mac: `6a:5f:ee:92:${10 + id}:${10 + id}`
+			},
+			{
+				ip: `${10 + id}.0.2.8`,
+				mac: `6a:00:ee:00:${10 + id}:${10 + id}`
+			}
+		]
+	};
+
+	request.post('http://172.17.0.1:3000', { json: post_content }, (error, res, body) => {
+		
+		if(error) {
+			console.error(error);
+		}
+		else {
+			console.log(`enet0_inbound_fwd_add statusCode: ${res.statusCode}`);
+			console.log(body);
+		};
+	});
+};
+
+enet0_load_vpn_cfg();
+
+for(var id = 0; id < 6; ++id) {
+	enet0_outbound_tunnel_add(id);
+	enet0_inbound_tunnel_add(id);
+	enet0_inbound_fwd_add(id);
+};
+
+function myFunc2() {
+
+	vpn_backend_service.dump();
+};
+setInterval(myFunc2, 2000);
+
+/*
 const enet0_json_cfg = 
 {
 	"UPDATE": "Mon, 14 Jan 2019 13:14:54 GMT",
@@ -205,19 +351,11 @@ var enet1_json_cfg =
 
 
 
-var vpn_backend = new VPN_BACKEND(
-	{
-		host: `172.17.0.1`,
-		username: `root`,
-		password: `devops123`
-	},
-	{
-		104: {
-			host: `172.17.0.2`,
-			username: `root`,
-			password: `root`
-		}
-	});
+	
+	
+vpn_backend_service.load_vpn_cfg(enet0_json_cfg);
+	
+	
 
 vpn_backend.vpn_init(enet0_json_cfg.VPN);
 
@@ -401,6 +539,7 @@ function myFunc() {
 	++i;
 };
 //setInterval(myFunc, 1000);
+*/
 
 /*
 var log_processor = function () {
@@ -417,6 +556,7 @@ var log_processor = function () {
 };
 */
 
+/*
 function myFunc2() {
 
 	//console.log(`==> ${j}. ${new Date().getTime()}: ${JSON.stringify(vpn_backend.output_processor)}`);
@@ -425,6 +565,7 @@ function myFunc2() {
 	//++j;
 };
 setInterval(myFunc2, 2000);
+*/
 //console.log(`7. ${new Date().getTime()}: ${JSON.stringify(vpn_backend.output_processor)}`);
 
 /*
