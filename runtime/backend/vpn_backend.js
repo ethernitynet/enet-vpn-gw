@@ -62,7 +62,7 @@ module.exports = function (host_profile, gw_profiles) {
 			nic_id: nic_id,
 			id: conn_id,
 			tunnel: {
-				local_tunnel_mac: vpn_conn_mac(cfg, conn_id),
+				local_tunnel_mac: vpn_conn_mac(cfg, { id: conn_id }),
 				remote_tunnel_mac: remote_tunnel_mac
 			}
 		};
@@ -70,7 +70,7 @@ module.exports = function (host_profile, gw_profiles) {
 			nic_id: nic_id,
 			id: conn_id,
 			tunnel: {
-				local_tunnel_mac: vpn_conn_mac(cfg, conn_id),
+				local_tunnel_mac: vpn_conn_mac(cfg, { id: conn_id }),
 				remote_tunnel_mac: remote_tunnel_mac
 			}
 		};
@@ -81,7 +81,7 @@ module.exports = function (host_profile, gw_profiles) {
 		const nic_id = cfg.ace_nic_config[0].nic_name;		
 		const tunnel_key = `nic${nic_id}.conn${conn_id}.in`;
 		
-		this.tunnel_states[tunnel_key].fwd = { next_hops: next_hops, actions: {}, forwarders: {} };
+		this.tunnel_states[tunnel_key].fwd = { phase: `action_add`, next_hops: next_hops, actions: {}, forwarders: {} };
 		this.gw_config.host_cmds_append([
 			{
 				key: tunnel_key,
@@ -105,7 +105,31 @@ module.exports = function (host_profile, gw_profiles) {
 				state: this.tunnel_states[tunnel_key],
 				output_processor: this.output_processor,
 				expr_builder: mea_expr_inbound_fwd_add,
-				delay: 100
+				delay: 1000
+			},
+			{
+				key: tunnel_key,
+				cfg: cfg,
+				state: this.tunnel_states[tunnel_key],
+				output_processor: this.output_processor,
+				expr_builder: mea_expr_inbound_fwd_add,
+				delay: 1000
+			},
+			{
+				key: tunnel_key,
+				cfg: cfg,
+				state: this.tunnel_states[tunnel_key],
+				output_processor: this.output_processor,
+				expr_builder: mea_expr_inbound_fwd_add,
+				delay: 1000
+			},
+			{
+				key: tunnel_key,
+				cfg: cfg,
+				state: this.tunnel_states[tunnel_key],
+				output_processor: this.output_processor,
+				expr_builder: mea_expr_inbound_fwd_add,
+				delay: 1000
 			}
 		]);
 		this.gw_config.host_cmd();

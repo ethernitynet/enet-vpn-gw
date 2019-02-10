@@ -139,27 +139,26 @@ global.vpn_conn_hash = function (cfg, conn_id) {
 	return str_hash(`${conn_ns}`, 24);
 };
 
-global.vpn_conn_tag_hex = function (cfg, conn_id) {
+global.vpn_conn_tag = function (cfg, conn_state) {
 	
-	const hash_str = vpn_conn_hash(cfg, conn_id);
-	
-	return `${hash_str.substring(4, 6)}`;
+	return (64 + conn_state.id);
 };
 
-global.vpn_conn_tag = function (cfg, conn_id) {
+global.vpn_conn_tag_hex = function (cfg, conn_state) {
 	
-	const conn_tag_hex = vpn_conn_tag_hex(cfg, conn_id);
+	const conn_tag = vpn_conn_tag(cfg, conn_state);
+	const conn_tag_hex = uint32_to_hex(conn_tag);
 	
-	return hex_to_uint32(conn_tag_hex);
+	return conn_tag_hex.substring(conn_tag_hex.length - 2);
 };
 
-global.vpn_conn_mac = function (cfg, conn_id) {
+global.vpn_conn_mac = function (cfg, conn_state) {
 	
-	const conn_tag_hex = vpn_conn_tag_hex(cfg, conn_id);
+	const conn_tag_hex = vpn_conn_tag_hex(cfg, conn_state);
 	const nic_id = cfg.ace_nic_config[0].nic_name;
-	const conn_cfg = cfg.conns[conn_id];
+	const conn_cfg = cfg.conns[conn_state.id];
 	
-	return `CC:D3:9D:D1:${conn_tag_hex}:${nic_id}${conn_cfg.tunnel_port - 100}`;
+	return `CC:D3:9D:D1:${conn_tag_hex}:${conn_state.id}${conn_cfg.tunnel_port - 100}`;
 };
 
 /////////////////////////////////////////////////
@@ -245,17 +244,21 @@ global.mea_init_expr = function (cfg) {
 
 global.mea_ipsec_add_parse = function (conn_state, profile_key, prev_output) {
 	
+	var result = false;
 	var ipsec_profile_regex = /Done\s+create\s+IPSecESP\s+with\s+Id\s+=\s+(\d+)/;
 	prev_output.replace(ipsec_profile_regex, function(match, profile_id) {
 		
 		if (profile_id) {
 			conn_state.profiles[profile_key] = parseInt(profile_id, 10);
+			result = true;
 		};
 	});
+	return result;
 };
 
 global.mea_action_add_parse = function (conn_state, action_key, prev_output) {
 	
+	var result = false;
 	var action_regex = /Done.\s+ActionId=(\d+)\s+\(PmId=([YESNO]+)\/([^,]+),tmId=[YESNO]+\/[^,]+,edId=[YESNO]+\/[^,]+\)/;
 	prev_output.replace(action_regex, function(match, action_id, pm_flag, pm_id) {
 		
@@ -264,12 +267,15 @@ global.mea_action_add_parse = function (conn_state, action_key, prev_output) {
 			if (pm_flag && (pm_flag === `YES`) && pm_id) {
 				conn_state.pms[action_key] = parseInt(pm_id, 10);
 			};
+			result = true;
 		};
 	});
+	return result;
 };
 
 global.mea_service_add_parse = function (conn_state, service_key, prev_output) {
 	
+	var result = false;
 	var action_regex = /Done.\s+External\s+serviceId=(\d+)\s+Port=\d+\s+\(PmId=(\d+)\s+TmId=\d+\s+EdId=\d+\s+pol_prof_id=\d+\)/;
 	prev_output.replace(action_regex, function(match, service_id, pm_id) {
 		
@@ -279,14 +285,20 @@ global.mea_service_add_parse = function (conn_state, service_key, prev_output) {
 				conn_state.pms[service_key] = parseInt(pm_id, 10);
 			};
 		};
+		result = true;
 	});
+	return result;
 };
 
 global.mea_forwarder_add_parse = function (conn_state, forwarder_key, forwarder_str, prev_output) {
 	
+	var result = false;
+	console.log(`mea_forwarder_add_parse(${forwarder_str}) <= ${prev_output}`);	
 	if(prev_output === ``) {
 		conn_state.forwarders[forwarder_key] = forwarder_str;
+		result = true;
 	};
+	return result;
 };
 
 global.mea_ports_init_expr = function (cfg) {
@@ -312,20 +324,38 @@ global.mea_ipsec_inbound_fwd_add_expr = function (cmd) {
 	const mea_top = mea_cli_top(nic_id);
 	const action_add = mea_action_add(nic_id);
 	const forwarder_add = mea_forwarder_add(nic_id);
-	const conn_tag_hex = vpn_conn_tag_hex(cmd.cfg, cmd.state.id);
+	const conn_tag_hex = vpn_conn_tag_hex(cmd.cfg, cmd.state);
 	const next_hops_count = cmd.state.fwd.next_hops.length;
 	const actions_count = Object.keys(cmd.state.fwd.actions).length;
+	const forwarders_count = Object.keys(cmd.state.fwd.forwarders).length;
 	
+	console.log(`mea_ipsec_inbound_fwd_add_expr() next_hops_count: ${next_hops_count} actions_count: ${actions_count} forwarders_count: ${forwarders_count}`);
 	var expr = `${mea_top}\n`;
-	if(actions_count < next_hops_count) {
-		const next_hop_idx = actions_count;
-		const next_hop = cmd.state.fwd.next_hops[next_hop_idx];
-		if(cmd.state.fwd.actions[next_hop.ip] = -1) {
+	switch(cmd.state.fwd.phase) {
+		case `action_add`:
+		if(actions_count < next_hops_count) {
+			const next_hop_idx = actions_count;
+			const next_hop = cmd.state.fwd.next_hops[next_hop_idx];
+			console.log(`mea_ipsec_inbound_fwd_add_expr() cmd.state.fwd.actions[${next_hop.ip}]: ${cmd.state.fwd.actions[next_hop.ip]}`);
 			expr += `${action_add} -ed 1 0 -h 0 0 0 0 -lmid 1 0 1 0 -r ${next_hop.mac} ${cmd.state.tunnel.local_tunnel_mac} 0000 -hType 3\n`;
+			cmd.state.fwd.phase = `action_parse`;
 		}
-		else if(cmd.state.fwd.forwarders[next_hop.ip] === ``) {
-			expr += `${forwarder_add} 6 ${next_hop.ip} 0 0x1${conn_tag_hex} 3 1 0 1 ${conn_cfg.lan_port} -action 1 ${cmd.state.fwd.actions[next_hop.ip]}\n`;
+		else {
+			cmd.state.fwd.phase = `done`;
 		};
+		break;
+		case `forwarder_add`:
+		if(forwarders_count < next_hops_count) {
+			const next_hop_idx = forwarders_count;
+			const next_hop = cmd.state.fwd.next_hops[next_hop_idx];
+			console.log(`mea_ipsec_inbound_fwd_add_expr() cmd.state.fwd.actions[${next_hop.ip}]: ${cmd.state.fwd.forwarders[next_hop.ip]}`);
+			expr += `${forwarder_add} 6 ${next_hop.ip} 0 0x1${conn_tag_hex} 3 1 0 1 ${conn_cfg.lan_port} -action 1 ${cmd.state.fwd.actions[next_hop.ip]}\n`;
+			cmd.state.fwd.phase = `forwarder_parse`;
+		}
+		else {
+			cmd.state.fwd.phase = `done`;
+		};
+		break;
 	};
 	return expr;
 };
@@ -336,34 +366,50 @@ global.mea_ipsec_inbound_fwd_add_parse = function (cmd) {
 	const next_hops_count = cmd.state.fwd.next_hops.length;
 	const actions_count = Object.keys(cmd.state.fwd.actions).length;
 	const forwarders_count = Object.keys(cmd.state.fwd.forwarders).length;
-	const conn_tag_hex = vpn_conn_tag_hex(cmd.cfg, cmd.state.id);
-	
-	if(forwarders_count < next_hops_count) {
-		const next_hop_idx = actions_count;
-		const next_hop = cmd.state.fwd.next_hops[next_hop_idx];
-		if(cmd.state.fwd.actions[next_hop.ip] === undefined) {
-			cmd.state.fwd.actions[next_hop.ip] = -1;
+
+	console.log(`mea_ipsec_inbound_fwd_add_parse(phase:${cmd.state.fwd.phase}) next_hops_count: ${next_hops_count} actions_count: ${actions_count} forwarders_count: ${forwarders_count}`);	
+	switch(cmd.state.fwd.phase) {
+		
+		case `action_add`:
+		if(actions_count < next_hops_count) {
+			const next_hop_idx = actions_count;
+			const next_hop = cmd.state.fwd.next_hops[next_hop_idx];
 			cmd.output_processor[cmd.key] = {};
-			return true;
+			return `action_add`;
 		}
-		else if(cmd.state.fwd.actions[next_hop.ip] === -1) {
-			cmd.state.fwd.forwarders[next_hop.ip] = ``;
-			const prev_output = cmd.output_processor[cmd.key].stdout;
-			cmd.output_processor[cmd.key] = {};
-			mea_action_add_parse(cmd.state.fwd, `${next_hop.ip}`, prev_output);
-			return true;
-		}
-		else if(cmd.state.fwd.forwarders[next_hop.ip] === ``) {
-			const prev_output = cmd.output_processor[cmd.key].stdout;
-			cmd.output_processor[cmd.key] = {};
-			mea_forwarder_add_parse(cmd.state, `${next_hop.ip}`, `6 ${next_hop.ip} 0 0x1${conn_tag_hex}`, prev_output);
-			return false;
+		else {
+			return `done`;
 		};
-	}
-	else {
-		const prev_output = cmd.output_processor[cmd.key].stdout;
-		cmd.output_processor[cmd.key] = {};
-		return false;
+		break;
+		
+		case `action_parse`:
+		if(actions_count < next_hops_count) {
+			const prev_output = cmd.output_processor[cmd.key].stdout;
+			cmd.output_processor[cmd.key] = {};
+			const next_hop_idx = actions_count;
+			const next_hop = cmd.state.fwd.next_hops[next_hop_idx];
+			const result = mea_action_add_parse(cmd.state.fwd, `${next_hop.ip}`, prev_output);
+			return `forwarder_add`;
+		}
+		else {
+			return `done`;
+		};
+		break;
+		
+		case `forwarder_parse`:
+		if(forwarders_count < next_hops_count) {
+			const prev_output = cmd.output_processor[cmd.key].stdout;
+			cmd.output_processor[cmd.key] = {};
+			const next_hop_idx = forwarders_count;
+			const next_hop = cmd.state.fwd.next_hops[next_hop_idx];
+			const conn_tag_hex = vpn_conn_tag_hex(cmd.cfg, cmd.state);
+			const result = mea_forwarder_add_parse(cmd.state.fwd, `${next_hop.ip}`, `6 ${next_hop.ip} 0 0x1${conn_tag_hex}`, prev_output);
+			return `action_add`;
+		}
+		else {
+			return `done`;
+		};
+		break;
 	};
 };
 
@@ -375,8 +421,8 @@ global.mea_ipsec_inbound_add_expr = function (cmd) {
 	const ipsec_add = mea_ipsec_profile_add(nic_id);
 	const service_add = mea_service_add(nic_id);
 	const remote_ip_hex = ip_to_hex(conn_cfg.remote_tunnel_endpoint_ip);
-	const conn_tag_hex = vpn_conn_tag_hex(cmd.cfg, cmd.state.id);
-	const conn_tag = vpn_conn_tag(cmd.cfg, cmd.state.id);
+	const conn_tag_hex = vpn_conn_tag_hex(cmd.cfg, cmd.state);
+	const conn_tag = vpn_conn_tag(cmd.cfg, cmd.state);
 	const port_macs = mea_port_macs[nic_id];
 	
 	var expr = `${mea_top}\n`;
@@ -496,7 +542,8 @@ global.mea_expr_init = function (cmd) {
 
 global.mea_expr_inbound_fwd_add = function (cmd) {
 
-	if(mea_ipsec_inbound_fwd_add_parse(cmd)) {
+	cmd.state.fwd.phase = mea_ipsec_inbound_fwd_add_parse(cmd);
+	if(cmd.state.fwd.phase != `done`) {
 		return mea_ipsec_inbound_fwd_add_expr(cmd);
 	};
 	return `exit`;
