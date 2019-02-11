@@ -7,7 +7,7 @@ var fs = require('fs');
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
 
-var vpn_backend_service = new VPN_BACKEND_SERVICE(
+var vpn0_backend_service = new VPN_BACKEND_SERVICE(
 	{
 		host: `172.17.0.1`,
 		username: `root`,
@@ -19,131 +19,223 @@ var vpn_backend_service = new VPN_BACKEND_SERVICE(
 			username: `root`,
 			password: `root`
 		}
-	}
+	},
+	3000
 );
 
-var enet0_load_vpn_cfg = function () {
+var vpn1_backend_service = new VPN_BACKEND_SERVICE(
+	{
+		host: `172.17.0.1`,
+		username: `root`,
+		password: `devops123`
+	},
+	{
+		104: {
+			host: `172.17.0.5`,
+			username: `root`,
+			password: `root`
+		}
+	},
+	3000
+);
+
+var enet_load_vpn_cfg = function (nic_id, backend_ip, backend_port) {
 	
-	const enet_json_cfg = fs.readFileSync(`/shared/enet0-vpn/enet_vpn_config.json`, `utf8`);
+	const enet_json_cfg = fs.readFileSync(`/shared/enet${nic_id}-vpn/enet_vpn_config.json`, `utf8`);
 	const post_content = {
 		op: `load_vpn_cfg`,
 		vpn_cfg: JSON.parse(enet_json_cfg)
 	};
 
-	request.post('http://172.17.0.1:3000', { json: post_content }, (error, res, body) => {
+	request.post(`http://${backend_ip}:${backend_port}`, { json: post_content }, (error, res, body) => {
 		
 		if(error) {
 			console.error(error);
 		}
 		else {
-			console.log(`enet0_load_vpn_cfg statusCode: ${res.statusCode}`);
+			console.log(`enet_load_vpn_cfg(${nic_id}, ${backend_ip}, ${backend_port}) statusCode: ${res.statusCode}`);
 			console.log(body);
 		};
 	});
 };
 
-var enet0_outbound_tunnel_add = function (id) {
+var enet_outbound_tunnel_add = function (nic_id, backend_ip, backend_port, id) {
 	
-	const post_content = {
-		op: `add_outbound_tunnel`,
-		tunnel_spec: {
-			"local_subnet": `${10 + id}.0.1.0/24`,
-			"remote_subnet": `${10 + id}.0.2.0/24`,
-			"lan_port": "105",
-			"tunnel_port": "104"
-		},
-		ipsec_cfg: {
-			spi: (1000 + id),
-			auth_algo: null,
-			cipher_algo: `aes_gcm128-null`,
-			auth_key: `00`,
-			cipher_key: `666666660000000033333333111111115555${1000 + id}`
-		}
-	};
-
-	request.post('http://172.17.0.1:3000', { json: post_content }, (error, res, body) => {
+	switch(nic_id) {
 		
-		if(error) {
-			console.error(error);
-		}
-		else {
-			console.log(`enet0_outbound_tunnel_add statusCode: ${res.statusCode}`);
-			console.log(body);
-		};
-	});
-};
-
-var enet0_inbound_tunnel_add = function (id) {
-	
-	const post_content = {
-		op: `add_inbound_tunnel`,
-		tunnel_spec: {
-			"local_subnet": `${10 + id}.0.1.0/24`,
-			"remote_subnet": `${10 + id}.0.2.0/24`,
-			"lan_port": "105",
-			"tunnel_port": "104"
-		},
-		ipsec_cfg: {
-			spi: (2000 + id),
-			auth_algo: null,
-			cipher_algo: `aes_gcm128-null`,
-			auth_key: `00`,
-			cipher_key: `666666660000000033333333111111115555${2000 + id}`
-		}
-	};
-
-	request.post('http://172.17.0.1:3000', { json: post_content }, (error, res, body) => {
-		
-		if(error) {
-			console.error(error);
-		}
-		else {
-			console.log(`enet0_inbound_tunnel_add statusCode: ${res.statusCode}`);
-			console.log(body);
-		};
-	});
-};
-
-var enet0_inbound_fwd_add = function (id) {
-	
-	const post_content = {
-		op: `add_inbound_fwd`,
-		tunnel_spec: {
-			"local_subnet": `${10 + id}.0.1.0/24`,
-			"remote_subnet": `${10 + id}.0.2.0/24`,
-			"lan_port": "105",
-			"tunnel_port": "104"
-		},
-		next_hops: [
-			{
-				ip: `${10 + id}.0.2.5`,
-				mac: `6a:5f:ee:92:${10 + id}:${10 + id}`
+		case 0:
+		const post_content = {
+			op: `add_outbound_tunnel`,
+			tunnel_spec: {
+				"local_subnet": `${10 + id}.0.1.0/24`,
+				"remote_subnet": `${10 + id}.0.2.0/24`,
+				"lan_port": "105",
+				"tunnel_port": "104"
 			},
-			{
-				ip: `${10 + id}.0.2.8`,
-				mac: `6a:00:ee:00:${10 + id}:${10 + id}`
+			ipsec_cfg: {
+				spi: (1000 + id),
+				auth_algo: null,
+				cipher_algo: `aes_gcm128-null`,
+				auth_key: `00`,
+				cipher_key: `666666660000000033333333111111115555${1000 + id}`
 			}
-		]
+		};
+		break;
+		
+		case 1:
+		const post_content = {
+			op: `add_outbound_tunnel`,
+			tunnel_spec: {
+				"remote_subnet": `${10 + id}.0.1.0/24`,
+				"local_subnet": `${10 + id}.0.2.0/24`,
+				"lan_port": "106",
+				"tunnel_port": "104"
+			},
+			ipsec_cfg: {
+				spi: (1100 + id),
+				auth_algo: null,
+				cipher_algo: `aes_gcm128-null`,
+				auth_key: `00`,
+				cipher_key: `666666660000000033333333111111115555${1100 + id}`
+			}
+		};
+		break;
 	};
 
-	request.post('http://172.17.0.1:3000', { json: post_content }, (error, res, body) => {
+	request.post(`http://${backend_ip}:${backend_port}`, { json: post_content }, (error, res, body) => {
 		
 		if(error) {
 			console.error(error);
 		}
 		else {
-			console.log(`enet0_inbound_fwd_add statusCode: ${res.statusCode}`);
+			console.log(`enet_outbound_tunnel_add(${nic_id}, ${backend_ip}, ${backend_port}, ${id}) statusCode: ${res.statusCode}`);
 			console.log(body);
 		};
 	});
 };
 
-enet0_load_vpn_cfg();
+var enet_inbound_tunnel_add = function (nic_id, backend_ip, backend_port, id) {
+	
+	switch(nic_id) {
+		
+		case 0:
+		const post_content = {
+			op: `add_inbound_tunnel`,
+			tunnel_spec: {
+				"local_subnet": `${10 + id}.0.1.0/24`,
+				"remote_subnet": `${10 + id}.0.2.0/24`,
+				"lan_port": "105",
+				"tunnel_port": "104"
+			},
+			ipsec_cfg: {
+				spi: (2000 + id),
+				auth_algo: null,
+				cipher_algo: `aes_gcm128-null`,
+				auth_key: `00`,
+				cipher_key: `666666660000000033333333111111115555${2000 + id}`
+			}
+		};
+		break;
+		
+		case 1:
+		const post_content = {
+			op: `add_inbound_tunnel`,
+			tunnel_spec: {
+				"remote_subnet": `${10 + id}.0.1.0/24`,
+				"local_subnet": `${10 + id}.0.2.0/24`,
+				"lan_port": "106",
+				"tunnel_port": "104"
+			},
+			ipsec_cfg: {
+				spi: (2100 + id),
+				auth_algo: null,
+				cipher_algo: `aes_gcm128-null`,
+				auth_key: `00`,
+				cipher_key: `666666660000000033333333111111115555${2100 + id}`
+			}
+		};
+		break;
+	};
+
+	request.post(`http://${backend_ip}:${backend_port}`, { json: post_content }, (error, res, body) => {
+		
+		if(error) {
+			console.error(error);
+		}
+		else {
+			console.log(`enet_inbound_tunnel_add(${nic_id}, ${backend_ip}, ${backend_port}, ${id}) statusCode: ${res.statusCode}`);
+			console.log(body);
+		};
+	});
+};
+
+var enet_inbound_fwd_add = function (nic_id, backend_ip, backend_port, id) {
+	
+	switch(nic_id) {
+		
+		case 0:
+		const post_content = {
+			op: `add_inbound_fwd`,
+			tunnel_spec: {
+				"local_subnet": `${10 + id}.0.1.0/24`,
+				"remote_subnet": `${10 + id}.0.2.0/24`,
+				"lan_port": "105",
+				"tunnel_port": "104"
+			},
+			next_hops: [
+				{
+					ip: `${10 + id}.0.2.5`,
+					mac: `6a:5f:ee:92:${10 + id}:${10 + id}`
+				},
+				{
+					ip: `${10 + id}.0.2.8`,
+					mac: `6a:00:ee:00:${10 + id}:${10 + id}`
+				}
+			]
+		};
+		break;
+		
+		case 1:
+		const post_content = {
+			op: `add_inbound_fwd`,
+			tunnel_spec: {
+				"remote_subnet": `${10 + id}.0.1.0/24`,
+				"local_subnet": `${10 + id}.0.2.0/24`,
+				"lan_port": "106",
+				"tunnel_port": "104"
+			},
+			next_hops: [
+				{
+					ip: `${10 + id}.0.2.5`,
+					mac: `6a:5f:ee:92:${20 + id}:${20 + id}`
+				},
+				{
+					ip: `${10 + id}.0.2.8`,
+					mac: `6a:00:ee:00:${20 + id}:${20 + id}`
+				}
+			]
+		};
+		break;
+	};
+
+	request.post(`http://${backend_ip}:${backend_port}`, { json: post_content }, (error, res, body) => {
+		
+		if(error) {
+			console.error(error);
+		}
+		else {
+			console.log(`enet_inbound_fwd_add(${nic_id}, ${backend_ip}, ${backend_port}, ${id}) statusCode: ${res.statusCode}`);
+			console.log(body);
+		};
+	});
+};
+
+enet_load_vpn_cfg(0, `172.17.0.1`, 3000);
 
 for(var id = 0; id < 32; ++id) {
-	enet0_outbound_tunnel_add(id);
-	enet0_inbound_tunnel_add(id);
-	enet0_inbound_fwd_add(id);
+	enet0_outbound_tunnel_add(0, `172.17.0.1`, 3000, id);
+	enet0_inbound_tunnel_add(0, `172.17.0.1`, 3000, id);
+	enet0_inbound_fwd_add(0, `172.17.0.1`, 3000, id);
 };
 
 function myFunc2() {

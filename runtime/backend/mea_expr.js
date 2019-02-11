@@ -187,11 +187,14 @@ global.mea_port_macs = [
 
 global.mea_cli = function (nic_id) {
 	
+	const lockfile = `/var/lock/mea_cli_lockfile`;
+	const lock_timeout = 10;
+	
 	if(nic_id > 0) {
-		return `meaCli -card ${nic_id} mea`;
+		return `flock -o -x -w ${lock_timeout} ${lockfile} meaCli -card ${nic_id} mea`;
 	}
 	else {
-		return `meaCli mea`;
+		return `flock -o -x -w ${lock_timeout} ${lockfile} meaCli mea`;
 	};
 };
 

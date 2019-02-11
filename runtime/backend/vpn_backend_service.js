@@ -7,9 +7,9 @@ var http = require('http');
 /////////////////////////////////////////////////
 
 
-module.exports = function (host_profile, gw_profiles) {
+module.exports = function (host_profile, gw_profiles, service_port) {
 
-	this.service_port = 3000;
+	this.service_port = service_port;
 	this.vpn_cfg = undefined;
 	this.vpn_backend = new VPN_BACKEND(host_profile, gw_profiles);
 
