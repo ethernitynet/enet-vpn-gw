@@ -23,6 +23,7 @@ var vpn0_backend_service = new VPN_BACKEND_SERVICE(
 	3000
 );
 
+/*
 var vpn1_backend_service = new VPN_BACKEND_SERVICE(
 	{
 		host: `172.17.0.1`,
@@ -38,6 +39,7 @@ var vpn1_backend_service = new VPN_BACKEND_SERVICE(
 	},
 	3000
 );
+*/
 
 var enet_load_vpn_cfg = function (nic_id, backend_ip, backend_port) {
 	
@@ -60,11 +62,12 @@ var enet_load_vpn_cfg = function (nic_id, backend_ip, backend_port) {
 };
 
 var enet_outbound_tunnel_add = function (nic_id, backend_ip, backend_port, id) {
-	
+
+	var post_content = {};	
 	switch(nic_id) {
 		
 		case 0:
-		const post_content = {
+		post_content = {
 			op: `add_outbound_tunnel`,
 			tunnel_spec: {
 				"local_subnet": `${10 + id}.0.1.0/24`,
@@ -83,7 +86,7 @@ var enet_outbound_tunnel_add = function (nic_id, backend_ip, backend_port, id) {
 		break;
 		
 		case 1:
-		const post_content = {
+		post_content = {
 			op: `add_outbound_tunnel`,
 			tunnel_spec: {
 				"remote_subnet": `${10 + id}.0.1.0/24`,
@@ -116,10 +119,11 @@ var enet_outbound_tunnel_add = function (nic_id, backend_ip, backend_port, id) {
 
 var enet_inbound_tunnel_add = function (nic_id, backend_ip, backend_port, id) {
 	
+	var post_content = {};	
 	switch(nic_id) {
 		
 		case 0:
-		const post_content = {
+		post_content = {
 			op: `add_inbound_tunnel`,
 			tunnel_spec: {
 				"local_subnet": `${10 + id}.0.1.0/24`,
@@ -138,7 +142,7 @@ var enet_inbound_tunnel_add = function (nic_id, backend_ip, backend_port, id) {
 		break;
 		
 		case 1:
-		const post_content = {
+		post_content = {
 			op: `add_inbound_tunnel`,
 			tunnel_spec: {
 				"remote_subnet": `${10 + id}.0.1.0/24`,
@@ -171,10 +175,11 @@ var enet_inbound_tunnel_add = function (nic_id, backend_ip, backend_port, id) {
 
 var enet_inbound_fwd_add = function (nic_id, backend_ip, backend_port, id) {
 	
+	var post_content = {};	
 	switch(nic_id) {
 		
 		case 0:
-		const post_content = {
+		post_content = {
 			op: `add_inbound_fwd`,
 			tunnel_spec: {
 				"local_subnet": `${10 + id}.0.1.0/24`,
@@ -196,7 +201,7 @@ var enet_inbound_fwd_add = function (nic_id, backend_ip, backend_port, id) {
 		break;
 		
 		case 1:
-		const post_content = {
+		post_content = {
 			op: `add_inbound_fwd`,
 			tunnel_spec: {
 				"remote_subnet": `${10 + id}.0.1.0/24`,
@@ -233,16 +238,18 @@ var enet_inbound_fwd_add = function (nic_id, backend_ip, backend_port, id) {
 enet_load_vpn_cfg(0, `172.17.0.1`, 3000);
 
 for(var id = 0; id < 32; ++id) {
-	enet0_outbound_tunnel_add(0, `172.17.0.1`, 3000, id);
-	enet0_inbound_tunnel_add(0, `172.17.0.1`, 3000, id);
-	enet0_inbound_fwd_add(0, `172.17.0.1`, 3000, id);
+	enet_outbound_tunnel_add(0, `172.17.0.1`, 3000, id);
+	enet_inbound_tunnel_add(0, `172.17.0.1`, 3000, id);
+	enet_inbound_fwd_add(0, `172.17.0.1`, 3000, id);
 };
 
+/*
 function myFunc2() {
 
-	vpn_backend_service.dump();
+	vpn0_backend_service.dump();
 };
-//setInterval(myFunc2, 2000);
+setInterval(myFunc2, 2000);
+*/
 
 /*
 const enet0_json_cfg = 
