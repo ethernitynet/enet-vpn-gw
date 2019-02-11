@@ -192,12 +192,12 @@ var enet_inbound_fwd_add = function (nic_id, backend_ip, backend_port, id) {
 			},
 			next_hops: [
 				{
-					ip: `${10 + id}.0.2.5`,
-					mac: `6a:5f:ee:92:${20 + id}:${20 + id}`
+					ip: `${10 + id}.0.1.5`,
+					mac: `6a:5f:ee:92:${10 + id}:${10 + id}`
 				},
 				{
-					ip: `${10 + id}.0.2.8`,
-					mac: `6a:00:ee:00:${20 + id}:${20 + id}`
+					ip: `${10 + id}.0.1.8`,
+					mac: `6a:00:ee:00:${10 + id}:${10 + id}`
 				}
 			]
 		};
@@ -215,12 +215,12 @@ var enet_inbound_fwd_add = function (nic_id, backend_ip, backend_port, id) {
 			},
 			next_hops: [
 				{
-					ip: `${10 + id}.0.1.5`,
-					mac: `6a:5f:ee:92:${10 + id}:${10 + id}`
+					ip: `${10 + id}.0.2.5`,
+					mac: `6a:5f:ee:92:${20 + id}:${20 + id}`
 				},
 				{
-					ip: `${10 + id}.0.1.8`,
-					mac: `6a:00:ee:00:${10 + id}:${10 + id}`
+					ip: `${10 + id}.0.2.8`,
+					mac: `6a:00:ee:00:${20 + id}:${20 + id}`
 				}
 			]
 		};
