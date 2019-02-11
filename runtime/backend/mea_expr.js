@@ -158,7 +158,7 @@ global.vpn_conn_mac = function (cfg, conn_state) {
 	const nic_id = cfg.ace_nic_config[0].nic_name;
 	const conn_cfg = cfg.conns[conn_state.id];
 	
-	return `CC:D3:9D:D1:${conn_tag_hex}:${conn_state.id}${conn_cfg.tunnel_port - 100}`;
+	return `CC:D3:9D:D1:${conn_tag_hex}:${nic_id}${conn_cfg.tunnel_port - 100}`;
 };
 
 /////////////////////////////////////////////////
