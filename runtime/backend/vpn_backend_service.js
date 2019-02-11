@@ -15,11 +15,14 @@ module.exports = function (host_profile, gw_profiles, service_port) {
 
 	this.find_conn = function (tunnel_spec) {
 		
+		console.log(`tunnel_spec: ${JSON.stringify(tunnel_spec)}`);
+		//console.log(`tunnel_spec: ${JSON.stringify(this.vpn_cfg.VPN.conns, null, 2)}`);
 		const conn_id = this.vpn_cfg.VPN.conns.findIndex((conn) => 
-			(conn.local_subnet === tunnel_spec.local_subnet) && 
-			(conn.remote_subnet === tunnel_spec.remote_subnet) && 
-			(conn.lan_port === tunnel_spec.lan_port) && 
-			(conn.tunnel_port === tunnel_spec.tunnel_port));
+			//(console.log(`conn: ${JSON.stringify(conn)}`)) && 
+			(conn.local_subnet == tunnel_spec.local_subnet) && 
+			(conn.remote_subnet == tunnel_spec.remote_subnet) && 
+			(conn.lan_port == tunnel_spec.lan_port) && 
+			(conn.tunnel_port == tunnel_spec.tunnel_port));
 		return conn_id;
 	};
 

@@ -4,8 +4,8 @@ set -x
 
 pktlen=800
 conn_id=0
-north_gw_mac='CC:D3:9D:D1:40:04'
-south_gw_mac='CC:D3:9D:D1:40:14'
+north_gw_mac='CC:D3:9D:D1:40:07'
+south_gw_mac='CC:D3:9D:D1:40:17'
 north_net="10.0.1.0"
 south_net="10.0.2.0"
 north_ip="10.0.1.5"

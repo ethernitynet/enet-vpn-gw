@@ -23,6 +23,11 @@ global.mea_ipsec_format_security_type = function (auth_algo, cipher_algo) {
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
 
+global.mea_host_port = 127;
+global.mea_cipher_port = 104;
+global.mea_lan_ports = [ 105, 106 ];
+global.mea_tunnel_port = 107;
+
 global.mask_arr = [
 	0x0000000000000000,
 	0x0000000080000000,
@@ -329,12 +334,15 @@ global.mea_ports_init_expr = function (cfg) {
 	const port_macs = mea_port_macs[nic_id];
 	
 	var expr = `${mea_top}\n`;
-	expr += `${service_add} 24 FFF000 FFF000 D.C 0 1 0 1000000000 0 64000 0 0 0 -f 1 0 -ra 0 -l2Type 0 -v 24 -p 0 -h 0 0 0 0 -lmid 1 0 1 0 -r ${port_macs[24]} 00:00:00:00:00:00 0000 -hType 0\n`;
-	expr += `${service_add} 104 FFF000 FFF000 D.C 0 1 0 1000000000 0 64000 0 0 1 127 -f 1 0 -ra 0 -l2Type 0 -v 104 -h 0 0 0 0 -lmid 1 0 1 0 -r ${port_macs[104]} 00:00:00:00:00:00 0000 -hType 0\n`;
-	expr += `${service_add} 105 FFF000 FFF000 D.C 0 1 0 1000000000 0 64000 0 0 1 127 -f 1 0 -ra 0 -l2Type 0 -v 105 -h 0 0 0 0 -lmid 1 0 1 0 -r ${port_macs[105]} 00:00:00:00:00:00 0000 -hType 0\n`;
-	expr += `${service_add} 106 FFF000 FFF000 D.C 0 1 0 1000000000 0 64000 0 0 1 127 -f 1 0 -ra 0 -l2Type 0 -v 106 -h 0 0 0 0 -lmid 1 0 1 0 -r ${port_macs[106]} 00:00:00:00:00:00 0000 -hType 0\n`;
-	expr += `${service_add} 107 FFF000 FFF000 D.C 0 1 0 1000000000 0 64000 0 0 1 127 -f 1 0 -ra 0 -l2Type 0 -v 107 -h 0 0 0 0 -lmid 1 0 1 0 -r ${port_macs[107]} 00:00:00:00:00:00 0000 -hType 0\n`;
-	expr += `${mea_cli(nic_id)} IPSec global set my_Ipsec_Ipv4 ${vpn_cfg.vpn_gw_ip}`;;
+	expr += `${mea_cli(nic_id)} interface config set ${mea_cipher_port} -lb 7\n`;
+	expr += `${service_add} ${mea_cipher_port} FFF000 FFF000 D.C 0 1 0 1000000000 0 64000 0 0 1 ${mea_host_port} -f 1 0 -ra 0 -l2Type 0 -v ${mea_cipher_port} -p 0 -h 0 0 0 0 -lmid 1 0 1 0 -r ${port_macs[mea_cipher_port]} 00:00:00:00:00:00 0000 -hType 0\n`;
+	expr += `${mea_cli(nic_id)} interface config set ${mea_tunnel_port} -lb 0\n`;
+	expr += `${mea_cli(nic_id)} interface config set ${mea_lan_ports[0]} -lb 0\n`;
+	expr += `${mea_cli(nic_id)} interface config set ${mea_lan_ports[1]} -lb 0\n`;
+	expr += `${service_add} ${mea_tunnel_port} FFF000 FFF000 D.C 0 1 0 1000000000 0 64000 0 0 1 ${mea_host_port} -f 1 0 -ra 0 -l2Type 0 -v ${mea_tunnel_port} -h 0 0 0 0 -lmid 1 0 1 0 -r ${port_macs[mea_tunnel_port]} 00:00:00:00:00:00 0000 -hType 0\n`;
+	expr += `${service_add} ${mea_lan_ports[0]} FFF000 FFF000 D.C 0 1 0 1000000000 0 64000 0 0 1 ${mea_host_port} -f 1 0 -ra 0 -l2Type 0 -v ${mea_lan_ports[0]} -h 0 0 0 0 -lmid 1 0 1 0 -r ${port_macs[mea_lan_ports[0]]} 00:00:00:00:00:00 0000 -hType 0\n`;
+	expr += `${service_add} ${mea_lan_ports[1]} FFF000 FFF000 D.C 0 1 0 1000000000 0 64000 0 0 1 ${mea_host_port} -f 1 0 -ra 0 -l2Type 0 -v ${mea_lan_ports[1]} -h 0 0 0 0 -lmid 1 0 1 0 -r ${port_macs[mea_lan_ports[1]]} 00:00:00:00:00:00 0000 -hType 0\n`;
+	expr += `${mea_cli(nic_id)} IPSec global set my_Ipsec_Ipv4 ${vpn_cfg.vpn_gw_ip}\n`;
 	return expr;
 };
 
@@ -358,7 +366,7 @@ global.mea_ipsec_inbound_fwd_add_expr = function (cmd) {
 			const next_hop_idx = actions_count;
 			const next_hop = cmd.state.fwd.next_hops[next_hop_idx];
 			console.log(`mea_ipsec_inbound_fwd_add_expr() cmd.state.fwd.actions[${next_hop.ip}]: ${cmd.state.fwd.actions[next_hop.ip]}`);
-			expr += `${action_add} -ed 1 0 -h 0 0 0 0 -lmid 1 0 1 0 -r ${next_hop.mac} ${cmd.state.tunnel.local_tunnel_mac} 0000 -hType 3\n`;
+			expr += `${action_add} -pm 1 0 -ed 1 0 -h 0 0 0 0 -lmid 1 0 1 0 -r ${next_hop.mac} ${cmd.state.tunnel.local_tunnel_mac} 0000 -hType 3\n`;
 			cmd.state.fwd.phase = `action_parse`;
 		}
 		else {
@@ -453,10 +461,10 @@ global.mea_ipsec_inbound_add_expr = function (cmd) {
 		const tunnel_keys_str = `-Integrity_key ${tunnel_keys.integrity_key} -Integrity_IV ${tunnel_keys.integrity_iv} -Confident_key ${tunnel_keys.confidentiality_key} -Confident_IV ${tunnel_keys.confidentiality_iv}`;
 
 		expr += `${ipsec_add} auto -security_type ${security_type} -TFC_en 0 -ESN_en 0 -SPI ${cmd.state.ipsec.spi} ${tunnel_keys_str}\n`;
-		expr += `${service_add} 27 FF1${conn_tag_hex} FF1${conn_tag_hex} D.C 0 1 0 1000000000 0 64000 0 0 1 127 -f 1 6 -v ${256 + conn_tag} -l4port_mask 1 -ra 0 -l2Type 1 -h 0 0 0 0 -lmid 1 0 1 0 -r ${port_macs[27]} 00:00:00:00:00:00 0000 -hType 0\n`;
+		expr += `${service_add} ${mea_cipher_port} FF1${conn_tag_hex} FF1${conn_tag_hex} D.C 0 1 0 1000000000 0 64000 0 0 1 ${mea_host_port} -f 1 6 -v ${256 + conn_tag} -l4port_mask 1 -ra 0 -l2Type 1 -h 0 0 0 0 -lmid 1 0 1 0 -r ${port_macs[mea_cipher_port]} 00:00:00:00:00:00 0000 -hType 0\n`;
 	}
 	else {
-		expr += `${service_add} ${conn_cfg.tunnel_port} ${remote_ip_hex} ${remote_ip_hex} D.C 0 1 0 1000000000 0 64000 0 0 1 27 -ra 0 -inf 1 0x${uint32_to_hex(cmd.state.ipsec.spi)} -l2Type 0 -subType 19 -h 810001${conn_tag_hex} 0 0 0 -hType 1 -hESP 2 ${cmd.state.profiles.inbound_profile_id} -lmid 1 0 1 0 -r ${port_macs[104]} 00:00:00:00:00:00 0000\n`;
+		expr += `${service_add} ${conn_cfg.tunnel_port} ${remote_ip_hex} ${remote_ip_hex} D.C 0 1 0 1000000000 0 64000 0 0 1 ${mea_cipher_port} -ra 0 -inf 1 0x${uint32_to_hex(cmd.state.ipsec.spi)} -l2Type 0 -subType 19 -h 810001${conn_tag_hex} 0 0 0 -hType 1 -hESP 2 ${cmd.state.profiles.inbound_profile_id} -lmid 1 0 1 0 -r ${port_macs[conn_cfg.tunnel_port]} 00:00:00:00:00:00 0000\n`;
 	};
 	return expr;
 };
@@ -511,8 +519,8 @@ global.mea_ipsec_outbound_add_expr = function (cmd) {
 		expr += `${action_add} -pm 1 0 -ed 1 0 -hIPSec 1 1 ${vpn_cfg.vpn_gw_ip} ${conn_cfg.remote_tunnel_endpoint_ip} -hESP 1 ${cmd.state.profiles.outbound_profile_id} -hType 71\n`;
 	}
 	else {
-		expr += `${forwarder_add} 0 ${cmd.state.tunnel.remote_tunnel_mac} 24 3 1 0 1 ${conn_cfg.tunnel_port} -action 1 ${cmd.state.actions.out_encrypt}\n`;
-		expr += `${forwarder_add} 0 ${cmd.state.tunnel.local_tunnel_mac} ${conn_cfg.lan_port} 3 1 0 1 24 -action 1 ${cmd.state.actions.out_l3fwd}\n`;
+		expr += `${forwarder_add} 0 ${cmd.state.tunnel.local_tunnel_mac} ${conn_cfg.lan_port} 3 1 0 1 ${mea_cipher_port} -action 1 ${cmd.state.actions.out_encrypt}\n`;
+		expr += `${forwarder_add} 0 ${cmd.state.tunnel.local_tunnel_mac} ${mea_cipher_port} 3 1 0 1 ${conn_cfg.tunnel_port} -action 1 ${cmd.state.actions.out_l3fwd}\n`;
 	};
 	return expr;
 };
@@ -546,8 +554,8 @@ global.mea_ipsec_outbound_add_parse = function (cmd) {
 	else {
 		const prev_output = cmd.output_processor[cmd.key].stdout;
 		cmd.output_processor[cmd.key] = {};
-		mea_forwarder_add_parse(cmd.state, `out_encrypt`, `0 ${cmd.state.tunnel.remote_tunnel_mac} 24`, prev_output);
-		mea_forwarder_add_parse(cmd.state, `out_l3fwd`, `0 ${cmd.state.tunnel.local_tunnel_mac} ${conn_cfg.lan_port}`, prev_output);
+		mea_forwarder_add_parse(cmd.state, `out_encrypt`, `0 ${cmd.state.tunnel.remote_tunnel_mac} ${conn_cfg.lan_port}`, prev_output);
+		mea_forwarder_add_parse(cmd.state, `out_l3fwd`, `0 ${cmd.state.tunnel.local_tunnel_mac} ${mea_cipher_port}`, prev_output);
 		return false;
 	};
 };
