@@ -32,10 +32,17 @@ module.exports = function (host_profile, gw_profiles) {
 	
 	this.dump_tunnel_states = function () {
 		
-		console.log(`==  ${new Date().getTime()}  ==`);
-		console.log(`=====================`);
-		console.log(JSON.stringify(this.tunnel_states, null, 2));
-		console.log(`=====================`);
+		var dump_str = `\n`;
+		dump_str += `=========================\n`;
+		dump_str += `==  VPN Tunnel States  ==\n`;
+		dump_str += `====  ${new Date().getTime()}  ====\n`;
+		dump_str += `=========================\n`;
+		dump_str += JSON.stringify(this.tunnel_states, null, 2);
+		dump_str += `\n`;
+		dump_str += `=====================\n`;
+		dump_str += `=====================\n`;
+		dump_str += `\n`;
+		return dump_str;
 	};
 	
 	this.vpn_init = function (cfg) {
@@ -58,7 +65,7 @@ module.exports = function (host_profile, gw_profiles) {
 	this.inbound_fwd_add = function (cfg, conn_id, next_hops) {
 		
 		const nic_id = cfg.ace_nic_config[0].nic_name;		
-		const tunnel_key = `nic${nic_id}.conn${conn_id}.in`;
+		const tunnel_key = `nic${nic_id}_conn${conn_id}_in`;
 		
 		this.tunnel_states[tunnel_key].fwd = { phase: `action_add`, next_hops: next_hops, actions: {}, forwarders: {} };
 		this.gw_config.host_cmds_append([
@@ -117,7 +124,7 @@ module.exports = function (host_profile, gw_profiles) {
 	this.inbound_tunnel_add = function (cfg, conn_id, remote_tunnel_mac, ipsec_cfg) {
 		
 		const nic_id = cfg.ace_nic_config[0].nic_name;		
-		const tunnel_key = `nic${nic_id}.conn${conn_id}.in`;
+		const tunnel_key = `nic${nic_id}_conn${conn_id}_in`;
 		
 		this.tunnel_states[tunnel_key] = {
 			nic_id: nic_id,
@@ -160,7 +167,7 @@ module.exports = function (host_profile, gw_profiles) {
 	this.outbound_tunnel_add = function (cfg, conn_id, remote_tunnel_mac, ipsec_cfg) {
 		
 		const nic_id = cfg.ace_nic_config[0].nic_name;		
-		const tunnel_key = `nic${nic_id}.conn${conn_id}.out`;
+		const tunnel_key = `nic${nic_id}_conn${conn_id}_out`;
 		
 		this.tunnel_states[tunnel_key] = {
 			nic_id: nic_id,

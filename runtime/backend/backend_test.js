@@ -140,7 +140,7 @@ var enet0_inbound_fwd_add = function (id) {
 
 enet0_load_vpn_cfg();
 
-for(var id = 0; id < 6; ++id) {
+for(var id = 0; id < 32; ++id) {
 	enet0_outbound_tunnel_add(id);
 	enet0_inbound_tunnel_add(id);
 	enet0_inbound_fwd_add(id);
@@ -150,7 +150,7 @@ function myFunc2() {
 
 	vpn_backend_service.dump();
 };
-setInterval(myFunc2, 2000);
+//setInterval(myFunc2, 2000);
 
 /*
 const enet0_json_cfg = 
