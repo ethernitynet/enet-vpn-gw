@@ -23,7 +23,6 @@ var vpn0_backend_service = new VPN_BACKEND_SERVICE(
 	3000
 );
 
-/*
 var vpn1_backend_service = new VPN_BACKEND_SERVICE(
 	{
 		host: `172.17.0.1`,
@@ -37,9 +36,8 @@ var vpn1_backend_service = new VPN_BACKEND_SERVICE(
 			password: `root`
 		}
 	},
-	3000
+	3001
 );
-*/
 
 var enet_load_vpn_cfg = function (nic_id, backend_ip, backend_port) {
 	
@@ -73,7 +71,8 @@ var enet_outbound_tunnel_add = function (nic_id, backend_ip, backend_port, id) {
 				"local_subnet": `${10 + id}.0.1.0/24`,
 				"remote_subnet": `${10 + id}.0.2.0/24`,
 				"lan_port": "105",
-				"tunnel_port": "104"
+				"tunnel_port": "104",
+				"remote_tunnel_mac": vpn_conn_mac_base(1, id, 104)
 			},
 			ipsec_cfg: {
 				spi: (1000 + id),
@@ -92,7 +91,8 @@ var enet_outbound_tunnel_add = function (nic_id, backend_ip, backend_port, id) {
 				"remote_subnet": `${10 + id}.0.1.0/24`,
 				"local_subnet": `${10 + id}.0.2.0/24`,
 				"lan_port": "106",
-				"tunnel_port": "104"
+				"tunnel_port": "104",
+				"remote_tunnel_mac": vpn_conn_mac_base(0, id, 104)
 			},
 			ipsec_cfg: {
 				spi: (1100 + id),
@@ -129,14 +129,15 @@ var enet_inbound_tunnel_add = function (nic_id, backend_ip, backend_port, id) {
 				"local_subnet": `${10 + id}.0.1.0/24`,
 				"remote_subnet": `${10 + id}.0.2.0/24`,
 				"lan_port": "105",
-				"tunnel_port": "104"
+				"tunnel_port": "104",
+				"remote_tunnel_mac": vpn_conn_mac_base(1, id, 104)
 			},
 			ipsec_cfg: {
-				spi: (2000 + id),
+				spi: (1100 + id),
 				auth_algo: null,
 				cipher_algo: `aes_gcm128-null`,
 				auth_key: `00`,
-				cipher_key: `666666660000000033333333111111115555${2000 + id}`
+				cipher_key: `666666660000000033333333111111115555${1100 + id}`
 			}
 		};
 		break;
@@ -148,14 +149,15 @@ var enet_inbound_tunnel_add = function (nic_id, backend_ip, backend_port, id) {
 				"remote_subnet": `${10 + id}.0.1.0/24`,
 				"local_subnet": `${10 + id}.0.2.0/24`,
 				"lan_port": "106",
-				"tunnel_port": "104"
+				"tunnel_port": "104",
+				"remote_tunnel_mac": vpn_conn_mac_base(0, id, 104)
 			},
 			ipsec_cfg: {
-				spi: (2100 + id),
+				spi: (1000 + id),
 				auth_algo: null,
 				cipher_algo: `aes_gcm128-null`,
 				auth_key: `00`,
-				cipher_key: `666666660000000033333333111111115555${2100 + id}`
+				cipher_key: `666666660000000033333333111111115555${1000 + id}`
 			}
 		};
 		break;
@@ -185,16 +187,17 @@ var enet_inbound_fwd_add = function (nic_id, backend_ip, backend_port, id) {
 				"local_subnet": `${10 + id}.0.1.0/24`,
 				"remote_subnet": `${10 + id}.0.2.0/24`,
 				"lan_port": "105",
-				"tunnel_port": "104"
+				"tunnel_port": "104",
+				"remote_tunnel_mac": vpn_conn_mac_base(1, id, 104)
 			},
 			next_hops: [
 				{
 					ip: `${10 + id}.0.2.5`,
-					mac: `6a:5f:ee:92:${10 + id}:${10 + id}`
+					mac: `6a:5f:ee:92:${20 + id}:${20 + id}`
 				},
 				{
 					ip: `${10 + id}.0.2.8`,
-					mac: `6a:00:ee:00:${10 + id}:${10 + id}`
+					mac: `6a:00:ee:00:${20 + id}:${20 + id}`
 				}
 			]
 		};
@@ -207,16 +210,17 @@ var enet_inbound_fwd_add = function (nic_id, backend_ip, backend_port, id) {
 				"remote_subnet": `${10 + id}.0.1.0/24`,
 				"local_subnet": `${10 + id}.0.2.0/24`,
 				"lan_port": "106",
-				"tunnel_port": "104"
+				"tunnel_port": "104",
+				"remote_tunnel_mac": vpn_conn_mac_base(0, id, 104)
 			},
 			next_hops: [
 				{
-					ip: `${10 + id}.0.2.5`,
-					mac: `6a:5f:ee:92:${20 + id}:${20 + id}`
+					ip: `${10 + id}.0.1.5`,
+					mac: `6a:5f:ee:92:${10 + id}:${10 + id}`
 				},
 				{
-					ip: `${10 + id}.0.2.8`,
-					mac: `6a:00:ee:00:${20 + id}:${20 + id}`
+					ip: `${10 + id}.0.1.8`,
+					mac: `6a:00:ee:00:${10 + id}:${10 + id}`
 				}
 			]
 		};
@@ -236,11 +240,18 @@ var enet_inbound_fwd_add = function (nic_id, backend_ip, backend_port, id) {
 };
 
 enet_load_vpn_cfg(0, `172.17.0.1`, 3000);
+enet_load_vpn_cfg(1, `172.17.0.1`, 3001);
 
-for(var id = 0; id < 32; ++id) {
-	enet_outbound_tunnel_add(0, `172.17.0.1`, 3000, id);
-	enet_inbound_tunnel_add(0, `172.17.0.1`, 3000, id);
-	enet_inbound_fwd_add(0, `172.17.0.1`, 3000, id);
+for(var id0 = 0; id0 < 3; ++id0) {
+	enet_outbound_tunnel_add(0, `172.17.0.1`, 3000, id0);
+	enet_inbound_tunnel_add(0, `172.17.0.1`, 3000, id0);
+	enet_inbound_fwd_add(0, `172.17.0.1`, 3000, id0);
+};
+
+for(var id1 = 0; id1 < 3; ++id1) {
+	enet_outbound_tunnel_add(1, `172.17.0.1`, 3001, id1);
+	enet_inbound_tunnel_add(1, `172.17.0.1`, 3001, id1);
+	enet_inbound_fwd_add(1, `172.17.0.1`, 3001, id1);
 };
 
 /*

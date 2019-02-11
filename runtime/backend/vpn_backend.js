@@ -12,7 +12,7 @@ module.exports = function (host_profile, gw_profiles) {
 	this.gw_config = new GW_CONFIG(host_profile, gw_profiles);
 	this.output_processor = {};
 	this.tunnel_states = {};
-	this.host_delay = 200;
+	this.host_delay = 100;
 	
 	this.dump_output_processor = function () {
 		

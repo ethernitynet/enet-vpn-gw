@@ -3,24 +3,24 @@
 set -x
 
 pktlen=800
-
+conn_id=0
+north_gw_mac='CC:D3:9D:D1:40:04'
+south_gw_mac='CC:D3:9D:D1:40:14'
 north_net="10.0.1.0"
+south_net="10.0.2.0"
 north_ip="10.0.1.5"
+south_ip="10.0.2.5"
+
 north_maskbits=24
 north_net_cidr="${north_net}/${north_maskbits}"
 north_ip_cidr="${north_ip}/${north_maskbits}"
 
-south_net="10.0.2.0"
-south_ip="10.0.2.5"
 south_maskbits=24
 south_net_cidr="${south_net}/${south_maskbits}"
 south_ip_cidr="${south_ip}/${south_maskbits}"
 
-north_gw_mac='CC:D3:9D:D5:6E:04'
-south_gw_mac='CC:D3:9D:D6:7C:14'
-
-n2s_pcap_file='./multinic/n2s_plaintext_800.pcap'
-s2n_pcap_file='./multinic/s2n_plaintext_800.pcap'
+n2s_pcap_file="./runtime/bench/multinic/n2s_conn${conn_id}_${pktlen}.pcap"
+s2n_pcap_file="./runtime/bench/multinic/s2n_conn${conn_id}_${pktlen}.pcap"
 
 ns_cleanup() {
 

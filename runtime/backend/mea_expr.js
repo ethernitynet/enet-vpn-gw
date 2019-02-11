@@ -139,26 +139,42 @@ global.vpn_conn_hash = function (cfg, conn_id) {
 	return str_hash(`${conn_ns}`, 24);
 };
 
-global.vpn_conn_tag = function (cfg, conn_state) {
+global.vpn_conn_tag_base = function (conn_id) {
 	
-	return (64 + conn_state.id);
+	return (64 + conn_id);
 };
 
-global.vpn_conn_tag_hex = function (cfg, conn_state) {
+global.vpn_conn_tag_hex_base = function (conn_id) {
 	
-	const conn_tag = vpn_conn_tag(cfg, conn_state);
+	const conn_tag = vpn_conn_tag_base(conn_id);
 	const conn_tag_hex = uint32_to_hex(conn_tag);
 	
 	return conn_tag_hex.substring(conn_tag_hex.length - 2);
 };
 
+global.vpn_conn_mac_base = function (nic_id, conn_id, tunnel_port) {
+	
+	const conn_tag_hex = vpn_conn_tag_hex_base(conn_id);
+	
+	return `CC:D3:9D:D1:${conn_tag_hex}:${nic_id}${tunnel_port - 100}`;
+};
+
+global.vpn_conn_tag = function (cfg, conn_state) {
+	
+	return vpn_conn_tag_base(conn_state.id);
+};
+
+global.vpn_conn_tag_hex = function (cfg, conn_state) {
+	
+	return vpn_conn_tag_hex_base(conn_state.id);
+};
+
 global.vpn_conn_mac = function (cfg, conn_state) {
 	
-	const conn_tag_hex = vpn_conn_tag_hex(cfg, conn_state);
 	const nic_id = cfg.ace_nic_config[0].nic_name;
 	const conn_cfg = cfg.conns[conn_state.id];
 	
-	return `CC:D3:9D:D1:${conn_tag_hex}:${nic_id}${conn_cfg.tunnel_port - 100}`;
+	return vpn_conn_mac_base(nic_id, conn_state.id, conn_cfg.tunnel_port);
 };
 
 /////////////////////////////////////////////////
@@ -307,6 +323,7 @@ global.mea_forwarder_add_parse = function (conn_state, forwarder_key, forwarder_
 global.mea_ports_init_expr = function (cfg) {
 	
 	const nic_id = cfg.ace_nic_config[0].nic_name;
+	const vpn_cfg = cfg.vpn_gw_config[0];
 	const mea_top = mea_cli_top(nic_id);
 	const service_add = mea_service_add(nic_id);
 	const port_macs = mea_port_macs[nic_id];
@@ -317,6 +334,7 @@ global.mea_ports_init_expr = function (cfg) {
 	expr += `${service_add} 105 FFF000 FFF000 D.C 0 1 0 1000000000 0 64000 0 0 1 127 -f 1 0 -ra 0 -l2Type 0 -v 105 -h 0 0 0 0 -lmid 1 0 1 0 -r ${port_macs[105]} 00:00:00:00:00:00 0000 -hType 0\n`;
 	expr += `${service_add} 106 FFF000 FFF000 D.C 0 1 0 1000000000 0 64000 0 0 1 127 -f 1 0 -ra 0 -l2Type 0 -v 106 -h 0 0 0 0 -lmid 1 0 1 0 -r ${port_macs[106]} 00:00:00:00:00:00 0000 -hType 0\n`;
 	expr += `${service_add} 107 FFF000 FFF000 D.C 0 1 0 1000000000 0 64000 0 0 1 127 -f 1 0 -ra 0 -l2Type 0 -v 107 -h 0 0 0 0 -lmid 1 0 1 0 -r ${port_macs[107]} 00:00:00:00:00:00 0000 -hType 0\n`;
+	expr += `${mea_cli(nic_id)} IPSec global set my_Ipsec_Ipv4 ${vpn_cfg.vpn_gw_ip}`;;
 	return expr;
 };
 

@@ -5,7 +5,7 @@ TREX_WEB_URL="http://trex-tgn.cisco.com/trex"
 cfg_dir=$(pwd)/runtime/bench/trex
 trx_user="trx"
 trx_home=/home/${trx_user}
-trx_root=${trx_home}/v2.52
+trx_root=${trx_home}/v2.51
 srvr_cfg_file="${cfg_dir}/srvr_cfg.yaml"
 trx_py_dir="${cfg_dir}/py"
 
