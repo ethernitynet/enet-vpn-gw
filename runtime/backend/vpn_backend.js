@@ -63,6 +63,10 @@ module.exports = function (host_profile, gw_profiles) {
 		]);
 		this.gw_config.host_cmd();
 	};
+
+	this.get_stats = function (cfg) {
+		
+	};
 	
 	this.inbound_fwd_add = function (cfg, conn_id, next_hops) {
 		

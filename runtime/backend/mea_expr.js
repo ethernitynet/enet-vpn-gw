@@ -19,6 +19,8 @@ global.mea_ipsec_format_security_type = function (auth_algo, cipher_algo) {
 	return `0xCA`;
 };
 
+global.ipsec_debug = false;
+
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
@@ -334,12 +336,12 @@ global.mea_ports_init_expr = function (cfg) {
 	const port_macs = mea_port_macs[nic_id];
 	
 	var expr = `${mea_top}\n`;
-	expr += `${mea_cli(nic_id)} interface config set ${mea_cipher_port} -lb 7\n`;
+	expr += `${mea_cli(nic_id)} interface config set ${mea_cipher_port} -lb 0\n`;
 	expr += `${service_add} ${mea_cipher_port} FFF000 FFF000 D.C 0 1 0 1000000000 0 64000 0 0 1 ${mea_host_port} -f 1 0 -ra 0 -l2Type 0 -v ${mea_cipher_port} -p 0 -h 0 0 0 0 -lmid 1 0 1 0 -r ${port_macs[mea_cipher_port]} 00:00:00:00:00:00 0000 -hType 0\n`;
 	expr += `${mea_cli(nic_id)} interface config set ${mea_tunnel_port} -lb 0\n`;
 	expr += `${mea_cli(nic_id)} interface config set ${mea_lan_ports[0]} -lb 0\n`;
 	expr += `${mea_cli(nic_id)} interface config set ${mea_lan_ports[1]} -lb 0\n`;
-	expr += `${service_add} ${mea_tunnel_port} FFF000 FFF000 D.C 0 1 0 1000000000 0 64000 0 0 1 ${mea_host_port} -f 1 0 -ra 0 -l2Type 0 -v ${mea_tunnel_port} -h 0 0 0 0 -lmid 1 0 1 0 -r ${port_macs[mea_tunnel_port]} 00:00:00:00:00:00 0000 -hType 0\n`;
+	//expr += `${service_add} ${mea_tunnel_port} FFF000 FFF000 D.C 0 1 0 1000000000 0 64000 0 0 1 ${mea_host_port} -f 1 0 -ra 0 -l2Type 0 -v ${mea_tunnel_port} -h 0 0 0 0 -lmid 1 0 1 0 -r ${port_macs[mea_tunnel_port]} 00:00:00:00:00:00 0000 -hType 0\n`;
 	expr += `${service_add} ${mea_lan_ports[0]} FFF000 FFF000 D.C 0 1 0 1000000000 0 64000 0 0 1 ${mea_host_port} -f 1 0 -ra 0 -l2Type 0 -v ${mea_lan_ports[0]} -h 0 0 0 0 -lmid 1 0 1 0 -r ${port_macs[mea_lan_ports[0]]} 00:00:00:00:00:00 0000 -hType 0\n`;
 	expr += `${service_add} ${mea_lan_ports[1]} FFF000 FFF000 D.C 0 1 0 1000000000 0 64000 0 0 1 ${mea_host_port} -f 1 0 -ra 0 -l2Type 0 -v ${mea_lan_ports[1]} -h 0 0 0 0 -lmid 1 0 1 0 -r ${port_macs[mea_lan_ports[1]]} 00:00:00:00:00:00 0000 -hType 0\n`;
 	expr += `${mea_cli(nic_id)} IPSec global set my_Ipsec_Ipv4 ${vpn_cfg.vpn_gw_ip}\n`;
@@ -464,7 +466,12 @@ global.mea_ipsec_inbound_add_expr = function (cmd) {
 		expr += `${service_add} ${mea_cipher_port} FF1${conn_tag_hex} FF1${conn_tag_hex} D.C 0 1 0 1000000000 0 64000 0 0 1 ${mea_host_port} -f 1 6 -v ${256 + conn_tag} -l4port_mask 1 -ra 0 -l2Type 1 -h 0 0 0 0 -lmid 1 0 1 0 -r ${port_macs[mea_cipher_port]} 00:00:00:00:00:00 0000 -hType 0\n`;
 	}
 	else {
-		expr += `${service_add} ${conn_cfg.tunnel_port} ${remote_ip_hex} ${remote_ip_hex} D.C 0 1 0 1000000000 0 64000 0 0 1 ${mea_cipher_port} -ra 0 -inf 1 0x${uint32_to_hex(cmd.state.ipsec.spi)} -l2Type 0 -subType 19 -h 810001${conn_tag_hex} 0 0 0 -hType 1 -hESP 2 ${cmd.state.profiles.inbound_profile_id} -lmid 1 0 1 0 -r ${port_macs[conn_cfg.tunnel_port]} 00:00:00:00:00:00 0000\n`;
+		if(ipsec_debug) {
+			expr += `${service_add} ${conn_cfg.tunnel_port} FF000 FF000 D.C 0 1 0 1000000000 0 64000 0 0 1 ${mea_cipher_port} -ra 0 -h 0 0 0 0 -hType 0 -l2Type 0\n`;
+		}
+		else {
+			expr += `${service_add} ${conn_cfg.tunnel_port} ${remote_ip_hex} ${remote_ip_hex} D.C 0 1 0 1000000000 0 64000 0 0 1 ${mea_cipher_port} -ra 0 -inf 1 0x${uint32_to_hex(cmd.state.ipsec.spi)} -l2Type 0 -subType 19 -h 810001${conn_tag_hex} 0 0 0 -hType 1 -hESP 2 ${cmd.state.profiles.inbound_profile_id} -lmid 1 0 1 0 -r ${port_macs[conn_cfg.tunnel_port]} 00:00:00:00:00:00 0000\n`;
+		};
 	};
 	return expr;
 };
@@ -516,7 +523,12 @@ global.mea_ipsec_outbound_add_expr = function (cmd) {
 	else if(cmd.state.actions.out_encrypt === undefined) {
 		const vpn_cfg = cmd.cfg.vpn_gw_config[0];
 		
-		expr += `${action_add} -pm 1 0 -ed 1 0 -hIPSec 1 1 ${vpn_cfg.vpn_gw_ip} ${conn_cfg.remote_tunnel_endpoint_ip} -hESP 1 ${cmd.state.profiles.outbound_profile_id} -hType 71\n`;
+		if(ipsec_debug) {
+			expr += `${action_add} -pm 1 0 -ed 1 0 -h 81000000 0 0 0 -hType 0\n`;
+		}
+		else {
+			expr += `${action_add} -pm 1 0 -ed 1 0 -hIPSec 1 1 ${vpn_cfg.vpn_gw_ip} ${conn_cfg.remote_tunnel_endpoint_ip} -hESP 1 ${cmd.state.profiles.outbound_profile_id} -hType 71\n`;
+		};
 	}
 	else {
 		expr += `${forwarder_add} 0 ${cmd.state.tunnel.local_tunnel_mac} ${conn_cfg.lan_port} 3 1 0 1 ${mea_cipher_port} -action 1 ${cmd.state.actions.out_encrypt}\n`;

@@ -53,6 +53,11 @@ module.exports = function (host_profile, gw_profiles, service_port) {
 		return this.vpn_backend.dump_tunnel_states();
 	};
 
+	this.get_stats = function () {
+		
+		return this.vpn_backend.get_stats(this.vpn_cfg.VPN);
+	};
+
 	this.load_vpn_cfg = function (vpn_cfg) {
 		
 		this.vpn_cfg = vpn_cfg;
