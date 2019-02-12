@@ -27,8 +27,8 @@ gw1_profiles[mea_tunnel_port] = {
 	password: `root`
 };
 
-var vpn0_backend_service = new VPN_BACKEND_SERVICE(host_profile, gw0_profiles, 3000);
-var vpn1_backend_service = new VPN_BACKEND_SERVICE(host_profile, gw1_profiles, 3001);
+var vpn0_backend_service = new VPN_BACKEND_SERVICE(host_profile, gw0_profiles, 4400);
+var vpn1_backend_service = new VPN_BACKEND_SERVICE(host_profile, gw1_profiles, 4401);
 
 var enet_load_vpn_cfg = function (nic_id, backend_ip, backend_port) {
 	
@@ -234,19 +234,19 @@ var enet_inbound_fwd_add = function (nic_id, backend_ip, backend_port, id) {
 	});
 };
 
-enet_load_vpn_cfg(0, `172.17.0.1`, 3000);
-enet_load_vpn_cfg(1, `172.17.0.1`, 3001);
+enet_load_vpn_cfg(0, `172.17.0.1`, 4400);
+enet_load_vpn_cfg(1, `172.17.0.1`, 4401);
 
 for(var id0 = 0; id0 < 4; ++id0) {
-	enet_outbound_tunnel_add(0, `172.17.0.1`, 3000, id0);
-	enet_inbound_tunnel_add(0, `172.17.0.1`, 3000, id0);
-	enet_inbound_fwd_add(0, `172.17.0.1`, 3000, id0);
+	enet_outbound_tunnel_add(0, `172.17.0.1`, 4400, id0);
+	enet_inbound_tunnel_add(0, `172.17.0.1`, 4400, id0);
+	enet_inbound_fwd_add(0, `172.17.0.1`, 4400, id0);
 };
 
 for(var id1 = 0; id1 < 4; ++id1) {
-	enet_outbound_tunnel_add(1, `172.17.0.1`, 3001, id1);
-	enet_inbound_tunnel_add(1, `172.17.0.1`, 3001, id1);
-	enet_inbound_fwd_add(1, `172.17.0.1`, 3001, id1);
+	enet_outbound_tunnel_add(1, `172.17.0.1`, 4401, id1);
+	enet_inbound_tunnel_add(1, `172.17.0.1`, 4401, id1);
+	enet_inbound_fwd_add(1, `172.17.0.1`, 4401, id1);
 };
 
 /*
