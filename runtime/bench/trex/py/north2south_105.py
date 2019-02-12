@@ -2,10 +2,10 @@ from trex_stl_lib.api import *
 
 
 ##################
-total_Mbps = 1
-frame_len = 650
-streams_count = 1
-vtep_dips_count = 16
+total_Mbps = 5000
+frame_len = 600
+streams_count = 4
+vtep_dips_count = 1
 vxlan_vni_min = 6106
 guest_vlan_min = 10
 guest_prio_min = 0
@@ -14,12 +14,12 @@ guest_prios_count = 1
 guest_sips_count = 65536
 guest_dips_count = 65536
 ##########################################
-vxlan_sip_x = "10.0.1.110"
+vxlan_sip_x = "10.0.1.5"
 ##########################################
 vtep_dip_min =                       10
 vtep_dip_min = (vtep_dip_min << 8) + 0
 vtep_dip_min = (vtep_dip_min << 8) + 2
-vtep_dip_min = (vtep_dip_min << 8) + 0
+vtep_dip_min = (vtep_dip_min << 8) + 4
 ##########################################
 guest_sip_min =                        1
 guest_sip_min = (guest_sip_min << 8) + 1
@@ -208,39 +208,63 @@ class STLS1(object):
 		
 			if stream_id == 0:
 				##########################################
-				vxlan_sip_x = "10.0.1.210"
+				vxlan_smac_x = '6a:5f:ee:92:10:10'
+				vxlan_dmac_x = 'CC:D3:9D:D1:40:07'
+				##########################################
+				vxlan_sip_x = "10.0.1.5"
 				##########################################
 				vtep_dip_min =                       10
 				vtep_dip_min = (vtep_dip_min << 8) + 0
 				vtep_dip_min = (vtep_dip_min << 8) + 2
-				vtep_dip_min = (vtep_dip_min << 8) + 0
+				vtep_dip_min = (vtep_dip_min << 8) + 4
 				##########################################
 			elif stream_id == 1:
 				##########################################
-				vxlan_sip_x = "10.0.1.211"
+				vxlan_smac_x = '6a:5f:ee:92:11:11'
+				vxlan_dmac_x = 'CC:D3:9D:D1:41:07'
 				##########################################
-				vtep_dip_min =                       10
+				vxlan_sip_x = "11.0.1.5"
+				##########################################
+				vtep_dip_min =                       11
 				vtep_dip_min = (vtep_dip_min << 8) + 0
 				vtep_dip_min = (vtep_dip_min << 8) + 2
-				vtep_dip_min = (vtep_dip_min << 8) + 0
+				vtep_dip_min = (vtep_dip_min << 8) + 4
 				##########################################
 			elif stream_id == 2:
 				##########################################
-				vxlan_sip_x = "10.0.1.212"
+				vxlan_smac_x = '6a:5f:ee:92:12:12'
+				vxlan_dmac_x = 'CC:D3:9D:D1:42:07'
 				##########################################
-				vtep_dip_min =                       10
+				vxlan_sip_x = "12.0.1.5"
+				##########################################
+				vtep_dip_min =                       12
 				vtep_dip_min = (vtep_dip_min << 8) + 0
 				vtep_dip_min = (vtep_dip_min << 8) + 2
+				vtep_dip_min = (vtep_dip_min << 8) + 4
+				##########################################
+			elif stream_id == 3:
+				##########################################
+				vxlan_smac_x = '6a:5f:ee:92:13:13'
+				vxlan_dmac_x = 'CC:D3:9D:D1:43:07'
+				##########################################
+				vxlan_sip_x = "13.0.1.5"
+				##########################################
+				vtep_dip_min =                       13
 				vtep_dip_min = (vtep_dip_min << 8) + 0
+				vtep_dip_min = (vtep_dip_min << 8) + 2
+				vtep_dip_min = (vtep_dip_min << 8) + 4
 				##########################################
 			else:
 				##########################################
-				vxlan_sip_x = "10.0.1.213"
+				vxlan_smac_x = '6a:5f:ee:92:14:14'
+				vxlan_dmac_x = 'CC:D3:9D:D1:44:07'
 				##########################################
-				vtep_dip_min =                       10
+				vxlan_sip_x = "14.0.1.5"
+				##########################################
+				vtep_dip_min =                       14
 				vtep_dip_min = (vtep_dip_min << 8) + 0
 				vtep_dip_min = (vtep_dip_min << 8) + 2
-				vtep_dip_min = (vtep_dip_min << 8) + 0
+				vtep_dip_min = (vtep_dip_min << 8) + 4
 				##########################################
 
 				#vxlan_sip_x = "172.1.1.%d" % (1 + (class_c_vtep_x % 128))
@@ -257,8 +281,6 @@ class STLS1(object):
 					ip_num = (ip_num >> 8)
 					vtep_dip0 = (ip_num & 255)
 					vtep_dip_x = "%d.%d.%d.%d" % (vtep_dip0, vtep_dip1, vtep_dip2, vtep_dip3)
-					vxlan_smac_x = '08:00:27:9c:81:cb'
-					vxlan_dmac_x = 'CC:D3:9D:D5:6E:04'
 					#vxlan_dmac_x = '00:e0:ed:39:95:76'
 					#############################################
 					#vxlan_smac_x = '00:e0:%02x:5c:0f:21' % (256 - (vtep_dip2 + 1))

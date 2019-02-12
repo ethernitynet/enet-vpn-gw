@@ -207,11 +207,15 @@ var enet_inbound_fwd_add = function (nic_id, backend_ip, backend_port, id) {
 			next_hops: [
 				{
 					ip: `${10 + id}.0.2.5`,
-					mac: `6a:5f:ee:92:${20 + id}:${20 + id}`
+					mac: `6a:5f:55:92:${20 + id}:${20 + id}`
 				},
 				{
-					ip: `${10 + id}.0.2.8`,
-					mac: `6a:00:ee:00:${20 + id}:${20 + id}`
+					ip: `${10 + id}.0.2.6`,
+					mac: `6a:5f:66:92:${20 + id}:${20 + id}`
+				},
+				{
+					ip: `${10 + id}.0.2.7`,
+					mac: `6a:5f:77:92:${20 + id}:${20 + id}`
 				}
 			]
 		};
@@ -233,13 +237,13 @@ var enet_inbound_fwd_add = function (nic_id, backend_ip, backend_port, id) {
 enet_load_vpn_cfg(0, `172.17.0.1`, 3000);
 enet_load_vpn_cfg(1, `172.17.0.1`, 3001);
 
-for(var id0 = 0; id0 < 1; ++id0) {
+for(var id0 = 0; id0 < 4; ++id0) {
 	enet_outbound_tunnel_add(0, `172.17.0.1`, 3000, id0);
 	enet_inbound_tunnel_add(0, `172.17.0.1`, 3000, id0);
 	enet_inbound_fwd_add(0, `172.17.0.1`, 3000, id0);
 };
 
-for(var id1 = 0; id1 < 1; ++id1) {
+for(var id1 = 0; id1 < 4; ++id1) {
 	enet_outbound_tunnel_add(1, `172.17.0.1`, 3001, id1);
 	enet_inbound_tunnel_add(1, `172.17.0.1`, 3001, id1);
 	enet_inbound_fwd_add(1, `172.17.0.1`, 3001, id1);
