@@ -336,7 +336,7 @@ global.mea_ports_init_expr = function (cfg) {
 	const port_macs = mea_port_macs[nic_id];
 	
 	var expr = `${mea_top}\n`;
-	expr += `${mea_cli(nic_id)} interface config set ${mea_cipher_port} -lb 0\n`;
+	expr += `${mea_cli(nic_id)} interface config set ${mea_cipher_port} -lb 7\n`;
 	expr += `${service_add} ${mea_cipher_port} FFF000 FFF000 D.C 0 1 0 1000000000 0 64000 0 0 1 ${mea_host_port} -f 1 0 -ra 0 -l2Type 0 -v ${mea_cipher_port} -p 0 -h 0 0 0 0 -lmid 1 0 1 0 -r ${port_macs[mea_cipher_port]} 00:00:00:00:00:00 0000 -hType 0\n`;
 	expr += `${mea_cli(nic_id)} interface config set ${mea_tunnel_port} -lb 0\n`;
 	expr += `${mea_cli(nic_id)} interface config set ${mea_lan_ports[0]} -lb 0\n`;
@@ -344,6 +344,7 @@ global.mea_ports_init_expr = function (cfg) {
 	//expr += `${service_add} ${mea_tunnel_port} FFF000 FFF000 D.C 0 1 0 1000000000 0 64000 0 0 1 ${mea_host_port} -f 1 0 -ra 0 -l2Type 0 -v ${mea_tunnel_port} -h 0 0 0 0 -lmid 1 0 1 0 -r ${port_macs[mea_tunnel_port]} 00:00:00:00:00:00 0000 -hType 0\n`;
 	expr += `${service_add} ${mea_lan_ports[0]} FFF000 FFF000 D.C 0 1 0 1000000000 0 64000 0 0 1 ${mea_host_port} -f 1 0 -ra 0 -l2Type 0 -v ${mea_lan_ports[0]} -h 0 0 0 0 -lmid 1 0 1 0 -r ${port_macs[mea_lan_ports[0]]} 00:00:00:00:00:00 0000 -hType 0\n`;
 	expr += `${service_add} ${mea_lan_ports[1]} FFF000 FFF000 D.C 0 1 0 1000000000 0 64000 0 0 1 ${mea_host_port} -f 1 0 -ra 0 -l2Type 0 -v ${mea_lan_ports[1]} -h 0 0 0 0 -lmid 1 0 1 0 -r ${port_macs[mea_lan_ports[1]]} 00:00:00:00:00:00 0000 -hType 0\n`;
+	expr += `${mea_cli(nic_id)} port egress set ${mea_cipher_port} -s 1 8000000000 64 1 1 0 0\n`;
 	expr += `${mea_cli(nic_id)} IPSec global set my_Ipsec_Ipv4 ${vpn_cfg.vpn_gw_ip}\n`;
 	return expr;
 };
