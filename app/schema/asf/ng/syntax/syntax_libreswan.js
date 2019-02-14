@@ -20,13 +20,12 @@ function libreswan_expr_ipsec_conf_conn_append(expr_arr, cfg, conn_id) {
 	const nic_cfg = cfg.ace_nic_config[0];
 	const conn = cfg.conns[conn_id];
 	const vpn_cfg = cfg.vpn_gw_config[0];
-	const outbound_ns = tun_ns(nic_cfg, conn);
-	const inbound_ns = tun_inbound_ns(nic_cfg, conn);
+	const conn_ns = vpn_conn_ns(nic_cfg, conn);
 	const libreswan_specific = conn.libreswan_specific;
 	const libreswan_specific_arr = libreswan_specific.split('\n');
 
-	expr_arr.push(`# Outbound Full HW Offload: ${vpn_cfg.vpn_gw_ip}>>${conn.remote_tunnel_endpoint_ip}[${outbound_ns}]`);
-	expr_arr.push(`# Inbound  Full HW Offload: ${conn.remote_tunnel_endpoint_ip}>>${vpn_cfg.vpn_gw_ip}[${inbound_ns}]`);
+	expr_arr.push(`# Outbound Full HW Offload: ${vpn_cfg.vpn_gw_ip}>>${conn.remote_tunnel_endpoint_ip}[${conn_ns}]`);
+	expr_arr.push(`# Inbound  Full HW Offload: ${conn.remote_tunnel_endpoint_ip}>>${vpn_cfg.vpn_gw_ip}[${conn_ns}]`);
 	expr_arr.push(`conn ${conn.name}`);
 
 	libreswan_specific_arr.forEach(function(param) {
@@ -108,6 +107,7 @@ function port_dictionary_append_libreswan(port_dictionary, cfg, port) {
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
 
+/*
 module.exports = function () {
 
 	this.json_cfg = { };
@@ -122,3 +122,5 @@ module.exports = function () {
 		port_dictionary_append_libreswan(port_dictionary, this.json_cfg, port);
     };
 };
+*/
+

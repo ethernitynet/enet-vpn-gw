@@ -115,7 +115,7 @@ function ovs_expr_conn_add_outbound_no_offload(expr_arr, cfg, conn_id) {
 	const nic_cfg = cfg.ace_nic_config[0];
 	const vpn_cfg = cfg.vpn_gw_config[0];
 	const conn = cfg.conns[conn_id];
-	const ns = tun_ns(nic_cfg, conn);
+	const ns = vpn_conn_ns(nic_cfg, conn);
 	const ns_mac = tun_ns_mac(nic_cfg, conn);
 	const vpn_inst = enet_vpn_inst(nic_cfg);
 	const gw_inst = enet_gw_inst(nic_cfg, conn.tunnel_port);

@@ -10,7 +10,7 @@ function expr_outbound_tunnel_del(expr_arr, cfg, conn_id) {
 	const nic_cfg = cfg.ace_nic_config[0];
 	const vpn_cfg = cfg.vpn_gw_config[0];
 	const conn = cfg.conns[conn_id];
-	const ns = tun_ns(nic_cfg, conn);
+	const ns = vpn_conn_ns(nic_cfg, conn);
 	const ns_mac = tun_ns_mac(nic_cfg, conn);
 	const netns_shared_dir = `/shared/conns/${ns}`;
 	const ovs_shared_dir = `/shared/enet${nic_cfg.nic_name}_libreswan${conn.tunnel_port}/conns/${ns}`;
@@ -32,7 +32,7 @@ function expr_outbound_tunnel_add(expr_arr, cfg, conn_id) {
 	const nic_cfg = cfg.ace_nic_config[0];
 	const vpn_cfg = cfg.vpn_gw_config[0];
 	const conn = cfg.conns[conn_id];
-	const ns = tun_ns(nic_cfg, conn);
+	const ns = vpn_conn_ns(nic_cfg, conn);
 	const ns_mac = tun_ns_mac(nic_cfg, conn);
 	const netns_shared_dir = `/shared/conns/${ns}`;
 	const ovs_shared_dir = `/shared/enet${nic_cfg.nic_name}_libreswan${conn.tunnel_port}/conns/${ns}`;
@@ -54,7 +54,7 @@ function conn_dictionary_append(conn_dictionary, cfg, conn_id) {
 	
 	const nic_cfg = cfg.ace_nic_config[0];
 	const conn = cfg.conns[conn_id];
-	const ns = tun_ns(nic_cfg, conn);
+	const ns = vpn_conn_ns(nic_cfg, conn);
 
 	var conn_expr = { };
 	var expr_arr = [];
@@ -73,7 +73,7 @@ function expr_dictionary_append_conn(expr_dictionary, conn_dictionary, cfg, conn
 	
 	const nic_cfg = cfg.ace_nic_config[0];
 	const conn = cfg.conns[conn_id];
-	const ns = tun_ns(nic_cfg, conn);
+	const ns = vpn_conn_ns(nic_cfg, conn);
 
 	expr_dictionary[`${ns}`] = { };
 	expr_dictionary[`${ns}`][`netns_del`] = expr_arr_serialize(conn_dictionary[`${ns}`][`netns_del`]);
@@ -108,7 +108,7 @@ function expr_dictionary_build(cfg) {
 	for(var conn_id = 0; conn_id < cfg.conns.length; ++conn_id) {
 		const conn = cfg.conns[conn_id];
 		const nic_cfg = cfg.ace_nic_config[0];
-		const ns = tun_ns(nic_cfg, conn);
+		const ns = vpn_conn_ns(nic_cfg, conn);
 		expr_dictionary[`${ns}`] = { };
 		conn_dictionary_append_mea(expr_dictionary, cfg, conn_id);
 		conn_dictionary_append_ovs(expr_dictionary, cfg, conn_id);

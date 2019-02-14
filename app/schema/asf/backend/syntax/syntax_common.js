@@ -172,37 +172,6 @@ global.conn_ns_mac = function (nic_cfg, vpn_cfg, conn) {
 	return `${enet_mac_prefix}${conn.lan_port - port_offset}:${hash_str.substring(4, 6)}:${nic_cfg.nic_name}${conn.tunnel_port - port_offset}`;
 };
 
-/*
-global.tun_ns = function (nic_cfg, conn) {
-	
-	const ns_name = `o-${conn.local_subnet}@${conn.lan_port}:${conn.remote_subnet}@${conn.tunnel_port}`;
-	return ns_name.replace(/\//g, '#');
-};
-
-global.tun_inbound_ns = function (nic_cfg, conn) {
-	
-	const ns_name = `i-${conn.remote_subnet}@${conn.tunnel_port}:${conn.local_subnet}@${conn.lan_port}`;
-	return ns_name.replace(/\//g, '#');
-};
-
-global.tun_ns_hash = function (nic_cfg, conn) {
-	
-	return str_hash(conn.local_subnet + '>>' + conn.remote_subnet, 24);
-};
-
-global.tun_ns_dev = function (nic_cfg, conn) {
-	
-	const hash_str = tun_ns_hash(nic_cfg, conn);
-	return `macv${conn.lan_port - port_offset}${hash_str.substring(4, 6)}`;
-};
-
-global.tun_ns_mac = function (nic_cfg, conn) {
-	
-	const hash_str = tun_ns_hash(nic_cfg, conn);
-	return `${enet_mac_prefix}${conn.lan_port - port_offset}:${hash_str.substring(4, 6)}:${nic_cfg.nic_name}${conn.tunnel_port - port_offset}`;
-};
-*/
-
 global.internal_port_mac = function (nic_cfg, internal_port) {
 	
 	return `${enet_mac_prefix}0:00:${parseInt(nic_cfg.nic_name, 10) + 2}${internal_port - 20}`;
@@ -235,7 +204,7 @@ global.enet_port_shared_dir = function (nic_cfg, port) {
 	return `${process.env.VPN_SHARED_DIR}/${gw_inst}`;
 };
 
-global.enet_conn_shared_dir = function (nic_cfg, conn) {
+global.enet_conn_shared_dir = function (vpn_cfg, conn) {
 	
 	const conn_ns = vpn_conn_ns(vpn_cfg, conn);
 	
@@ -249,7 +218,7 @@ global.enet_port_host_dir = function (nic_cfg, port) {
 	return `${process.env.HOST_SHARED_DIR}/${gw_inst}`;
 };
 
-global.enet_conn_host_dir = function (nic_cfg, conn) {
+global.enet_conn_host_dir = function (vpn_cfg, conn) {
 	
 	const conn_ns = vpn_conn_ns(vpn_cfg, conn);
 	

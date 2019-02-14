@@ -140,7 +140,7 @@ function conn_dictionary_append_libreswan(conn_dictionary, cfg, conn_id) {
 	const vpn_inst = enet_vpn_inst(nic_cfg);
 	const conn = cfg.conns[conn_id];
 	const gw_inst = enet_gw_inst(nic_cfg, conn.tunnel_port);
-	const ns = tun_ns(nic_cfg, conn);
+	const ns = vpn_conn_ns(nic_cfg, conn);
 	const expr_dir = `${nic_cfg.install_dir}/shared/${vpn_inst}/${gw_inst}/conns/${ns}`;
 	
 	var expr_arr = [];
@@ -174,7 +174,7 @@ module.exports = function () {
 		const nic_cfg = this.json_cfg.ace_nic_config[0];
 		const conn = this.json_cfg.conns[conn_id];
 		const gw_inst = enet_gw_inst(nic_cfg, conn.tunnel_port);
-		const ns = tun_ns(nic_cfg, conn);
+		const ns = vpn_conn_ns(nic_cfg, conn);
 		
 		var that = this;
 		var exec_cmd = `eval "${env}"\n`;
