@@ -1,4 +1,8 @@
 
+/////////////////////////////
+process.title = `backend_test`;
+/////////////////////////////
+
 var VPN_BACKEND_SERVICE = require('./vpn_backend_service.js');
 const request = require('request');
 var fs = require('fs');

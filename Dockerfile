@@ -7,6 +7,7 @@ ARG IMG_LIBRESWAN_TAG="ethernity/libreswan:v3.27"
 
 ENV LIBRESWAN_TAG=$IMG_LIBRESWAN_TAG
 ENV ENET_VPN_DIR=${SRC_DIR}/enet/vpn
+ENV ENET_VPN_BACKEND_DIR=${SRC_DIR}/runtime/backend
 
 COPY app/ ${SRC_DIR}/
 ENV BASH_ENV=${SRC_DIR}/docker-entrypoint.sh
@@ -18,7 +19,7 @@ RUN enet_vpn_config_mngr_install
 COPY runtime/ ${SRC_DIR}/runtime/
 ENV BASH_ENV=${SRC_DIR}/app-entrypoint.sh
 
-WORKDIR ${ENET_VPN_DIR}
+WORKDIR ${ENET_VPN_BACKEND_DIR}
 
 #RUN cat $BASH_ENV >> /etc/profile
 #ENTRYPOINT ["${SRC_DIR}/app-entrypoint.sh"]
