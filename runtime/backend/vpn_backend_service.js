@@ -29,7 +29,7 @@ module.exports = function (host_profile, gw_profiles, service_port) {
 	this.find_remote_tunnel_mac = function (tunnel_spec) {
 		
 		if(tunnel_spec.remote_tunnel_mac === undefined) {
-			return `cc:d3:9d:d0:00:00`;
+			return `${enet_mac_pfx}0:00:00`;
 		};
 		return tunnel_spec.remote_tunnel_mac;
 	};

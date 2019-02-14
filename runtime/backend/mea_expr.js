@@ -19,6 +19,7 @@ global.mea_ipsec_format_security_type = function (auth_algo, cipher_algo) {
 	return `0xCA`;
 };
 
+global.enet_mac_pfx = `CC:D3:9D:D`;
 global.ipsec_debug = false;
 
 /////////////////////////////////////////////////
@@ -163,7 +164,7 @@ global.vpn_conn_mac_base = function (nic_id, conn_id, tunnel_port) {
 	
 	const conn_tag_hex = vpn_conn_tag_hex_base(conn_id);
 	
-	return `CC:D3:9D:D1:${conn_tag_hex}:${nic_id}${tunnel_port - 100}`;
+	return `${enet_mac_pfx}1:${conn_tag_hex}:${nic_id}${tunnel_port - 100}`;
 };
 
 global.vpn_conn_tag = function (cfg, conn_state) {
@@ -188,25 +189,20 @@ global.vpn_conn_mac = function (cfg, conn_state) {
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
 
+global.hexc = [ `0`, `1`, `2`, `3`, `4`, `5`, `6`, `7`, `8`, `9`, `A`, `B`, `C`, `D`, `E`, `F` ];
 
-global.mea_port_macs = [
-	{
-		24: `CC:D3:9D:D0:00:A4`,
-		27: `CC:D3:9D:D0:00:A7`,
-		104: `CC:D3:9D:D0:00:04`,
-		105: `CC:D3:9D:D0:00:05`,
-		106: `CC:D3:9D:D0:00:06`,
-		107: `CC:D3:9D:D0:00:07`
-	},
-	{
-		24: `CC:D3:9D:D0:00:B4`,
-		27: `CC:D3:9D:D0:00:B7`,
-		104: `CC:D3:9D:D0:00:14`,
-		105: `CC:D3:9D:D0:00:15`,
-		106: `CC:D3:9D:D0:00:16`,
-		107: `CC:D3:9D:D0:00:17`
-	}
-];
+global.mea_port_macs = function (nic_id) {
+	
+	const port_macs = {
+		24: `${enet_mac_pfx}0:00:${hexc[10 + nic_id]}4`,
+		27: `${enet_mac_pfx}0:00:${hexc[10 + nic_id]}7`,
+		104: `${enet_mac_pfx}0:00:04`,
+		105: `${enet_mac_pfx}0:00:05`,
+		106: `${enet_mac_pfx}0:00:06`,
+		107: `${enet_mac_pfx}0:00:07`
+	};
+	return port_macs;
+};
 
 global.mea_cli = function (nic_id) {
 	
@@ -333,7 +329,7 @@ global.mea_ports_init_expr = function (cfg) {
 	const vpn_cfg = cfg.vpn_gw_config[0];
 	const mea_top = mea_cli_top(nic_id);
 	const service_add = mea_service_add(nic_id);
-	const port_macs = mea_port_macs[nic_id];
+	const port_macs = mea_port_macs(nic_id);
 	
 	var expr = `${mea_top}\n`;
 	expr += `${mea_cli(nic_id)} interface config set ${mea_cipher_port} -lb 7\n`;
@@ -455,7 +451,7 @@ global.mea_ipsec_inbound_add_expr = function (cmd) {
 	const remote_ip_hex = ip_to_hex(conn_cfg.remote_tunnel_endpoint_ip);
 	const conn_tag_hex = vpn_conn_tag_hex(cmd.cfg, cmd.state);
 	const conn_tag = vpn_conn_tag(cmd.cfg, cmd.state);
-	const port_macs = mea_port_macs[nic_id];
+	const port_macs = mea_port_macs(nic_id);
 	
 	var expr = `${mea_top}\n`;
 	if(cmd.state.services.in_l3fwd === undefined) {
