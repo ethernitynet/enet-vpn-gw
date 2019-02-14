@@ -8,7 +8,7 @@ enet_vpn_config_mngr_install() {
 	cd ${SRC_DIR}/config
 	npm install
 	cd -
-	cd ${SRC_DIR}/runtime/backend
+	cd ${ENET_VPN_BACKEND_DIR}
 	npm install
 	cd -
 }
