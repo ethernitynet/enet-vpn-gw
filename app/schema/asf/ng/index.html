@@ -91,6 +91,56 @@
   }
 
 </style>
+
+<script type="text/javascript">
+
+var selected_conn = {};
+var selected_conn_idx = -1;
+
+window.onclick = function(e) {
+
+	var conn_status = ``;
+	if(e.path.length > 6) {
+		switch(e.path[2].className) {
+			
+			case `checkbox schema-form-checkbox  has-success`:
+			conn_status = `disconnecting`;
+			break;
+			
+			case `checkbox schema-form-checkbox `:
+			conn_status = `connecting`;
+			break;
+			
+			default:
+			return ``;
+		};
+		const class_name_arr = e.path[6].className.split(` `);
+		var tab = -1;
+		var index = -2;
+		class_name_arr.forEach(function (token) {
+		
+			token.replace(/tab([0-9]+)/, function(match, tab_str) {
+			
+				if(tab_str != undefined) {
+					tab = parseInt(tab_str, 10);
+				};
+			});
+			token.replace(/index([0-9]+)/, function(match, index_str) {
+			
+				if(index_str != undefined) {
+					index = parseInt(index_str, 10);
+				};
+			});
+			if(tab == index) {
+				selected_conn_idx = index;
+				console.log(`Connection#${selected_conn_idx}>`);
+			};
+		});
+	};
+	return ``;
+};
+</script>
+
 </head>
 <body ng-app="test" ng-controller="TestCtrl" ng-cloak>
 
@@ -512,6 +562,16 @@ app.controller('TestCtrl', function($scope, $http, $location, $q) {
 
   $scope.pretty = function(){
     return typeof $scope.modelData === 'string' ? $scope.modelData : JSON.stringify($scope.modelData, undefined, 2);
+  };
+  
+  $scope.toggle_connect = function (toggle_value, form) {
+
+    const connect_status = (toggle_value) ? `connecting` : `disconnecting`;
+	const model = JSON.parse(document.getElementById("model_content").innerHTML);
+	if(model.conns.length > selected_conn_idx) {
+		const selected_conn = model.conns[selected_conn_idx];
+		console.log(`Connection#${selected_conn_idx}> ${model.conns[selected_conn_idx].name}: ${connect_status}`);
+	};
   };
 
   $scope.get_libreswan_conf = function(port_id){

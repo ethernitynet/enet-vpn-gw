@@ -311,7 +311,10 @@
 							"type": "section",
 							"htmlClass": "col-xs-4",
 							"items": [
-								"conns[].connect"
+								{
+									"key": "conns[].connect",
+									"onChange": "toggle_connect(modelValue, form)"
+								}
 							]
 						}
 					]
