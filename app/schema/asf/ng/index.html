@@ -13,7 +13,7 @@
   <style type="text/css">
   
   .textarea_high { 
-    height: 500px;
+    height: 100px;
   }
   
   .spinner {
@@ -209,6 +209,7 @@ function toggle_debug() {
     <div class="navbar-header">
 	  <img src="img/EthernityLogo.png" height="60" alt="Ethernity Networks Ltd.">
       <a class="navbar-brand glyphicon glyphicon-cog" onclick="toggle_debug()"></a>
+      <p style="display:inline-block;color:red;font-size:25px;vertical-align:bottom;">&nbsp;&nbsp;&nbsp;&nbsp; ENET VPN GW</p>
     </div>
 
 
@@ -252,7 +253,6 @@ function toggle_debug() {
 </nav>
 
 <div class="col-md-12">
-  <h1>ENET VPN GW</h1>
   <div class="row">
     <div class="col-sm-5">
 
@@ -400,8 +400,8 @@ app.controller('TestCtrl', function($scope, $http, $location, $q) {
     { name: "Kitchen Sink", data: 'data/sink.json' },
     { name: "Hack: Conditional required", data: 'data/conditional-required.json' },
 	*/
-    { name: "ENET VPN GW (NIC #1, 20 tunnels, Initiator)", data: 'data/enet_vpn_schema_form.json', model: 'model/bench/multinic/enet0_vpn_config_initiator_15.json' },
-    { name: "ENET VPN GW (NIC #2, 20 tunnels, Listener)", data: 'data/enet_vpn_schema_form.json', model: 'model/bench/multinic/enet1_vpn_config_listener_15.json' },
+    { name: "ENET VPN GW (NIC #1, 15 tunnels, Initiator)", data: 'data/enet_vpn_schema_form.json', model: 'model/bench/multinic/enet0_vpn_config_initiator_15.json' },
+    { name: "ENET VPN GW (NIC #2, 15 tunnels, Listener)", data: 'data/enet_vpn_schema_form.json', model: 'model/bench/multinic/enet1_vpn_config_listener_15.json' },
     { name: "ENET VPN GW (NIC #1, 51 tunnels, Initiator)", data: 'data/enet_vpn_schema_form.json', model: 'model/bench/multinic/enet0_vpn_config_initiator_51.json' },
     { name: "ENET VPN GW (NIC #2, 51 tunnels, Listener)", data: 'data/enet_vpn_schema_form.json', model: 'model/bench/multinic/enet1_vpn_config_listener_51.json' }
   ];

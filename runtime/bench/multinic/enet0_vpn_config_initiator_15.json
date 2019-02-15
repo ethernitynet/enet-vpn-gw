@@ -19,7 +19,11 @@
 				"lan_port": "105",
 				"tunnel_port": "107",
 				"inbound_routes": "10.0.1.1",
-				"libreswan_specific": "type=tunnel\nauthby=secret\nike=aes-sha1;modp2048\nikev2=insist\nnarrowing=yes"
+				"libreswan_specific": "type=tunnel\nauthby=secret\nike=aes-sha1;modp2048\nikev2=insist\nnarrowing=yes",
+				"enabled": true,
+				"listen": true,
+				"connect": false,
+				"connected": false
 			},
 			{
 				"name": "tun11_full_hw",
@@ -33,7 +37,11 @@
 				"lan_port": "105",
 				"tunnel_port": "107",
 				"inbound_routes": "11.0.1.1",
-				"libreswan_specific": "type=tunnel\nauthby=secret\nike=aes-sha1;modp2048\nikev2=insist\nnarrowing=yes"
+				"libreswan_specific": "type=tunnel\nauthby=secret\nike=aes-sha1;modp2048\nikev2=insist\nnarrowing=yes",
+				"enabled": true,
+				"listen": true,
+				"connect": false,
+				"connected": false
 			},
 			{
 				"name": "tun12_full_hw",
@@ -47,7 +55,11 @@
 				"lan_port": "105",
 				"tunnel_port": "107",
 				"inbound_routes": "12.0.1.1",
-				"libreswan_specific": "type=tunnel\nauthby=secret\nike=aes-sha1;modp2048\nikev2=insist\nnarrowing=yes"
+				"libreswan_specific": "type=tunnel\nauthby=secret\nike=aes-sha1;modp2048\nikev2=insist\nnarrowing=yes",
+				"enabled": true,
+				"listen": true,
+				"connect": false,
+				"connected": false
 			},
 			{
 				"name": "tun13_full_hw",
@@ -61,7 +73,11 @@
 				"lan_port": "105",
 				"tunnel_port": "107",
 				"inbound_routes": "13.0.1.1",
-				"libreswan_specific": "type=tunnel\nauthby=secret\nike=aes-sha1;modp2048\nikev2=insist\nnarrowing=yes"
+				"libreswan_specific": "type=tunnel\nauthby=secret\nike=aes-sha1;modp2048\nikev2=insist\nnarrowing=yes",
+				"enabled": true,
+				"listen": true,
+				"connect": false,
+				"connected": false
 			},
 			{
 				"name": "tun14_full_hw",
@@ -75,7 +91,11 @@
 				"lan_port": "105",
 				"tunnel_port": "107",
 				"inbound_routes": "14.0.1.1",
-				"libreswan_specific": "type=tunnel\nauthby=secret\nike=aes-sha1;modp2048\nikev2=insist\nnarrowing=yes"
+				"libreswan_specific": "type=tunnel\nauthby=secret\nike=aes-sha1;modp2048\nikev2=insist\nnarrowing=yes",
+				"enabled": true,
+				"listen": true,
+				"connect": false,
+				"connected": false
 			},
 			{
 				"name": "tun15_full_hw",
@@ -89,7 +109,11 @@
 				"lan_port": "105",
 				"tunnel_port": "107",
 				"inbound_routes": "15.0.1.1",
-				"libreswan_specific": "type=tunnel\nauthby=secret\nike=aes-sha1;modp2048\nikev2=insist\nnarrowing=yes"
+				"libreswan_specific": "type=tunnel\nauthby=secret\nike=aes-sha1;modp2048\nikev2=insist\nnarrowing=yes",
+				"enabled": true,
+				"listen": true,
+				"connect": false,
+				"connected": false
 			},
 			{
 				"name": "tun16_full_hw",
@@ -103,7 +127,11 @@
 				"lan_port": "105",
 				"tunnel_port": "107",
 				"inbound_routes": "16.0.1.1",
-				"libreswan_specific": "type=tunnel\nauthby=secret\nike=aes-sha1;modp2048\nikev2=insist\nnarrowing=yes"
+				"libreswan_specific": "type=tunnel\nauthby=secret\nike=aes-sha1;modp2048\nikev2=insist\nnarrowing=yes",
+				"enabled": true,
+				"listen": true,
+				"connect": false,
+				"connected": false
 			},
 			{
 				"name": "tun17_full_hw",
@@ -117,7 +145,11 @@
 				"lan_port": "105",
 				"tunnel_port": "107",
 				"inbound_routes": "17.0.1.1",
-				"libreswan_specific": "type=tunnel\nauthby=secret\nike=aes-sha1;modp2048\nikev2=insist\nnarrowing=yes"
+				"libreswan_specific": "type=tunnel\nauthby=secret\nike=aes-sha1;modp2048\nikev2=insist\nnarrowing=yes",
+				"enabled": true,
+				"listen": true,
+				"connect": false,
+				"connected": false
 			},
 			{
 				"name": "tun18_full_hw",
@@ -131,7 +163,11 @@
 				"lan_port": "105",
 				"tunnel_port": "107",
 				"inbound_routes": "18.0.1.1",
-				"libreswan_specific": "type=tunnel\nauthby=secret\nike=aes-sha1;modp2048\nikev2=insist\nnarrowing=yes"
+				"libreswan_specific": "type=tunnel\nauthby=secret\nike=aes-sha1;modp2048\nikev2=insist\nnarrowing=yes",
+				"enabled": true,
+				"listen": true,
+				"connect": false,
+				"connected": false
 			},
 			{
 				"name": "tun19_full_hw",
@@ -145,7 +181,11 @@
 				"lan_port": "105",
 				"tunnel_port": "107",
 				"inbound_routes": "19.0.1.1",
-				"libreswan_specific": "type=tunnel\nauthby=secret\nike=aes-sha1;modp2048\nikev2=insist\nnarrowing=yes"
+				"libreswan_specific": "type=tunnel\nauthby=secret\nike=aes-sha1;modp2048\nikev2=insist\nnarrowing=yes",
+				"enabled": true,
+				"listen": true,
+				"connect": false,
+				"connected": false
 			},
 			{
 				"name": "tun20_full_hw",
@@ -159,7 +199,11 @@
 				"lan_port": "105",
 				"tunnel_port": "107",
 				"inbound_routes": "20.0.1.1",
-				"libreswan_specific": "type=tunnel\nauthby=secret\nike=aes-sha1;modp2048\nikev2=insist\nnarrowing=yes"
+				"libreswan_specific": "type=tunnel\nauthby=secret\nike=aes-sha1;modp2048\nikev2=insist\nnarrowing=yes",
+				"enabled": true,
+				"listen": true,
+				"connect": false,
+				"connected": false
 			},
 			{
 				"name": "tun21_full_hw",
@@ -173,7 +217,11 @@
 				"lan_port": "105",
 				"tunnel_port": "107",
 				"inbound_routes": "21.0.1.1",
-				"libreswan_specific": "type=tunnel\nauthby=secret\nike=aes-sha1;modp2048\nikev2=insist\nnarrowing=yes"
+				"libreswan_specific": "type=tunnel\nauthby=secret\nike=aes-sha1;modp2048\nikev2=insist\nnarrowing=yes",
+				"enabled": true,
+				"listen": true,
+				"connect": false,
+				"connected": false
 			},
 			{
 				"name": "tun22_full_hw",
@@ -187,7 +235,11 @@
 				"lan_port": "105",
 				"tunnel_port": "107",
 				"inbound_routes": "15.0.1.1",
-				"libreswan_specific": "type=tunnel\nauthby=secret\nike=aes-sha1;modp2048\nikev2=insist\nnarrowing=yes"
+				"libreswan_specific": "type=tunnel\nauthby=secret\nike=aes-sha1;modp2048\nikev2=insist\nnarrowing=yes",
+				"enabled": true,
+				"listen": true,
+				"connect": false,
+				"connected": false
 			},
 			{
 				"name": "tun23_full_hw",
@@ -201,7 +253,11 @@
 				"lan_port": "105",
 				"tunnel_port": "107",
 				"inbound_routes": "23.0.1.1",
-				"libreswan_specific": "type=tunnel\nauthby=secret\nike=aes-sha1;modp2048\nikev2=insist\nnarrowing=yes"
+				"libreswan_specific": "type=tunnel\nauthby=secret\nike=aes-sha1;modp2048\nikev2=insist\nnarrowing=yes",
+				"enabled": true,
+				"listen": true,
+				"connect": false,
+				"connected": false
 			},
 			{
 				"name": "tun24_full_hw",
@@ -215,7 +271,11 @@
 				"lan_port": "105",
 				"tunnel_port": "107",
 				"inbound_routes": "24.0.1.1",
-				"libreswan_specific": "type=tunnel\nauthby=secret\nike=aes-sha1;modp2048\nikev2=insist\nnarrowing=yes"
+				"libreswan_specific": "type=tunnel\nauthby=secret\nike=aes-sha1;modp2048\nikev2=insist\nnarrowing=yes",
+				"enabled": true,
+				"listen": true,
+				"connect": false,
+				"connected": false
 			}
 		],
 		"ace_nic_config": [{

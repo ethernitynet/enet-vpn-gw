@@ -28,6 +28,21 @@
 				"items": {
 					"type": "object",
 					"properties": {
+						"enabled": {
+							"title": "Enabled",
+							"type": "boolean"
+						},
+						"listen": {
+							"title": "Listen to Incoming Connections",
+							"type": "boolean"
+						},
+						"connect": {
+							"title": "Connect to Remote Endpoint",
+							"type": "boolean"
+						},
+						"connected": {
+							"type": "boolean"
+						},
 						"name": {
 							"title": "Tunnel Name",
 							"type": "string"
@@ -111,6 +126,11 @@
 						}
 					},
 					"required": [
+						"enabled",
+						"listen",
+						"connect",
+						"connected",
+						"disable",
 						"name",
 						"inbound_accel",
 						"outbound_accel",
@@ -267,8 +287,39 @@
 			"style": {
 				"remove": "btn-danger"
 			},
-			"title": "{{ value.name || 'Tab '+$index }}",
+			"title": "{{ value.name+(value.connect ? '  =>  connect' : ' ') || 'Tab '+$index }}",
 			"items": [
+				{
+					"type": "section",
+					"htmlClass": "row",
+					"items": [
+						{
+							"type": "section",
+							"htmlClass": "col-xs-4",
+							"items": [
+								"conns[].enabled"
+							]
+						},
+						{
+							"type": "section",
+							"htmlClass": "col-xs-4",
+							"items": [
+								"conns[].listen"
+							]
+						},
+						{
+							"type": "section",
+							"htmlClass": "col-xs-4",
+							"items": [
+								"conns[].connect"
+							]
+						}
+					]
+				},
+				{
+					"key": "conns[].connected",
+					"condition": "value.connect"
+				},
 				"conns[].name",
 				{
 					"type": "section",
