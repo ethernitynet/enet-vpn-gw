@@ -191,7 +191,7 @@ bind_layers(VXLAN, Ether)
 def get_vxlan_ssdp_pkt( vxlan_smac_x, vxlan_dmac_x, vxlan_sip_x, vxlan_dip_x, vxlan_sport_x, vxlan_vni_x, guest_vlan_x, guest_prio_x, guest_sip_x, guest_dip_x, guest_sport_x ):
 	vxlan_ssdp_pkt = get_scapy_vxlan_udp_pkt( vxlan_smac_x, vxlan_dmac_x, vxlan_sip_x, vxlan_dip_x, vxlan_sport_x, 4789, vxlan_vni_x, guest_vlan_x, guest_prio_x, guest_sip_x, guest_dip_x, guest_sport_x, 1900, ssdp_payload_raw )
 	return vxlan_ssdp_pkt;
-
+	
 
 ####################
 class STLS1(object):
@@ -200,73 +200,53 @@ class STLS1(object):
 	def __init__ (self):
 		self.fsize  = 64; # the size of the packet
 
-
 	def create_stream (self):
 
 		stream_id = 0;
 		for class_c_vtep_x in range(0, vxlan_vnis_count):
-		
-			if stream_id == 0:
-				##########################################
-				vxlan_smac_x = '6a:5f:ee:92:10:10'
-				vxlan_dmac_x = 'CC:D3:9D:D1:40:07'
-				##########################################
-				vxlan_sip_x = "10.0.1.5"
-				##########################################
-				vtep_dip_min =                       10
-				vtep_dip_min = (vtep_dip_min << 8) + 0
-				vtep_dip_min = (vtep_dip_min << 8) + 2
-				vtep_dip_min = (vtep_dip_min << 8) + 4
-				##########################################
-			elif stream_id == 1:
-				##########################################
-				vxlan_smac_x = '6a:5f:ee:92:11:11'
-				vxlan_dmac_x = 'CC:D3:9D:D1:41:07'
-				##########################################
-				vxlan_sip_x = "11.0.1.5"
-				##########################################
-				vtep_dip_min =                       11
-				vtep_dip_min = (vtep_dip_min << 8) + 0
-				vtep_dip_min = (vtep_dip_min << 8) + 2
-				vtep_dip_min = (vtep_dip_min << 8) + 4
-				##########################################
-			elif stream_id == 2:
-				##########################################
-				vxlan_smac_x = '6a:5f:ee:92:12:12'
-				vxlan_dmac_x = 'CC:D3:9D:D1:42:07'
-				##########################################
-				vxlan_sip_x = "12.0.1.5"
-				##########################################
-				vtep_dip_min =                       12
-				vtep_dip_min = (vtep_dip_min << 8) + 0
-				vtep_dip_min = (vtep_dip_min << 8) + 2
-				vtep_dip_min = (vtep_dip_min << 8) + 4
-				##########################################
-			elif stream_id == 3:
-				##########################################
-				vxlan_smac_x = '6a:5f:ee:92:13:13'
-				vxlan_dmac_x = 'CC:D3:9D:D1:43:07'
-				##########################################
-				vxlan_sip_x = "13.0.1.5"
-				##########################################
-				vtep_dip_min =                       13
-				vtep_dip_min = (vtep_dip_min << 8) + 0
-				vtep_dip_min = (vtep_dip_min << 8) + 2
-				vtep_dip_min = (vtep_dip_min << 8) + 4
-				##########################################
-			else:
-				##########################################
-				vxlan_smac_x = '6a:5f:ee:92:14:14'
-				vxlan_dmac_x = 'CC:D3:9D:D1:44:07'
-				##########################################
-				vxlan_sip_x = "14.0.1.5"
-				##########################################
-				vtep_dip_min =                       14
-				vtep_dip_min = (vtep_dip_min << 8) + 0
-				vtep_dip_min = (vtep_dip_min << 8) + 2
-				vtep_dip_min = (vtep_dip_min << 8) + 4
-				##########################################
+	
+			vxlan_smac_y = "6a:5f:ee:92:00:00"
+			vxlan_dmac_y = "CC:D3:9D:D1:00:07"
+			vxlan_sip_y = "10.0.1.4"
+			vtep_dip_min_y =                         10
+			vtep_dip_min_y = (vtep_dip_min_y << 8) + 0
+			vtep_dip_min_y = (vtep_dip_min_y << 8) + 2
+			vtep_dip_min_y = (vtep_dip_min_y << 8) + 3
 
+			##########################################
+			tunnel_id = (stream_id % 4)
+			lan_host_id = (5 + (stream_id / 4))
+			vxlan_smac_y = "6a:5f:ee:92:%d:%d" % ((10 + tunnel_id), (10 + tunnel_id))
+
+			##########################################
+			if tunnel_id >= 15:
+				vxlan_dmac_y = "CC:D3:9D:D1:4F:07"
+			elif tunnel_id == 14:
+				vxlan_dmac_y = "CC:D3:9D:D1:4E:07"
+			elif tunnel_id == 13:
+				vxlan_dmac_y = "CC:D3:9D:D1:4D:07"
+			elif tunnel_id == 12:
+				vxlan_dmac_y = "CC:D3:9D:D1:4C:07"
+			elif tunnel_id == 11:
+				vxlan_dmac_y = "CC:D3:9D:D1:4B:07"
+			elif tunnel_id == 10:
+				vxlan_dmac_y = "CC:D3:9D:D1:4A:07"
+			else:
+				vxlan_dmac_y = "CC:D3:9D:D1:4%d:07" % (tunnel_id)
+			##########################################
+			vxlan_sip_y = "%d.0.1.%d" % ((10 + tunnel_id), lan_host_id)
+			##########################################
+			vtep_dip_min_y =                        (10 + tunnel_id)
+			vtep_dip_min_y = (vtep_dip_min_y << 8) + 0
+			vtep_dip_min_y = (vtep_dip_min_y << 8) + 2
+			vtep_dip_min_y = (vtep_dip_min_y << 8) + 4
+			##########################################
+
+			vxlan_smac_x = vxlan_smac_y
+			vxlan_dmac_x = vxlan_dmac_y
+			vxlan_sip_x = vxlan_sip_y
+			vtep_dip_min = vtep_dip_min_y
+				
 				#vxlan_sip_x = "172.1.1.%d" % (1 + (class_c_vtep_x % 128))
 			guest_sport_x = 3000
 			for guest_vlan_x in range(guest_vlan_min, guest_vlan_max):
