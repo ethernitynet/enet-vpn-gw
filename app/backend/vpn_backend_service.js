@@ -7,8 +7,9 @@ var http = require('http');
 /////////////////////////////////////////////////
 
 
-module.exports = function (host_profile, gw_profiles, service_port) {
+module.exports = function (host_profile, gw_profiles, service_ip, service_port) {
 
+	this.service_ip = service_ip;
 	this.service_port = service_port;
 	this.vpn_cfg = undefined;
 	this.vpn_backend = new VPN_BACKEND(host_profile, gw_profiles);
@@ -90,35 +91,74 @@ module.exports = function (host_profile, gw_profiles, service_port) {
 	
 	this.backend_server = http.createServer((req, res) => {
 		
-		let data = [];
-		req.on('data', chunk => {
+		const headers = {
+			'Access-Control-Allow-Origin': '*',
+			'Access-Control-Allow-Methods': 'OPTIONS, POST, GET',
+			'Access-Control-Max-Age': 2592000, // 30 days
+			/** add other headers as per requirement */
+		};
+
+		if (req.method === 'OPTIONS') {
+			res.writeHead(204, headers);
+			res.end();
+			return;
+		};
+		
+		if(req.method == `POST`) {
+			let chunk_no = 0;
+			let data = [];
 			
-			data.push(chunk);
-		});
-		req.on('end', () => {
-			
-			const content = JSON.parse(data);
-			switch(content.op) {
-				case `dump_vpn_cfg`:
-					res.end(this.dump_vpn_cfg());
-				break;
-				case `dump_tunnel_states`:
-					res.end(this.dump_tunnel_states());
-				break;
-				case `load_vpn_cfg`:
-					res.end(this.load_vpn_cfg(content.vpn_cfg));
-				break;
-				case `add_outbound_tunnel`:
-					res.end(this.add_outbound_tunnel(content.tunnel_spec, content.ipsec_cfg));
-				break;
-				case `add_inbound_tunnel`:
-					res.end(this.add_inbound_tunnel(content.tunnel_spec, content.ipsec_cfg));
-				break;
-				case `add_inbound_fwd`:
-					res.end(this.add_inbound_fwd(content.tunnel_spec, content.next_hops));
-				break;
-			};
-		});
-	}).listen(this.service_port);
+				req.on('data', chunk => {
+					
+					//console.log(`chunk#${chunk_no}: ${chunk}`);
+					++chunk_no;
+					data.push(chunk);
+				});
+				req.on('end', () => {
+					
+					if (['GET', 'POST'].indexOf(req.method) > -1) {
+						res.writeHead(200, headers);
+					};
+					//console.log(`end: ${chunk_no} chunks`);
+					//console.log(`data: ${data}`);
+					try {
+						const content = JSON.parse(data);
+						switch(content.op) {
+							case `dump_vpn_cfg`:
+								res.end(this.dump_vpn_cfg());
+							break;
+							case `dump_tunnel_states`:
+								res.end(this.dump_tunnel_states());
+							break;
+							case `load_vpn_cfg`:
+								res.end(this.load_vpn_cfg(content.vpn_cfg));
+							break;
+							case `add_outbound_tunnel`:
+								res.end(this.add_outbound_tunnel(content.tunnel_spec, content.ipsec_cfg));
+							break;
+							case `add_inbound_tunnel`:
+								res.end(this.add_inbound_tunnel(content.tunnel_spec, content.ipsec_cfg));
+							break;
+							case `add_inbound_fwd`:
+								res.end(this.add_inbound_fwd(content.tunnel_spec, content.next_hops));
+							break;
+							default:
+								res.end(`Unknown op: ${content.op}`);
+							break;
+						};
+					}
+					catch(error) {
+						res.writeHead(405, headers);
+						res.end(`${chunk_no} chunks: [${data}] JSON.parse: ${error}`);
+						return;
+					};
+				});
+			return;
+		};
+		
+		res.writeHead(405, headers);
+		res.end(`${req.method} is not allowed for the request.`);
+		
+	}).listen(this.service_port, this.service_ip);
 };
 

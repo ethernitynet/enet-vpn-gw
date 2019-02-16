@@ -43,6 +43,9 @@ var host_cmd_exec = function (gw_config_inst) {
 					if(code == 0) {
 						if(gw_config_inst.host_cmds_arr.length > 0) {
 							setTimeout(host_cmd_exec, cmd.delay, gw_config_inst);
+						}
+						else {
+							gw_config_inst.host_conn = undefined;
 						};
 					};
 				}).on('data', function(data) {
@@ -81,6 +84,7 @@ module.exports = function (host_profile, gw_profiles) {
 	
 	this.host_cmd = function () {
 
+		console.log(`<<<<==  ${this.host_conn}  ==>>>>`);
 		if(this.host_conn === undefined) {
 			host_cmd_exec(this);
 		};

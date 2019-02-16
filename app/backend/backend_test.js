@@ -256,10 +256,10 @@ var nic0_backend_start = function (host_profile) {
 		password: `root`
 	};
 
-	var vpn0_backend_service = new VPN_BACKEND_SERVICE(host_profile, nic0_gw0_profiles, 4400);
+	var vpn0_backend_service = new VPN_BACKEND_SERVICE(host_profile, nic0_gw0_profiles, `0.0.0.0`, 4400);
 	enet_load_vpn_cfg(0, `172.17.0.1`, 4400);
 
-	for(var id0 = 0; id0 < 4; ++id0) {
+	for(var id0 = 0; id0 < 2; ++id0) {
 		nic0_outbound_tunnel_add(`172.17.0.1`, 4400, id0);
 		nic0_inbound_tunnel_add(`172.17.0.1`, 4400, id0);
 		nic0_inbound_fwd_add(`172.17.0.1`, 4400, id0);
@@ -275,10 +275,10 @@ var nic1_backend_start = function (host_profile) {
 		password: `root`
 	};
 	
-	var vpn1_backend_service = new VPN_BACKEND_SERVICE(host_profile, nic1_gw0_profiles, 4401);
+	var vpn1_backend_service = new VPN_BACKEND_SERVICE(host_profile, nic1_gw0_profiles, `0.0.0.0`, 4401);
 	enet_load_vpn_cfg(1, `172.17.0.1`, 4401);
 
-	for(var id1 = 0; id1 < 4; ++id1) {
+	for(var id1 = 0; id1 < 2; ++id1) {
 		nic1_outbound_tunnel_add(`172.17.0.1`, 4401, id1);
 		nic1_inbound_tunnel_add(`172.17.0.1`, 4401, id1);
 		nic1_inbound_fwd_add(`172.17.0.1`, 4401, id1);
