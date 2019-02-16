@@ -92,6 +92,10 @@
 
 </style>
 
+<script src="../../../backend/vpn_common.js"></script>
+<script src="../../../backend/vpn_api.js"></script>
+<script src="../../../backend_test/vpn_api_test.js"></script>
+
 <script type="text/javascript">
 
 var selected_conn = {};
@@ -139,6 +143,30 @@ window.onclick = function(e) {
 	};
 	return ``;
 };
+
+var vpn_api_op = function (vpn_cfg_str, conn_id, op) {
+
+	const vpn_cfg = JSON.parse(vpn_cfg_str);
+	if((vpn_cfg != undefined) && (vpn_cfg.conns != undefined) && (vpn_cfg.conns.length > conn_id)) {
+		console.log(`Connection#${conn_id}> ${vpn_cfg.conns[conn_id].name}: ${op}`);
+		const backend_params = enet_vpn_get_backend_params_test(vpn_cfg);
+		switch(op) {
+		
+			case `connect`:
+			enet_vpn_outbound_tunnel_connect_test(backend_params.ip, backend_params.port, vpn_cfg, conn_id);
+			enet_vpn_inbound_tunnel_connect_test(backend_params.ip, backend_params.port, vpn_cfg, conn_id);
+			enet_vpn_inbound_fwd_add_test(backend_params.ip, backend_params.port, vpn_cfg, conn_id);
+			break;
+		
+			case `disconnect`:
+			break;
+		};
+	}
+	else {
+		console.log(`ERROR: vpn_cfg_str:[${vpn_cfg_str}] Connection#${conn_id}> ${op}`);
+	};
+};
+
 </script>
 
 </head>
@@ -566,12 +594,7 @@ app.controller('TestCtrl', function($scope, $http, $location, $q) {
   
   $scope.toggle_connect = function (toggle_value, form) {
 
-    const connect_status = (toggle_value) ? `connecting` : `disconnecting`;
-	const model = JSON.parse(document.getElementById("model_content").innerHTML);
-	if(model.conns.length > selected_conn_idx) {
-		const selected_conn = model.conns[selected_conn_idx];
-		console.log(`Connection#${selected_conn_idx}> ${model.conns[selected_conn_idx].name}: ${connect_status}`);
-	};
+    vpn_api_op(document.getElementById("model_content").innerHTML, selected_conn_idx, ((toggle_value) ? `connect` : `disconnect`));
   };
 
   $scope.get_libreswan_conf = function(port_id){
