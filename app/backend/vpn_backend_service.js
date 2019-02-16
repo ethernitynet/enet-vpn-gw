@@ -106,13 +106,13 @@ module.exports = function (host_profile, gw_profiles, service_ip, service_port) 
 		
 		if(req.method == `POST`) {
 			let chunk_no = 0;
-			let data = [];
+			let body = ``;
 			
 				req.on('data', chunk => {
 					
 					//console.log(`chunk#${chunk_no}: ${chunk}`);
 					++chunk_no;
-					data.push(chunk);
+					body += chunk.toString();
 				});
 				req.on('end', () => {
 					
@@ -120,9 +120,9 @@ module.exports = function (host_profile, gw_profiles, service_ip, service_port) 
 						res.writeHead(200, headers);
 					};
 					//console.log(`end: ${chunk_no} chunks`);
-					//console.log(`data: ${data}`);
+					//console.log(`body: ${body}`);
 					try {
-						const content = JSON.parse(data);
+						const content = JSON.parse(body);
 						switch(content.op) {
 							case `dump_vpn_cfg`:
 								res.end(this.dump_vpn_cfg());
@@ -149,8 +149,8 @@ module.exports = function (host_profile, gw_profiles, service_ip, service_port) 
 					}
 					catch(error) {
 						res.writeHead(405, headers);
-						res.end(`${chunk_no} chunks: [${data}] JSON.parse: ${error}`);
-						console.log(`${chunk_no} chunks: [${data}] JSON.parse: ${error}`);
+						res.end(`${chunk_no} chunks: [${body}] JSON.parse: ${error}`);
+						console.log(`${chunk_no} chunks: [${body}] JSON.parse: ${error}`);
 						return;
 					};
 				});
