@@ -2,9 +2,9 @@ from trex_stl_lib.api import *
 
 
 ##################
-total_Mbps = 5000
-frame_len = 600
-streams_count = 4
+total_Mbps = 5500
+frame_len = 300
+streams_count = 56
 vtep_dips_count = 1
 vxlan_vni_min = 6106
 guest_vlan_min = 10
@@ -31,6 +31,9 @@ guest_dip_min = (guest_dip_min << 8) + 10
 guest_dip_min = (guest_dip_min << 8) + 0
 guest_dip_min = (guest_dip_min << 8) + 1
 ##########################################
+##################
+nic_id = 0
+##################
 
 
 ###############################################################################################
@@ -127,6 +130,41 @@ ssdp_payload_list = [
 ]
 
 
+vxlan_smac_arr = [
+[
+	["05:00:45:74:23:30","07:00:af:57:c7:83","09:00:f5:73:eb:7b","0c:00:64:c7:42:33"],
+	["0a:01:30:45:34:34","04:01:74:72:ae:67","0f:01:da:11:c6:13","06:01:89:c4:53:43"],
+	["02:02:01:77:26:c0","04:02:59:46:0e:77","01:02:32:b5:ce:b2","0d:02:1e:37:72:6c"],
+	["07:03:26:d8:48:f3","03:03:cd:fe:52:f2","09:03:e7:5e:82:50","0a:03:27:6d:84:8f"],
+	["04:04:6a:ed:77:91","0c:04:6b:e1:e7:2e","05:04:94:b4:5e:ba","0c:04:dc:be:d7:79"],
+	["0f:05:7e:b9:5b:c3","08:05:e1:e8:39:9a","00:05:af:72:0c:7a","0b:05:7b:7b:95:bc"],
+	["0c:06:f3:75:f0:5c","0f:06:9f:06:2f:c5","0b:06:ec:f0:08:f7","04:06:03:97:5f:05"],
+	["01:07:44:fa:2c:f3","01:07:fd:d3:94:27","0b:07:61:84:f9:8f","0d:07:e5:8f:a2:cf"],
+	["0e:08:e9:2e:f6:14","0c:08:4f:21:34:cd","03:08:9e:9e:91:98","06:08:91:42:ef:61"],
+	["0d:09:33:e4:33:22","08:09:68:a8:fd:7f","08:09:0d:7c:62:71","07:09:3f:ee:43:32"],
+	["0e:10:7a:96:43:41","07:10:d9:88:45:86","0a:10:1e:87:66:83","00:10:e8:29:64:34"],
+	["07:11:b1:14:58:38","01:11:e4:84:27:dd","0b:11:c7:fa:ea:fb","04:11:24:f1:45:83"],
+	["0b:12:88:23:62:38","0e:12:c3:57:10:d1","0a:12:4b:4b:ce:44","04:12:82:62:36:23"],
+	["06:13:1a:2c:df:a1","07:13:97:92:36:3e","06:13:66:64:64:64","01:13:66:92:cd:fa"]
+],
+[
+	["01:00:45:74:23:33","fd:00:af:57:c7:05","56:00:f5:73:eb:d5","1f:00:64:c7:42:56"],
+	["4b:01:30:45:34:43","df:01:74:72:ae:48","df:01:da:11:c6:f8","bd:01:89:c4:53:df"],
+	["0e:02:01:77:26:6c","e6:02:59:46:0e:00","b3:02:32:b5:ce:60","ee:02:1e:37:72:b3"],
+	["37:03:26:d8:48:8f","3a:03:cd:fe:52:31","14:03:e7:5e:82:a1","73:03:27:6d:84:14"],
+	["1f:04:6a:ed:77:79","5d:04:6b:e1:e7:1d","cd:04:94:b4:5e:dd","f5:04:dc:be:d7:cd"],
+	["32:05:7e:b9:5b:bc","e9:05:e1:e8:39:38","87:05:af:72:0c:98","2e:05:7b:7b:95:87"],
+	["c2:06:f3:75:f0:05","58:06:9f:06:2f:c3","29:06:ec:f0:08:83","25:06:03:97:5f:29"],
+	["3e:07:44:fa:2c:cf","5b:07:fd:d3:94:3d","21:07:61:84:f9:bd","e5:07:e5:8f:a2:21"],
+	["43:08:e9:2e:f6:61","08:08:4f:21:34:44","17:08:9e:9e:91:84","30:08:91:42:ef:17"],
+	["2b:09:33:e4:33:32","34:09:68:a8:fd:20","16:09:0d:7c:62:40","b3:09:3f:ee:43:16"],
+	["1d:10:7a:96:43:34","32:10:d9:88:45:13","70:10:1e:87:66:23","d3:10:e8:29:64:70"],
+	["89:11:b1:14:58:83","a3:11:e4:84:27:8d","f2:11:c7:fa:ea:3d","9a:11:24:f1:45:f2"],
+	["8c:12:88:23:62:23","2c:12:c3:57:10:8b","91:12:4b:4b:ce:cb","c2:12:82:62:36:91"],
+	["19:13:1a:2c:df:fa","f3:13:97:92:36:1c","02:13:66:64:64:3c","9f:13:66:92:cd:02"]
+]
+]
+
 def get_scapy_vxlan_udp_pkt( vxlan_smac_x, vxlan_dmac_x, vxlan_sip_x, vxlan_dip_x, vxlan_sport_x, vxlan_dport_x, vxlan_vni_x, guest_vlan_x, guest_prio_x, guest_sip_x, guest_dip_x, guest_sport_x, guest_dport_x, payload_x ):
 	############################################################################################################################################
 	scapy_vxlan_udp_pkt = Ether(src=vxlan_smac_x,dst=vxlan_dmac_x)/IP(proto=17,src=vxlan_sip_x,dst=vxlan_dip_x)/UDP(sport=vxlan_sport_x,dport=vxlan_dport_x)/VXLAN(vni=vxlan_vni_x)/Ether()/Dot1Q(vlan=guest_vlan_x,prio=guest_prio_x)/IP(src=guest_sip_x,dst=guest_dip_x,proto=17)/UDP(sport=guest_sport_x,dport=guest_dport_x)/Raw(load=payload_x)
@@ -214,10 +252,9 @@ class STLS1(object):
 			vtep_dip_min_y = (vtep_dip_min_y << 8) + 3
 
 			##########################################
-			tunnel_id = (stream_id % 4)
-			lan_host_id = (5 + (stream_id / 4))
-			vxlan_smac_y = "6a:5f:ee:92:%d:%d" % ((10 + tunnel_id), (10 + tunnel_id))
-
+			lan_host_id = (stream_id % 4)
+			tunnel_id = (stream_id / 4)
+			vxlan_smac_y = vxlan_smac_arr[nic_id][tunnel_id][lan_host_id]
 			##########################################
 			if tunnel_id >= 15:
 				vxlan_dmac_y = "CC:D3:9D:D1:4F:07"
@@ -234,7 +271,7 @@ class STLS1(object):
 			else:
 				vxlan_dmac_y = "CC:D3:9D:D1:4%d:07" % (tunnel_id)
 			##########################################
-			vxlan_sip_y = "%d.0.1.%d" % ((10 + tunnel_id), lan_host_id)
+			vxlan_sip_y = "%d.0.1.%d" % ((10 + tunnel_id), (5 + lan_host_id))
 			##########################################
 			vtep_dip_min_y =                        (10 + tunnel_id)
 			vtep_dip_min_y = (vtep_dip_min_y << 8) + 0
