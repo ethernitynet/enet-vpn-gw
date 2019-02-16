@@ -144,21 +144,31 @@ window.onclick = function(e) {
 	return ``;
 };
 
-var vpn_api_op = function (vpn_cfg_str, conn_id, op) {
+var vpn_api_op = function (vpn_cfg_str, op, conn_id) {
 
 	const vpn_cfg = JSON.parse(vpn_cfg_str);
-	if((vpn_cfg != undefined) && (vpn_cfg.conns != undefined) && (vpn_cfg.conns.length > conn_id)) {
-		console.log(`Connection#${conn_id}> ${vpn_cfg.conns[conn_id].name}: ${op}`);
+	if((vpn_cfg != undefined) && (vpn_cfg.conns != undefined)) {
 		const backend_params = enet_vpn_get_backend_params_test(vpn_cfg);
 		switch(op) {
 		
+			case `load_cfg`:
+			enet_vpn_load_cfg(backend_params.ip, backend_params.port, { VPN: vpn_cfg });
+			break;
+		
 			case `connect`:
-			enet_vpn_outbound_tunnel_connect_test(backend_params.ip, backend_params.port, vpn_cfg, conn_id);
-			enet_vpn_inbound_tunnel_connect_test(backend_params.ip, backend_params.port, vpn_cfg, conn_id);
-			enet_vpn_inbound_fwd_add_test(backend_params.ip, backend_params.port, vpn_cfg, conn_id);
+			console.log(`Connection#${conn_id}> ${vpn_cfg.conns[conn_id].name}: ${op}`);
+			if(vpn_cfg.conns.length > conn_id) {
+				enet_vpn_outbound_tunnel_connect_test(backend_params.ip, backend_params.port, vpn_cfg, conn_id);
+				enet_vpn_inbound_tunnel_connect_test(backend_params.ip, backend_params.port, vpn_cfg, conn_id);
+				enet_vpn_inbound_fwd_add_test(backend_params.ip, backend_params.port, vpn_cfg, conn_id);
+			};
 			break;
 		
 			case `disconnect`:
+			console.log(`Connection#${conn_id}> ${vpn_cfg.conns[conn_id].name}: ${op}`);
+			if(vpn_cfg.conns.length > conn_id) {
+				//
+			};
 			break;
 		};
 	}
@@ -594,7 +604,7 @@ app.controller('TestCtrl', function($scope, $http, $location, $q) {
   
   $scope.toggle_connect = function (toggle_value, form) {
 
-    vpn_api_op(document.getElementById("model_content").innerHTML, selected_conn_idx, ((toggle_value) ? `connect` : `disconnect`));
+    vpn_api_op(document.getElementById("model_content").innerHTML, ((toggle_value) ? `connect` : `disconnect`), selected_conn_idx);
   };
 
   $scope.get_libreswan_conf = function(port_id){
@@ -657,14 +667,18 @@ app.controller('TestCtrl', function($scope, $http, $location, $q) {
 	var expr = '\n';
 
 	const json_cfg = $scope.modelData;
+	vpn_api_op(JSON.stringify(json_cfg), `load_cfg`);
+	/*
 	var conn_dictionary = { };
 	const conns_count = json_cfg.conns.length;
 	for(var i = 0; i < conns_count; ++i) {
 		conn_dictionary_append(conn_dictionary, json_cfg.VPN, i);
 	};
-	expr += JSON.stringify(conn_dictionary, null, 2);;
+	expr += JSON.stringify(conn_dictionary, null, 2);
+	*/
   };
 
+  /*
   $scope.submitForm = function(form) {
     // First we broadcast an event so all fields validate themselves
     $scope.$broadcast('schemaFormValidate');
@@ -685,6 +699,7 @@ app.controller('TestCtrl', function($scope, $http, $location, $q) {
       alert('You did it!');
     }
   };
+  */
 
 });
 // @license-end

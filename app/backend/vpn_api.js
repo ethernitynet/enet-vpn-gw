@@ -56,6 +56,17 @@ var post_via_ajax = function (label, ip, port, post_content) {
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
 
+var enet_vpn_load_cfg = function (backend_ip, backend_port, vpn_cfg) {
+	
+	const post_content = {
+		op: `load_vpn_cfg`,
+		vpn_cfg: vpn_cfg
+	};
+
+	//post_via_request(`enet_vpn_load_cfg`, backend_ip, backend_port, post_content);
+	post_via_ajax(`enet_vpn_load_cfg`, backend_ip, backend_port, post_content);
+};
+
 var enet_vpn_outbound_tunnel_connect = function (backend_ip, backend_port, tunnel_spec, ipsec_cfg) {
 
 	const post_content = {

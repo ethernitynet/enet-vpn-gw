@@ -443,7 +443,7 @@
 		{
 			"type": "submit",
 			"style": "btn-default",
-			"title": "OK"
+			"title": "Update Configuration"
 		},
 		"advanced",
 		{

@@ -150,6 +150,7 @@ module.exports = function (host_profile, gw_profiles, service_ip, service_port) 
 					catch(error) {
 						res.writeHead(405, headers);
 						res.end(`${chunk_no} chunks: [${data}] JSON.parse: ${error}`);
+						console.log(`${chunk_no} chunks: [${data}] JSON.parse: ${error}`);
 						return;
 					};
 				});
