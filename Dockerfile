@@ -16,6 +16,25 @@ RUN exec_apt_install "$(enet_vpn_prerequisites)"
 RUN exec_tgt '/' 'docker pull ethernity/libreswan'
 RUN enet_vpn_config_mngr_install
 
+#######################################
+########## Backend Service ############
+RUN printf '\
+[Unit]\n\
+Description=ENET VPN Backend Service\n\
+After=network.target\n\
+\n\
+[Service]\n\
+Type=simple\n\
+User=root\n\
+ExecStart=cd /usr/src/backend && npm start\n\
+Restart=on-abort\n\
+\n\
+[Install]\n\
+WantedBy=multi-user.target\n\
+' > /etc/systemd/system/enet_vpn_backend.service
+RUN systemctl enable enet_vpn_backend.service
+#######################################
+
 COPY runtime/ ${SRC_DIR}/runtime/
 ENV BASH_ENV=${SRC_DIR}/app-entrypoint.sh
 
