@@ -318,5 +318,5 @@ var influxdb_update = function () {
 };
 
 //influxdb_update();
-setInterval(influxdb_update, 2000);
+setInterval(influxdb_update, 1000);
 
