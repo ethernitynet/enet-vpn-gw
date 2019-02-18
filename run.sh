@@ -115,9 +115,10 @@ acenic_bind() {
 	then
 		${dpdk_install_dir}/usertools/dpdk-devbind.py -b ${driver_name} ${ACENIC_710_SLOT}
 	else
-		cd /home/trx/v2.51
-		./dpdk_nic_bind.py -b ${driver_name} ${ACENIC_710_SLOT}
-		cd -
+		#cd /home/trx/v2.51
+		#./dpdk_nic_bind.py -b ${driver_name} ${ACENIC_710_SLOT}
+		#cd -
+		echo '-'
 	fi
 }
 
