@@ -3,6 +3,12 @@ var http_request = require('request');
 var sh = require('shelljs');
 sh.config.silent = true;
 
+///////////////////////////////
+const influxdb_ip = `172.16.11.152`;
+const influxdb_db_name = `enet_vpn_db`;
+///////////////////////////////
+
+
 function influxdb_expr_stats_add(line_proto_arr, cfg, tunnel_config, stats) {
 	
 	const conn = cfg.conns[tunnel_config.CONN_ID];
@@ -81,7 +87,7 @@ function influxdb_send_batch(db_ip, db_port, db_name, line_proto_arr) {
 	for(var rec_id = 0; rec_id < line_proto_arr.length; ++rec_id) {
 		line_proto_str += `${line_proto_arr[rec_id]}\n`;
 	};
-	influxdb_send(`172.16.11.152`, 8086, `enet_vpn_db`, line_proto_str);
+	influxdb_send(influxdb_ip, 8086, influxdb_db_name, line_proto_str);
 };
 
 

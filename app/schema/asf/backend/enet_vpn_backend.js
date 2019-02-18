@@ -4,6 +4,15 @@ var influxdb_stats = require('./syntax/influxdb_stats.js');
 
 const argc_nic_name = 2;
 
+///////////////////////////////
+const influxdb_ip = `172.16.11.152`;
+var influxdb_name = function (nic_id, influxdb_ip_addr) {
+	
+	const ip_sfx = influxdb_ip_addr.replace(/\./, '_');
+	return `enet${nic_id}_vpn_${ip_sfx}`;
+};
+///////////////////////////////
+
 
 var enet0_json_cfg = 
 {
@@ -145,7 +154,7 @@ const expr = syntax_tunnel_inst.exec_dictionary_display();
 //console.log(expr);
 const stats_collect_cmd = syntax_tunnel_inst.load_config();
 const nic_cfg = json_cfg.VPN.ace_nic_config[0];
-var influxdb_stats_inst = new influxdb_stats(`172.17.0.1`, `root`, `devops123`, `172.16.11.152`, 8086, `enet${nic_cfg.nic_name}_vpn_db`, stats_collect_cmd);
+var influxdb_stats_inst = new influxdb_stats(`172.17.0.1`, `root`, `devops123`, influxdb_ip, 8086, influxdb_name(nic_cfg.nic_name, influxdb_ip), stats_collect_cmd);
 influxdb_stats_inst.update_cfg(json_cfg.VPN);
 
 // Initialization:

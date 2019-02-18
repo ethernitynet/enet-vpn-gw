@@ -101,6 +101,20 @@
 var selected_conn = {};
 var selected_conn_idx = -1;
 
+///////////////////////////////
+const grafana_ip = `172.16.11.152`;
+var dashboard_name = function (nic_id, grafana_ip_addr) {
+	
+	return `enet${nic_id}_vpn@${grafana_ip_addr}`;
+};
+var grafana_url = function (nic_id) {
+
+	const dashboard_key = (nic_id == 0) ? `tSZjSEumk` : `iWFcAzrik`;
+	const dash_name = dashboard_name(nic_id, grafana_ip);
+	return `http://${grafana_ip}:3000/d/${dashboard_key}/${dash_name}?refresh=2.5s&orgId=1&from=now-5m&to=now&kiosk`;
+};
+///////////////////////////////
+
 window.onclick = function(e) {
 
 	var conn_status = ``;
@@ -511,14 +525,7 @@ app.controller('TestCtrl', function($scope, $http, $location, $q) {
       $scope.modelData  = JSON.parse(res.files['model.json'].content);
       try {
 		const nic_name = $scope.modelData.ace_nic_config[0].nic_name;
-		switch(nic_name) {
-		case "0":
-			document.getElementById("charts_view").src = "http://172.16.11.152:3000/d/tSZjSEumk/enet0-vpn?refresh=2.5s&orgId=1&from=now-5m&to=now&kiosk";
-		break;
-		case "1":
-			document.getElementById("charts_view").src = "http://172.16.11.152:3000/d/iWFcAzrik/enet1-vpn?refresh=2.5s&orgId=1&from=now-5m&to=now&kiosk";
-		break;
-		};
+		document.getElementById("charts_view").src = grafana_url(nic_name);
       } catch (e){
  			document.getElementById("charts_view").src = "";
       };
@@ -579,14 +586,7 @@ app.controller('TestCtrl', function($scope, $http, $location, $q) {
     $scope.modelData = res_model.data.VPN || res_data.data.model || {};
 	  try {
 		const nic_name = $scope.modelData.ace_nic_config[0].nic_name;
-		switch(nic_name) {
-		case "0":
-			document.getElementById("charts_view").src = "http://172.16.11.152:3000/d/tSZjSEumk/enet0-vpn?refresh=2.5s&orgId=1&from=now-5m&to=now&kiosk";
-		break;
-		case "1":
-			document.getElementById("charts_view").src = "http://172.16.11.152:3000/d/iWFcAzrik/enet1-vpn?refresh=2.5s&orgId=1&from=now-5m&to=now&kiosk";
-		break;
-		};
+		document.getElementById("charts_view").src = grafana_url(nic_name);
 	  } catch (e){
 			document.getElementById("charts_view").src = "";
 	  };
