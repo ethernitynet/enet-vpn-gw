@@ -105,7 +105,7 @@ var selected_conn_idx = -1;
 const grafana_ip = `172.16.11.152`;
 var dashboard_name = function (nic_id, grafana_ip_addr) {
 	
-	return `enet${nic_id}_vpn@${grafana_ip_addr}`;
+	return `enet${nic_id}-vpn@${grafana_ip_addr}`;
 };
 var grafana_url = function (nic_id) {
 
