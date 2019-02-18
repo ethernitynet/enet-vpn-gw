@@ -109,7 +109,7 @@ var dashboard_name = function (nic_id, grafana_ip_addr) {
 };
 var grafana_url = function (nic_id) {
 
-	const dashboard_key = (nic_id == 0) ? `tSZjSEumk` : `iWFcAzrik`;
+	const dashboard_key = (nic_id == 0) ? `S6Ed9irmk` : `pqNKjirmk`;
 	const dash_name = dashboard_name(nic_id, grafana_ip);
 	return `http://${grafana_ip}:3000/d/${dashboard_key}/${dash_name}?refresh=2.5s&orgId=1&from=now-5m&to=now&kiosk`;
 };
@@ -485,6 +485,11 @@ app.config(['ngClipProvider', function(ngClipProvider) {
   }]);
 app.controller('TestCtrl', function($scope, $http, $location, $q) {
 
+///////////////////////////////
+const host_port = $location.port();
+const initial_nic_id = (host_port - 44443);
+///////////////////////////////
+
   $scope.tests = [
     /*
     { name: "Simple", data: 'data/simple.json' },
@@ -514,7 +519,7 @@ app.controller('TestCtrl', function($scope, $http, $location, $q) {
     $http.get('https://api.github.com/gists/' + gistId).success(function(res) {
       $scope.error = null;
       $scope.tests.unshift({name: 'Gist'});
-      $scope.selectedTest = $scope.tests[0];
+      $scope.selectedTest = $scope.tests[initial_nic_id];
       $scope.loadedData = {
         created: moment(res.created_at).fromNow(),
         user: res.user !== null ? res.user.login : 'Anonymous'
@@ -533,10 +538,10 @@ app.controller('TestCtrl', function($scope, $http, $location, $q) {
     }).error(function() {
       $scope.loadedData = 'dummy';
       $scope.error = 'Failed to load gist.';
-      $scope.selectedTest = $scope.tests[0];
+      $scope.selectedTest = $scope.tests[initial_nic_id];
     });
   } else {
-    $scope.selectedTest = $scope.tests[0];
+    $scope.selectedTest = $scope.tests[initial_nic_id];
   }
 
   $scope.$watch('selectedTest',function(val){

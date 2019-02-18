@@ -4,8 +4,8 @@
 /////////////////////////////////////////////////
 
 const test_backend_params = [
-	{ ip: `172.16.11.152`, port: 44000 },
-	{ ip: `172.16.11.152`, port: 44001 },
+	{ ip: `${location.host.split(':')[0]}`, port: 44000 },
+	{ ip: `${location.host.split(':')[0]}`, port: 44001 },
 ];
 
 const test_spis = [

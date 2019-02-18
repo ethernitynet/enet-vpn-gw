@@ -1,4 +1,13 @@
 
+const argc_host_ip = 2;
+
+var influxdb_name = function (nic_id, host_ip_addr) {
+	
+	const ip_sfx = host_ip_addr.replace(/\./, '_');
+	return `enet${nic_id}_vpn_${ip_sfx}`;
+};
+
+
 global.influxdb_success_count = 0;
 global.influxdb_error_count = 0;
 
@@ -243,8 +252,9 @@ var influxdb_update_nic = function (card_flag, card_id, db_name) {
 
 var influxdb_update = function () {
 
-	influxdb_update_nic(` `, ` `, `enet0_vpn`);
-	influxdb_update_nic(`-card`, `1`, `enet1_vpn`);
+	const host_ip = process.argv[argc_host_ip];
+	influxdb_update_nic(` `, ` `, `${influxdb_name(0, host_ip)}`);
+	influxdb_update_nic(`-card`, `1`, `${influxdb_name(1, host_ip)}`);
 };
 
 //influxdb_update();
