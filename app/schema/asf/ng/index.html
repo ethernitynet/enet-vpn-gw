@@ -103,15 +103,37 @@ var selected_conn_idx = -1;
 
 ///////////////////////////////
 const grafana_ip = `172.16.11.152`;
-var dashboard_name = function (nic_id, grafana_ip_addr) {
+const backend_ip = `${location.host.split(':')[0]}`;
+var dashboard_name = function (nic_id) {
 	
-	return `enet${nic_id}-vpn@${grafana_ip_addr}`;
+	return `enet${nic_id}-vpn@${backend_ip}`;
 };
 var grafana_url = function (nic_id) {
 
-	const dashboard_key = (nic_id == 0) ? `S6Ed9irmk` : `pqNKjirmk`;
-	const dash_name = dashboard_name(nic_id, grafana_ip);
-	return `http://${grafana_ip}:3000/d/${dashboard_key}/${dash_name}?refresh=2.5s&orgId=1&from=now-5m&to=now&kiosk`;
+	switch(backend_ip) {
+	
+	case `172.16.11.177`:
+	if(nic_id == 0) {
+		return `http://${grafana_ip}:3000/d/Otwmjmriz/enet${nic_id}-vpnat172-16-11-177?refresh=2.5s&orgId=1&from=now-5m&to=now&kiosk`;
+	};
+	break;
+	
+	case `172.16.11.151`:
+	if(nic_id == 1) {
+		return `http://${grafana_ip}:3000/d/BPshBWrmz/enet${nic_id}-vpnat172-16-11-151?refresh=2.5s&orgId=1&from=now-5m&to=now&kiosk`;
+	};
+	break;
+	
+	case `172.16.11.152`:
+	if(nic_id == 0) {
+		return `http://${grafana_ip}:3000/d/S6Ed9irmk/enet${nic_id}-vpnat172-16-11-152?refresh=2.5s&orgId=1&from=now-5m&to=now&kiosk`;
+	}
+	else if(nic_id == 1) {
+		return `http://${grafana_ip}:3000/d/pqNKjirmk/enet${nic_id}-vpnat172-16-11-152?refresh=2.5s&orgId=1&from=now-5m&to=now&kiosk`;
+	};
+	break;
+	
+	};
 };
 ///////////////////////////////
 

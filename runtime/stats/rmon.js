@@ -3,7 +3,7 @@ const argc_host_ip = 2;
 
 var influxdb_name = function (nic_id, host_ip_addr) {
 	
-	const ip_sfx = host_ip_addr.replace(/\./, '_');
+	const ip_sfx = host_ip_addr.replace(/\./g, '_');
 	return `enet${nic_id}_vpn_${ip_sfx}`;
 };
 
