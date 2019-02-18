@@ -297,8 +297,8 @@ const test_inbound_next_hop_macs = [
 ];
 
 const test_backend_params = [
-	{ ip: `172.16.11.152`, port: 4400 },
-	{ ip: `172.16.11.152`, port: 4401 },
+	{ ip: `172.16.11.152`, port: 44000 },
+	{ ip: `172.16.11.152`, port: 44001 },
 ];
 
 var vpn_remote_tunnel_mac_test = function (vpn_cfg, conn_id) {

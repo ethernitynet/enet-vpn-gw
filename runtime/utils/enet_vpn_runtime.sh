@@ -26,7 +26,7 @@ enet_vpn_config_mngr_start() {
 	cd ${SRC_DIR}/config
 	npm start &
 	cd -
-	cd ${SRC_DIR}/schema/asf
+	cd ${SRC_DIR}
 	local config_mngr_port=$(( 44443 + ${ACENIC_ID} ))
 	http-server -p ${config_mngr_port} &
 	cd -
