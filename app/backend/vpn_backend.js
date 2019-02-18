@@ -74,6 +74,10 @@ module.exports = function (host_profile, gw_profiles) {
 		console.log(`inbound_fwd_add(${nic_id}, ${conn_id}, next_hops)`);
 		const tunnel_key = `nic${nic_id}_conn${conn_id}_in`;
 		
+		if(this.tunnel_states[tunnel_key] == undefined) {
+			this.tunnel_states[tunnel_key] = {};
+		};
+		
 		this.tunnel_states[tunnel_key].fwd = { phase: `action_add`, next_hops: next_hops, actions: {}, forwarders: {}, pms: {} };
 		this.gw_config.host_cmds_append([
 			{
@@ -135,14 +139,16 @@ module.exports = function (host_profile, gw_profiles) {
 		console.log(`inbound_tunnel_add(${nic_id}, ${conn_id}, ${remote_tunnel_mac}, ipsec_cfg)`);
 		const tunnel_key = `nic${nic_id}_conn${conn_id}_in`;
 		
-		this.tunnel_states[tunnel_key] = {
-			nic_id: nic_id,
-			id: conn_id,
-			tunnel: {
-				remote_tunnel_mac: remote_tunnel_mac
-			},
-			ipsec: ipsec_cfg
+		if(this.tunnel_states[tunnel_key] == undefined) {
+			this.tunnel_states[tunnel_key] = {};
 		};
+		
+		this.tunnel_states[tunnel_key].nic_id = nic_id;
+		this.tunnel_states[tunnel_key].id = conn_id;
+		this.tunnel_states[tunnel_key].tunnel = {
+			remote_tunnel_mac: remote_tunnel_mac
+		};
+		this.tunnel_states[tunnel_key].ipsec = ipsec_cfg;
 		this.tunnel_states[tunnel_key].tunnel.local_tunnel_mac = vpn_conn_mac_base(nic_id, conn_id, conn_cfg.tunnel_port);
 		this.gw_config.host_cmds_append([
 			{
