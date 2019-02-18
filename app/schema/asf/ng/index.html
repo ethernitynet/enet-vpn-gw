@@ -152,23 +152,18 @@ var vpn_api_op = function (vpn_cfg_str, op, conn_id) {
 		switch(op) {
 		
 			case `load_cfg`:
-			enet_vpn_load_cfg(backend_params.ip, backend_params.port, { VPN: vpn_cfg });
+			console.log(`vpn_api_op> ${op}`);
+			enet_vpn_load_cfg_test(backend_params.ip, backend_params.port, vpn_cfg);
 			break;
 		
 			case `connect`:
 			console.log(`Connection#${conn_id}> ${vpn_cfg.conns[conn_id].name}: ${op}`);
-			if(vpn_cfg.conns.length > conn_id) {
-				enet_vpn_outbound_tunnel_connect_test(backend_params.ip, backend_params.port, vpn_cfg, conn_id);
-				enet_vpn_inbound_tunnel_connect_test(backend_params.ip, backend_params.port, vpn_cfg, conn_id);
-				enet_vpn_inbound_fwd_add_test(backend_params.ip, backend_params.port, vpn_cfg, conn_id);
-			};
+			enet_vpn_connect_test(backend_params.ip, backend_params.port, vpn_cfg, conn_id);
 			break;
 		
 			case `disconnect`:
 			console.log(`Connection#${conn_id}> ${vpn_cfg.conns[conn_id].name}: ${op}`);
-			if(vpn_cfg.conns.length > conn_id) {
-				//
-			};
+			enet_vpn_disconnect_test(backend_params.ip, backend_params.port, vpn_cfg, conn_id);
 			break;
 		};
 	}

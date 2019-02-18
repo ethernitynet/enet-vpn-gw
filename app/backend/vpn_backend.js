@@ -173,6 +173,14 @@ module.exports = function (host_profile, gw_profiles) {
 		this.gw_config.host_cmd();
 	};
 	
+	this.inbound_tunnel_del = function (cfg, conn_id) {
+		
+		const nic_id = cfg.ace_nic_config[0].nic_name;		
+		const conn_cfg = cfg.conns[conn_id];
+		const tunnel_key = `nic${nic_id}_conn${conn_id}_in`;
+		console.log(`inbound_tunnel_del(${nic_id}, ${conn_id}) => this.tunnel_states[${tunnel_key}]: ${(this.tunnel_states[tunnel_key] == undefined) ? "undefined" : "EXISTS"}`);
+	};
+	
 	this.outbound_tunnel_add = function (cfg, conn_id, remote_tunnel_mac, ipsec_cfg) {
 		
 		const nic_id = cfg.ace_nic_config[0].nic_name;		
@@ -224,6 +232,14 @@ module.exports = function (host_profile, gw_profiles) {
 			}
 		]);
 		this.gw_config.host_cmd();
+	};
+	
+	this.outbound_tunnel_del = function (cfg, conn_id) {
+		
+		const nic_id = cfg.ace_nic_config[0].nic_name;		
+		const conn_cfg = cfg.conns[conn_id];
+		const tunnel_key = `nic${nic_id}_conn${conn_id}_out`;
+		console.log(`outbound_tunnel_del(${nic_id}, ${conn_id}) => this.tunnel_states[${tunnel_key}]: ${(this.tunnel_states[tunnel_key] == undefined) ? "undefined" : "EXISTS"}`);
 	};
 	
 	this.gw_connect = function (nic_id, gw_port) {

@@ -63,8 +63,8 @@ var enet_vpn_load_cfg = function (backend_ip, backend_port, vpn_cfg) {
 		vpn_cfg: vpn_cfg
 	};
 
-	//post_via_request(`enet_vpn_load_cfg`, backend_ip, backend_port, post_content);
-	post_via_ajax(`enet_vpn_load_cfg`, backend_ip, backend_port, post_content);
+	//post_via_request(post_content.op, backend_ip, backend_port, post_content);
+	post_via_ajax(post_content.op, backend_ip, backend_port, post_content);
 };
 
 var enet_vpn_outbound_tunnel_connect = function (backend_ip, backend_port, tunnel_spec, ipsec_cfg) {
@@ -75,8 +75,8 @@ var enet_vpn_outbound_tunnel_connect = function (backend_ip, backend_port, tunne
 		ipsec_cfg: ipsec_cfg
 	};
 
-	//post_via_request(`enet_vpn_outbound_tunnel_connect`, backend_ip, backend_port, post_content);
-	post_via_ajax(`enet_vpn_outbound_tunnel_connect`, backend_ip, backend_port, post_content);
+	//post_via_request(post_content.op, backend_ip, backend_port, post_content);
+	post_via_ajax(post_content.op, backend_ip, backend_port, post_content);
 };
 
 var enet_vpn_inbound_tunnel_connect = function (backend_ip, backend_port, tunnel_spec, ipsec_cfg) {
@@ -87,8 +87,8 @@ var enet_vpn_inbound_tunnel_connect = function (backend_ip, backend_port, tunnel
 		ipsec_cfg: ipsec_cfg
 	};
 
-	//post_via_request(`enet_vpn_inbound_tunnel_connect`, backend_ip, backend_port, post_content);
-	post_via_ajax(`enet_vpn_inbound_tunnel_connect`, backend_ip, backend_port, post_content);
+	//post_via_request(post_content.op, backend_ip, backend_port, post_content);
+	post_via_ajax(post_content.op, backend_ip, backend_port, post_content);
 };
 
 var enet_vpn_inbound_fwd_add = function (backend_ip, backend_port, tunnel_spec, next_hops) {
@@ -99,6 +99,28 @@ var enet_vpn_inbound_fwd_add = function (backend_ip, backend_port, tunnel_spec, 
 		next_hops: next_hops
 	};
 
-	//post_via_request(`enet_vpn_inbound_fwd_add`, backend_ip, backend_port, post_content);
-	post_via_ajax(`enet_vpn_inbound_fwd_add`, backend_ip, backend_port, post_content);
+	//post_via_request(post_content.op, backend_ip, backend_port, post_content);
+	post_via_ajax(post_content.op, backend_ip, backend_port, post_content);
+};
+
+var enet_vpn_outbound_tunnel_disconnect = function (backend_ip, backend_port, tunnel_spec) {
+
+	const post_content = {
+		op: `del_outbound_tunnel`,
+		tunnel_spec: tunnel_spec
+	};
+
+	//post_via_request(post_content.op, backend_ip, backend_port, post_content);
+	post_via_ajax(post_content.op, backend_ip, backend_port, post_content);
+};
+
+var enet_vpn_inbound_tunnel_disconnect = function (backend_ip, backend_port, tunnel_spec) {
+	
+	const post_content = {
+		op: `del_inbound_tunnel`,
+		tunnel_spec: tunnel_spec
+	};
+
+	//post_via_request(post_content.op, backend_ip, backend_port, post_content);
+	post_via_ajax(post_content.op, backend_ip, backend_port, post_content);
 };

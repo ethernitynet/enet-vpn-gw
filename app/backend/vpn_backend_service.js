@@ -89,6 +89,20 @@ module.exports = function (host_profile, gw_profiles, service_ip, service_port) 
 		return `add_inbound_fwd> tunnel:[${JSON.stringify(tunnel_spec)}], next_hops: ${next_hops.length}  =>  Done.`;
 	};
 	
+	this.del_outbound_tunnel = function (tunnel_spec, ipsec_cfg) {
+		
+		const conn_id = this.find_conn(tunnel_spec);
+		this.vpn_backend.outbound_tunnel_del(this.vpn_cfg.VPN, conn_id);
+		return `del_outbound_tunnel> tunnel:[${JSON.stringify(tunnel_spec)}]  =>  Done.`;
+	};
+
+	this.del_inbound_tunnel = function (tunnel_spec, ipsec_cfg) {
+		
+		const conn_id = this.find_conn(tunnel_spec);
+		this.vpn_backend.inbound_tunnel_del(this.vpn_cfg.VPN, conn_id);
+		return `del_inbound_tunnel> tunnel:[${JSON.stringify(tunnel_spec)}]  =>  Done.`;
+	};
+	
 	this.backend_server = http.createServer((req, res) => {
 		
 		const headers = {
@@ -141,6 +155,12 @@ module.exports = function (host_profile, gw_profiles, service_ip, service_port) 
 							break;
 							case `add_inbound_fwd`:
 								res.end(this.add_inbound_fwd(content.tunnel_spec, content.next_hops));
+							break;
+							case `del_outbound_tunnel`:
+								res.end(this.del_outbound_tunnel(content.tunnel_spec, content.ipsec_cfg));
+							break;
+							case `del_inbound_tunnel`:
+								res.end(this.del_inbound_tunnel(content.tunnel_spec, content.ipsec_cfg));
 							break;
 							default:
 								res.end(`Unknown op: ${content.op}`);
