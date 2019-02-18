@@ -404,7 +404,7 @@ var enet_vpn_load_cfg_test = function (backend_ip, backend_port, vpn_cfg) {
 	if(vpn_cfg.conns != undefined) {
 		for(var conn_id = 0; conn_id < vpn_cfg.conns.length; ++conn_id) {
 			if((vpn_cfg.conns[conn_id].listen == true) || (vpn_cfg.conns[conn_id].connect == true)) {
-				enet_vpn_connect_test(backend_params.ip, backend_params.port, vpn_cfg, conn_id);
+				enet_vpn_connect_test(backend_ip, backend_port, vpn_cfg, conn_id);
 			};
 		};
 	};
