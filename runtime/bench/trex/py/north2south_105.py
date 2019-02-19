@@ -252,8 +252,10 @@ class STLS1(object):
 			vtep_dip_min_y = (vtep_dip_min_y << 8) + 3
 
 			##########################################
-			lan_host_id = (stream_id % 2)
-			tunnel_id = (stream_id / 2)
+			lan_hosts_count = 2
+			tunnels_count = (streams_count / lan_hosts_count)
+			lan_host_id = ((stream_id / tunnels_count) % lan_hosts_count);
+			tunnel_id = (stream_id % tunnels_count)
 			vxlan_smac_y = vxlan_smac_arr[nic_id][tunnel_id][lan_host_id]
 			##########################################
 			if tunnel_id >= 15:
