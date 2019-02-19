@@ -4,7 +4,7 @@ from trex_stl_lib.api import *
 ##################
 total_Mbps = 5500
 frame_len = 300
-streams_count = 56
+streams_count = 30
 vtep_dips_count = 1
 vxlan_vni_min = 6106
 guest_vlan_min = 10
@@ -252,8 +252,8 @@ class STLS1(object):
 			vtep_dip_min_y = (vtep_dip_min_y << 8) + 3
 
 			##########################################
-			lan_host_id = (stream_id % 4)
-			tunnel_id = (stream_id / 4)
+			lan_host_id = (stream_id % 2)
+			tunnel_id = (stream_id / 2)
 			vxlan_smac_y = vxlan_smac_arr[nic_id][tunnel_id][lan_host_id]
 			##########################################
 			if tunnel_id >= 15:
