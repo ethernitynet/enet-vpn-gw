@@ -219,11 +219,14 @@ global.mea_cli = function (nic_id) {
 
 global.mea_cli_top = function (nic_id) {
 	
+	const lockfile = `/var/lock/mea_cli_lockfile`;
+	const lock_timeout = 10;
+	
 	if(nic_id > 0) {
-		return `${mea_cli(nic_id)} top`;
+		return `flock -o -x -w ${lock_timeout} ${lockfile} meaCli -card ${nic_id} top`;
 	}
 	else {
-		return `${mea_cli(nic_id)} top`;
+		return `flock -o -x -w ${lock_timeout} ${lockfile} meaCli top`;
 	};
 };
 
@@ -273,10 +276,6 @@ global.mea_init_expr = function (cfg) {
 	expr += `${mea_cmd} action set delete all\n`;
 	expr += `${mea_cmd} service set delete all\n`;
 	expr += `${mea_cmd} IPSec ESP set delete all\n`;
-	expr += mea_shaper_add(nic_id, 104, `68`);
-	expr += mea_shaper_add(nic_id, 105, `69`);
-	expr += mea_shaper_add(nic_id, 106, `6A`);
-	expr += mea_shaper_add(nic_id, 107, `6B`);
 	return expr;
 };
 
@@ -449,17 +448,12 @@ global.mea_ports_init_expr = function (cfg) {
 	expr += `${service_add} ${mea_lan_ports[1]} FFF000 FFF000 D.C 0 1 0 1000000000 0 64000 0 0 1 ${mea_host_port} -f 1 0 -ra 0 -l2Type 0 -v ${mea_lan_ports[1]} -h 0 0 0 0 -lmid 1 0 1 0 -r ${port_macs[mea_lan_ports[1]]} 00:00:00:00:00:00 0000 -hType 0\n`;
 	expr += `${mea_cli(nic_id)} port egress set ${mea_cipher_port} -s 1 8000000000 64 1 1 0 0\n`;
 	expr += `${mea_cli(nic_id)} IPSec global set my_Ipsec_Ipv4 ${vpn_cfg.vpn_gw_ip}\n`;
+	expr += mea_shaper_add(nic_id, 104, `68`);
+	expr += mea_shaper_add(nic_id, 105, `69`);
+	expr += mea_shaper_add(nic_id, 106, `6A`);
+	expr += mea_shaper_add(nic_id, 107, `6B`);
 	return expr;
 };
-
-
-
-
-
-
-
-
-
 
 global.mea_stats_get_expr = function (cmd) {
 	
@@ -499,12 +493,6 @@ global.mea_stats_output_parse = function (cmd) {
 		break;
 	};
 };
-
-
-
-
-
-
 
 global.mea_ipsec_inbound_fwd_add_expr = function (cmd) {
 	

@@ -4,7 +4,7 @@ from trex_stl_lib.api import *
 ##################
 total_Mbps = 5000
 frame_len = 300
-streams_count = 28
+streams_count = 20
 vtep_dips_count = 1
 vxlan_vni_min = 6106
 guest_vlan_min = 10
