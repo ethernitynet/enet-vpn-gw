@@ -220,10 +220,10 @@ global.mea_cli = function (nic_id) {
 global.mea_cli_top = function (nic_id) {
 	
 	if(nic_id > 0) {
-		return `meaCli -card ${nic_id} top`;
+		return `${mea_cli(nic_id)} top`;
 	}
 	else {
-		return `meaCli top`;
+		return `${mea_cli(nic_id)} top`;
 	};
 };
 
@@ -246,6 +246,18 @@ global.mea_ipsec_profile_add = function (nic_id) {
 	
 	return `${mea_cli(nic_id)} IPSec ESP set create`;
 };
+
+global.mea_shaper_add = function (nic_id, port, port_hex) {
+	
+	const mea_top = mea_cli_top(nic_id);
+	const mea_cmd = mea_cli(nic_id);
+	
+	var expr = `${mea_top}\n`;
+	expr += `${mea_cmd} deb mod if_write_ind 100 20 3 ${port_hex} 10 1dc0000\n`;
+	expr += `${mea_cmd} port egress set ${port} -s 1 9500000000 64 1 1 0 0 -shaper_mode 0\n`;
+	expr += `${mea_cmd} queue priqueue set ${port} 0 -mp 512\n`;
+	return expr;
+};
 	
 global.mea_init_expr = function (cfg) {
 	
@@ -261,6 +273,10 @@ global.mea_init_expr = function (cfg) {
 	expr += `${mea_cmd} action set delete all\n`;
 	expr += `${mea_cmd} service set delete all\n`;
 	expr += `${mea_cmd} IPSec ESP set delete all\n`;
+	expr += mea_shaper_add(nic_id, 104, `68`);
+	expr += mea_shaper_add(nic_id, 105, `69`);
+	expr += mea_shaper_add(nic_id, 106, `6A`);
+	expr += mea_shaper_add(nic_id, 107, `6B`);
 	return expr;
 };
 
