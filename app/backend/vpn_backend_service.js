@@ -96,11 +96,11 @@ module.exports = function (host_profile, gw_profiles, service_ip, service_port) 
 		return JSON.stringify(response);
 	};
 
-	this.add_inbound_fwd = function (tunnel_spec, next_hops) {
+	this.add_inbound_fwd = function (tunnel_spec, next_hops, lan_port) {
 		
 		const conn_id = this.find_conn(tunnel_spec);
 		const remote_tunnel_mac = this.find_remote_tunnel_mac(tunnel_spec);
-		this.vpn_backend.inbound_fwd_add(this.vpn_cfg.VPN, conn_id, remote_tunnel_mac, next_hops);
+		this.vpn_backend.inbound_fwd_add(this.vpn_cfg.VPN, conn_id, remote_tunnel_mac, next_hops, lan_port);
 		const response = {
 			cmd: `add_inbound_fwd`,
 			tunnel_spec: tunnel_spec,
@@ -187,7 +187,7 @@ module.exports = function (host_profile, gw_profiles, service_ip, service_port) 
 								res.end(this.add_inbound_tunnel(content.tunnel_spec, content.ipsec_cfg));
 							break;
 							case `add_inbound_fwd`:
-								res.end(this.add_inbound_fwd(content.tunnel_spec, content.next_hops));
+								res.end(this.add_inbound_fwd(content.tunnel_spec, content.next_hops, content.lan_port));
 							break;
 							case `del_outbound_tunnel`:
 								res.end(this.del_outbound_tunnel(content.tunnel_spec, content.ipsec_cfg));

@@ -381,7 +381,7 @@ var enet_vpn_inbound_fwd_add_test = function (backend_ip, backend_port, vpn_cfg,
 	if(vpn_cfg.conns.length > conn_id) {
 		var tunnel_spec = vpn_cfg.conns[conn_id];
 		const next_hops = vpn_inbound_next_hops_test(vpn_cfg, conn_id);
-		enet_vpn_inbound_fwd_add(backend_ip, backend_port, tunnel_spec, next_hops);
+		enet_vpn_inbound_fwd_add(backend_ip, backend_port, tunnel_spec, next_hops, vpn_cfg.conns[conn_id].lan_port);
 	};
 };
 

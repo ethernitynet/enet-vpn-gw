@@ -522,7 +522,7 @@ global.mea_ipsec_inbound_fwd_add_expr = function (cmd) {
 			const next_hop_idx = forwarders_count;
 			const next_hop = cmd.state.fwd.next_hops[next_hop_idx];
 			console.log(`mea_ipsec_inbound_fwd_add_expr() cmd.state.fwd.actions[${next_hop.ip}]: ${cmd.state.fwd.forwarders[next_hop.ip]}`);
-			expr += `${forwarder_add} 6 ${next_hop.ip} 0 0x1${conn_tag_hex} 3 1 0 1 ${conn_cfg.lan_port} -action 1 ${cmd.state.fwd.actions[next_hop.ip]}\n`;
+			expr += `${forwarder_add} 6 ${next_hop.ip} 0 0x1${conn_tag_hex} 3 1 0 1 ${cmd.state.fwd.lan_port} -action 1 ${cmd.state.fwd.actions[next_hop.ip]}\n`;
 			cmd.state.fwd.phase = `forwarder_parse`;
 		}
 		else {

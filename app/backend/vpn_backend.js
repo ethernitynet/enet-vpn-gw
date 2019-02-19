@@ -83,11 +83,15 @@ module.exports = function (host_profile, gw_profiles) {
 		this.vpn_stats.UPDATE = `${new Date()}`;
 	};
 	
-	this.inbound_fwd_add = function (cfg, conn_id, remote_tunnel_mac, next_hops) {
+	this.inbound_fwd_add = function (cfg, conn_id, remote_tunnel_mac, next_hops, lan_port) {
 		
 		const nic_id = cfg.ace_nic_config[0].nic_name;		
-		console.log(`inbound_fwd_add(${nic_id}, ${conn_id}, ${remote_tunnel_mac}, next_hops)`);
 		const tunnel_key = `nic${nic_id}_conn${conn_id}_in`;
+		console.log(`inbound_fwd_add(${tunnel_key}, cfg.conns[${conn_id}]=${(cfg.conns != undefined) ? cfg.conns[conn_id] : 'empty'}, ${remote_tunnel_mac}, next_hops, ${lan_port})`);
+		
+		if((cfg.conns == undefined) || (cfg.conns[conn_id] == undefined)) {
+			return;
+		};
 		
 		if(this.tunnel_states[tunnel_key] == undefined) {
 			this.tunnel_states[tunnel_key] = { UPDATE: `never` };
@@ -96,7 +100,7 @@ module.exports = function (host_profile, gw_profiles) {
 			this.tunnel_states[tunnel_key].tunnel = { remote_tunnel_mac: remote_tunnel_mac };
 		};
 		
-		this.tunnel_states[tunnel_key].fwd = { phase: `action_add`, next_hops: next_hops, actions: {}, forwarders: {}, pms: {}, UPDATE: `never` };
+		this.tunnel_states[tunnel_key].fwd = { phase: `action_add`, next_hops: next_hops, lan_port: lan_port, actions: {}, forwarders: {}, pms: {}, UPDATE: `never` };
 		this.gw_config.host_cmds_append([
 			{
 				key: tunnel_key,

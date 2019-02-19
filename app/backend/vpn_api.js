@@ -103,12 +103,13 @@ var enet_vpn_inbound_tunnel_connect = function (backend_ip, backend_port, tunnel
 	post_via_ajax(post_content.op, backend_ip, backend_port, post_content);
 };
 
-var enet_vpn_inbound_fwd_add = function (backend_ip, backend_port, tunnel_spec, next_hops) {
+var enet_vpn_inbound_fwd_add = function (backend_ip, backend_port, tunnel_spec, next_hops, lan_port) {
 	
 	const post_content = {
 		op: `add_inbound_fwd`,
 		tunnel_spec: tunnel_spec,
-		next_hops: next_hops
+		next_hops: next_hops,
+		lan_port: lan_port
 	};
 
 	//post_via_request(post_content.op, backend_ip, backend_port, post_content);
