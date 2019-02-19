@@ -60,12 +60,14 @@ var rmon_parse_mac_drops = function(rmon_line) {
 
 var influxdb_formulate_rmon = function (db_name, rmons_container, port_key) {
 	
-	var rx_str = `${port_key},direction=rx PktsRX=${rmons_container[port_key].PktsRX},BytesRX=${rmons_container[port_key].BytesRX},CRCErrorPktsRX=${rmons_container[port_key].CRCErrorPktsRX},RxMacDropPktsRX=${rmons_container[port_key].RxMacDropPktsRX}`
-	var tx_str = `${port_key},direction=tx PktsTX=${rmons_container[port_key].PktsTX},BytesTX=${rmons_container[port_key].BytesTX},CRCErrorPktsTX=${rmons_container[port_key].CRCErrorPktsTX}`
-	console.log(`${db_name} <= ${rx_str}`);
-	console.log(`${db_name} <= ${tx_str}`);
-	influxdb_send(`172.17.0.1`, 8086, db_name, rx_str);
-	influxdb_send(`172.17.0.1`, 8086, db_name, tx_str);
+	if(rmons_container[port_key] != undefined) {
+		var rx_str = `${port_key},direction=rx PktsRX=${rmons_container[port_key].PktsRX},BytesRX=${rmons_container[port_key].BytesRX},CRCErrorPktsRX=${rmons_container[port_key].CRCErrorPktsRX},RxMacDropPktsRX=${rmons_container[port_key].RxMacDropPktsRX}`
+		var tx_str = `${port_key},direction=tx PktsTX=${rmons_container[port_key].PktsTX},BytesTX=${rmons_container[port_key].BytesTX},CRCErrorPktsTX=${rmons_container[port_key].CRCErrorPktsTX}`
+		console.log(`${db_name} <= ${rx_str}`);
+		console.log(`${db_name} <= ${tx_str}`);
+		influxdb_send(`172.17.0.1`, 8086, db_name, rx_str);
+		influxdb_send(`172.17.0.1`, 8086, db_name, tx_str);
+	};
 };
 
 var spawnSync = require('child_process').spawnSync
@@ -121,122 +123,6 @@ var influxdb_rmon_update_nic = function (rmon_str, db_name) {
 	influxdb_formulate_rmon(db_name, rmons_container, `rmon107`);
 	influxdb_formulate_rmon(db_name, rmons_container, `rmon127`);
 	console.log(`${Date.now()}> influxdb_success_count: ${influxdb_success_count} influxdb_error_count: ${influxdb_error_count}`);
-};
-
-
-const cfg0 = {
-	"VPN": {
-		"vpn_gw_config": [
-			{
-				"vpn_gw_ip": "10.11.11.1",
-				"libreswan_ver": "v3.27"
-			}
-		],
-		"conns": [
-			{
-			  "name": "tun13_full_hw",
-			  "inbound_accel": "full",
-			  "outbound_accel": "full",
-			  "pre_shared_secret": "ENET-LibreSwan",
-			  "encryption_type": "aes_gcm128-null",
-			  "remote_tunnel_endpoint_ip": "192.168.22.1",
-			  "local_subnet": "13.0.1.0/24",
-			  "remote_subnet": "13.0.2.0/24",
-			  "lan_port": "105",
-			  "tunnel_port": "107",
-			  "inbound_routes": "13.0.1.1",
-			  "libreswan_specific": "type=tunnel\nauthby=secret\nike=aes-sha1;modp2048\nikev2=insist\nnarrowing=yes"
-			}
-		]
-	}
-};
-
-const tunnel_states0 = {
-	"nic0_conn3_out":
-	{
-	  "nic_id": "0",
-	  "id": 3,
-	  "tunnel": {
-		"remote_tunnel_mac": "CC:D3:9D:D1:43:17",
-		"local_tunnel_mac": "CC:D3:9D:D1:43:07"
-	  },
-	  "ipsec": {
-		"spi": 1003,
-		"auth_algo": null,
-		"cipher_algo": "aes_gcm128-null",
-		"auth_key": "00",
-		"cipher_key": "6666666600000000333333331111111155551003"
-	  },
-	  "actions": {
-		"out_l3fwd": 65549,
-		"out_encrypt": 65550
-	  },
-	  "services": {},
-	  "profiles": {
-		"outbound_profile_id": 6
-	  },
-	  "forwarders": {
-		"out_encrypt": "0 CC:D3:9D:D1:43:17 105",
-		"out_l3fwd": "0 CC:D3:9D:D1:43:07 104"
-	  },
-	  "pms": {
-		"out_l3fwd": 23,
-		"out_encrypt": 24
-	  }
-	},
-	"nic0_conn3_in":
-	{
-	  "nic_id": "0",
-	  "id": 3,
-	  "tunnel": {
-		"remote_tunnel_mac": "CC:D3:9D:D1:43:17",
-		"local_tunnel_mac": "CC:D3:9D:D1:43:07"
-	  },
-	  "ipsec": {
-		"spi": 1103,
-		"auth_algo": null,
-		"cipher_algo": "aes_gcm128-null",
-		"auth_key": "00",
-		"cipher_key": "6666666600000000333333331111111155551103"
-	  },
-	  "fwd": {
-		"next_hops": [
-		  {
-			"ip": "13.0.1.5",
-			"mac": "6a:5f:ee:92:13:13"
-		  },
-		  {
-			"ip": "13.0.1.8",
-			"mac": "6a:00:ee:00:13:13"
-		  }
-		],
-		"actions": {
-		  "13.0.1.5": 65551,
-		  "13.0.1.8": 65552
-		},
-		"forwarders": {
-		  "13.0.1.5": "6 13.0.1.5 0 0x143",
-		  "13.0.1.8": "6 13.0.1.8 0 0x143"
-		},
-		"pms": {
-		  "13.0.1.5": 27,
-		  "13.0.1.8": 28
-		}
-	  },
-	  "actions": {},
-	  "services": {
-		"in_l3fwd": 522,
-		"in_decrypt": 523
-	  },
-	  "profiles": {
-		"inbound_profile_id": 7
-	  },
-	  "forwarders": {},
-	  "pms": {
-		"in_l3fwd": 25,
-		"in_decrypt": 26
-	  }
-	}
 };
 
 

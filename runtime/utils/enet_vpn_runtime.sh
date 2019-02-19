@@ -24,6 +24,7 @@ enet_vpn_config_mngr_start() {
 	mkdir -p $VPN_SHARED_DIR/enet${ACENIC_ID}_libreswan106/conns
 	mkdir -p $VPN_SHARED_DIR/enet${ACENIC_ID}_libreswan107/conns
 	cd ${SRC_DIR}/backend
+	npm stop
 	npm start &
 	cd -
 	cd ${SRC_DIR}

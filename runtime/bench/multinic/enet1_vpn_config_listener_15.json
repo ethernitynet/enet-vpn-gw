@@ -21,7 +21,7 @@
 				"inbound_routes": "10.0.2.5\n10.0.2.6\n10.0.2.7\n10.0.2.8",
 				"libreswan_specific": "type=tunnel\nauthby=secret\nike=aes-sha1;modp2048\nikev2=insist\nnarrowing=yes",
 				"enabled": true,
-				"listen": true,
+				"listen": false,
 				"connect": false,
 				"connected": false
 			},
@@ -39,7 +39,7 @@
 				"inbound_routes": "11.0.2.5\n11.0.2.6\n11.0.2.7\n11.0.2.8",
 				"libreswan_specific": "type=tunnel\nauthby=secret\nike=aes-sha1;modp2048\nikev2=insist\nnarrowing=yes",
 				"enabled": true,
-				"listen": true,
+				"listen": false,
 				"connect": false,
 				"connected": false
 			},
@@ -57,7 +57,7 @@
 				"inbound_routes": "12.0.2.5\n12.0.2.6\n12.0.2.7\n12.0.2.8",
 				"libreswan_specific": "type=tunnel\nauthby=secret\nike=aes-sha1;modp2048\nikev2=insist\nnarrowing=yes",
 				"enabled": true,
-				"listen": true,
+				"listen": false,
 				"connect": false,
 				"connected": false
 			},
@@ -75,7 +75,7 @@
 				"inbound_routes": "13.0.2.5\n13.0.2.6\n13.0.2.7\n13.0.2.8",
 				"libreswan_specific": "type=tunnel\nauthby=secret\nike=aes-sha1;modp2048\nikev2=insist\nnarrowing=yes",
 				"enabled": true,
-				"listen": true,
+				"listen": false,
 				"connect": false,
 				"connected": false
 			},
@@ -93,7 +93,7 @@
 				"inbound_routes": "14.0.2.5\n14.0.2.6\n14.0.2.7\n14.0.2.8",
 				"libreswan_specific": "type=tunnel\nauthby=secret\nike=aes-sha1;modp2048\nikev2=insist\nnarrowing=yes",
 				"enabled": true,
-				"listen": true,
+				"listen": false,
 				"connect": false,
 				"connected": false
 			},
@@ -111,7 +111,7 @@
 				"inbound_routes": "15.0.2.5\n15.0.2.6\n15.0.2.7\n15.0.2.8",
 				"libreswan_specific": "type=tunnel\nauthby=secret\nike=aes-sha1;modp2048\nikev2=insist\nnarrowing=yes",
 				"enabled": true,
-				"listen": true,
+				"listen": false,
 				"connect": false,
 				"connected": false
 			},
@@ -129,7 +129,7 @@
 				"inbound_routes": "16.0.2.5\n16.0.2.6\n16.0.2.7\n16.0.2.8",
 				"libreswan_specific": "type=tunnel\nauthby=secret\nike=aes-sha1;modp2048\nikev2=insist\nnarrowing=yes",
 				"enabled": true,
-				"listen": true,
+				"listen": false,
 				"connect": false,
 				"connected": false
 			},
@@ -147,7 +147,7 @@
 				"inbound_routes": "17.0.2.5\n17.0.2.6\n17.0.2.7\n17.0.2.8",
 				"libreswan_specific": "type=tunnel\nauthby=secret\nike=aes-sha1;modp2048\nikev2=insist\nnarrowing=yes",
 				"enabled": true,
-				"listen": true,
+				"listen": false,
 				"connect": false,
 				"connected": false
 			},
@@ -165,7 +165,7 @@
 				"inbound_routes": "18.0.2.5\n18.0.2.6\n18.0.2.7\n18.0.2.8",
 				"libreswan_specific": "type=tunnel\nauthby=secret\nike=aes-sha1;modp2048\nikev2=insist\nnarrowing=yes",
 				"enabled": true,
-				"listen": true,
+				"listen": false,
 				"connect": false,
 				"connected": false
 			},
@@ -183,7 +183,7 @@
 				"inbound_routes": "19.0.2.5\n19.0.2.6\n19.0.2.7\n19.0.2.8",
 				"libreswan_specific": "type=tunnel\nauthby=secret\nike=aes-sha1;modp2048\nikev2=insist\nnarrowing=yes",
 				"enabled": true,
-				"listen": true,
+				"listen": false,
 				"connect": false,
 				"connected": false
 			},
@@ -201,7 +201,7 @@
 				"inbound_routes": "20.0.2.5\n20.0.2.6\n20.0.2.7\n20.0.2.8",
 				"libreswan_specific": "type=tunnel\nauthby=secret\nike=aes-sha1;modp2048\nikev2=insist\nnarrowing=yes",
 				"enabled": true,
-				"listen": true,
+				"listen": false,
 				"connect": false,
 				"connected": false
 			},
@@ -219,7 +219,7 @@
 				"inbound_routes": "21.0.2.5\n21.0.2.6\n21.0.2.7\n21.0.2.8",
 				"libreswan_specific": "type=tunnel\nauthby=secret\nike=aes-sha1;modp2048\nikev2=insist\nnarrowing=yes",
 				"enabled": true,
-				"listen": true,
+				"listen": false,
 				"connect": false,
 				"connected": false
 			},
@@ -237,7 +237,7 @@
 				"inbound_routes": "22.0.2.5\n22.0.2.6\n22.0.2.7\n22.0.2.8",
 				"libreswan_specific": "type=tunnel\nauthby=secret\nike=aes-sha1;modp2048\nikev2=insist\nnarrowing=yes",
 				"enabled": true,
-				"listen": true,
+				"listen": false,
 				"connect": false,
 				"connected": false
 			},
@@ -255,7 +255,7 @@
 				"inbound_routes": "23.0.2.5\n23.0.2.6\n23.0.2.7\n23.0.2.8",
 				"libreswan_specific": "type=tunnel\nauthby=secret\nike=aes-sha1;modp2048\nikev2=insist\nnarrowing=yes",
 				"enabled": true,
-				"listen": true,
+				"listen": false,
 				"connect": false,
 				"connected": false
 			},
@@ -273,7 +273,7 @@
 				"inbound_routes": "24.0.2.5\n24.0.2.6\n24.0.2.7\n24.0.2.8",
 				"libreswan_specific": "type=tunnel\nauthby=secret\nike=aes-sha1;modp2048\nikev2=insist\nnarrowing=yes",
 				"enabled": true,
-				"listen": true,
+				"listen": false,
 				"connect": false,
 				"connected": false
 			}

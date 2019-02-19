@@ -26,7 +26,7 @@ var post_via_xhr = function (label, ip, port, post_content) {
 			console.log(xhr.responseText);
 		};
 	};
-	const post_content_str = JSON.stringify({ json: post_content });
+	const post_content_str = JSON.stringify({ data: post_content });
 	xhr.send(post_content_str);
 };
 
@@ -48,6 +48,17 @@ var post_via_ajax = function (label, ip, port, post_content) {
 		failure: function(errMsg) {
 			
 			console.log(`ERROR ${label}> ajax post(${ip}, ${port}, ${JSON.stringify(post_content, null, 2)}) error: ${errMsg}`);
+		},
+		statusCode: {
+			404: function () {
+				console.log(`${label}> ajax post(${ip}, ${port}, ${JSON.stringify(post_content, null, 2)}) code: 404`);
+			},
+			405: function () {
+				console.log(`${label}> ajax post(${ip}, ${port}, ${JSON.stringify(post_content, null, 2)}) code: 405`);
+			},
+			200: function (data) {
+				console.log(`${label}> ajax post(${ip}, ${port}, ${JSON.stringify(post_content, null, 2)}) code: 200`);
+			}
 		}
 	});
 };
@@ -64,6 +75,7 @@ var enet_vpn_load_cfg = function (backend_ip, backend_port, vpn_cfg) {
 	};
 
 	//post_via_request(post_content.op, backend_ip, backend_port, post_content);
+	//post_via_xhr(post_content.op, backend_ip, backend_port, post_content);
 	post_via_ajax(post_content.op, backend_ip, backend_port, post_content);
 };
 

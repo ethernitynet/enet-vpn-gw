@@ -201,6 +201,16 @@ var vpn_api_op = function (vpn_cfg_str, op, conn_id) {
 			console.log(`Connection#${conn_id}> ${vpn_cfg.conns[conn_id].name}: ${op}`);
 			enet_vpn_disconnect_test(backend_params.ip, backend_params.port, vpn_cfg, conn_id);
 			break;
+		
+			case `listen_on`:
+			console.log(`Connection#${conn_id}> ${vpn_cfg.conns[conn_id].name}: ${op}`);
+			enet_vpn_listen_on_test(backend_params.ip, backend_params.port, vpn_cfg, conn_id);
+			break;
+		
+			case `listen_off`:
+			console.log(`Connection#${conn_id}> ${vpn_cfg.conns[conn_id].name}: ${op}`);
+			enet_vpn_listen_off_test(backend_params.ip, backend_params.port, vpn_cfg, conn_id);
+			break;
 		};
 	}
 	else {
@@ -622,6 +632,16 @@ const initial_nic_id = (host_port - 44443);
 
   $scope.pretty = function(){
     return typeof $scope.modelData === 'string' ? $scope.modelData : JSON.stringify($scope.modelData, undefined, 2);
+  };
+  
+  $scope.toggle_enabled = function (toggle_value, form) {
+
+    vpn_api_op(document.getElementById("model_content").innerHTML, ((toggle_value) ? `enabled` : `disabled`), selected_conn_idx);
+  };
+  
+  $scope.toggle_listen = function (toggle_value, form) {
+
+    vpn_api_op(document.getElementById("model_content").innerHTML, ((toggle_value) ? `listen_on` : `listen_off`), selected_conn_idx);
   };
   
   $scope.toggle_connect = function (toggle_value, form) {

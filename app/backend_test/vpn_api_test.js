@@ -398,6 +398,19 @@ var enet_vpn_disconnect_test = function (backend_ip, backend_port, vpn_cfg, conn
 	enet_vpn_inbound_tunnel_disconnect_test(backend_ip, backend_port, vpn_cfg, conn_id);
 };
 
+var enet_vpn_listen_on_test = function (backend_ip, backend_port, vpn_cfg, conn_id) {
+
+	enet_vpn_outbound_tunnel_connect_test(backend_ip, backend_port, vpn_cfg, conn_id);
+	enet_vpn_inbound_tunnel_connect_test(backend_ip, backend_port, vpn_cfg, conn_id);
+	enet_vpn_inbound_fwd_add_test(backend_ip, backend_port, vpn_cfg, conn_id);
+};
+
+var enet_vpn_listen_off_test = function (backend_ip, backend_port, vpn_cfg, conn_id) {
+
+	enet_vpn_outbound_tunnel_disconnect_test(backend_ip, backend_port, vpn_cfg, conn_id);
+	enet_vpn_inbound_tunnel_disconnect_test(backend_ip, backend_port, vpn_cfg, conn_id);
+};
+
 var enet_vpn_load_cfg_test = function (backend_ip, backend_port, vpn_cfg) {
 
 	enet_vpn_load_cfg(backend_ip, backend_port, { VPN: vpn_cfg });

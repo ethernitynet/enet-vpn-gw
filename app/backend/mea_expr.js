@@ -323,6 +323,97 @@ global.mea_forwarder_add_parse = function (conn_state, forwarder_key, forwarder_
 	return result;
 };
 
+var mea_rmon_parse_pkts = function(rmon_line) {
+	
+	return rmon_line.replace(/\s*(\d+)\s+Total\s+Pkts\s+(\d+)\s+(\d+)/, `"rmon$1":{"PktsRX":$2,"PktsTX":$3,`);
+};
+
+var mea_rmon_parse_bytes = function(rmon_line) {
+	
+	return rmon_line.replace(/\s*Total\s+Bytes\s+(\d+)\s+(\d+)/, `"BytesRX":$1,"BytesTX":$2,`);
+};
+
+var mea_rmon_parse_crc_errors = function(rmon_line) {
+	
+	return rmon_line.replace(/\s*CRC\s+Error\s+Pkts\s+(\d+)\s+(\d+)/, `"CRCErrorPktsRX":$1,"CRCErrorPktsTX":$2,`);
+};
+
+var mea_rmon_parse_mac_drops = function(rmon_line) {
+	
+	return rmon_line.replace(/\s*Rx\s+Mac\s+Drop\s+Pkts\s+(\d+)/, `"RxMacDropPktsRX":$1}`);
+};
+
+var influxdb_send = function (db_ip, db_port, db_name, msg) {
+	
+/////////
+const influxdb_url = `http://${db_ip}:${db_port}/write?db=${db_name}`;
+//console.log(influxdb_url);
+http_request({
+		url: influxdb_url,
+		encoding: null,
+		method: 'POST',
+		body: msg
+	}, (error, response, body) => {
+		if (error) {
+			++influxdb_error_count;
+			console.log(`====  ${JSON.stringify(error)}  ====`);
+			if(response != undefined) {
+				console.log(`====  ${response.json({name : error})}  ====`);
+			};
+		} else {
+			++influxdb_success_count;
+			//console.log(`====  SUCCESS  ====`);
+		};
+	});
+/////////
+};
+
+var mea_influxdb_update_rmon = function (db_ip, db_port, db_name, rmons_container, port) {
+	
+	const port_key = `rmon${port}`;
+	if(rmons_container[port_key] != undefined) {
+		var rx_str = `${port_key},direction=rx PktsRX=${rmons_container[port_key].PktsRX},BytesRX=${rmons_container[port_key].BytesRX},CRCErrorPktsRX=${rmons_container[port_key].CRCErrorPktsRX},RxMacDropPktsRX=${rmons_container[port_key].RxMacDropPktsRX} ${rmons_container.timestamp + port}`
+		var tx_str = `${port_key},direction=tx PktsTX=${rmons_container[port_key].PktsTX},BytesTX=${rmons_container[port_key].BytesTX},CRCErrorPktsTX=${rmons_container[port_key].CRCErrorPktsTX}`
+		console.log(`${db_name}@${db_ip}:${db_port} <= ${rx_str}`);
+		console.log(`${db_name}@${db_ip}:${db_port} <= ${tx_str}`);
+		influxdb_send(db_ip, db_port, db_name, rx_str);
+		influxdb_send(db_ip, db_port, db_name, tx_str);
+	};
+};
+
+var mea_rmons_parse = function (stats_state, prev_output) {
+	
+	const rmon_arr = prev_output.split(/\r?\n/);
+	var rmons_container ={};
+	var rmons_container_str = `{`;
+	var ports_count = 0;
+	for(var line_idx = 2; line_idx < rmon_arr.length; line_idx += 5) {
+		//console.log(`${rmon_arr.length} ${line_idx}`);
+		rmons_container_str += mea_rmon_parse_pkts(rmon_arr[line_idx]);
+		rmons_container_str += mea_rmon_parse_bytes(rmon_arr[line_idx + 1]);
+		rmons_container_str += mea_rmon_parse_crc_errors(rmon_arr[line_idx + 2]);
+		rmons_container_str += mea_rmon_parse_mac_drops(rmon_arr[line_idx + 3]);
+		++ports_count;
+		if(ports_count >= 5) {
+			rmons_container_str += `,"timestamp":${rmon_arr[rmon_arr.length - 1]}`;
+			rmons_container_str += `}`;
+			rmons_container = JSON.parse(rmons_container_str);
+			break;
+		}
+		else {
+			rmons_container_str += `,`;
+		};
+	};
+	
+	//console.log(JSON.stringify(rmons_container, null, 2));
+	mea_influxdb_update_rmon(stats_state, rmons_container, `rmon104`);
+	mea_influxdb_update_rmon(stats_state, rmons_container, `rmon105`);
+	mea_influxdb_update_rmon(stats_state, rmons_container, `rmon106`);
+	mea_influxdb_update_rmon(stats_state, rmons_container, `rmon107`);
+	mea_influxdb_update_rmon(stats_state, rmons_container, `rmon127`);
+	console.log(`${Date.now()}> influxdb_success_count: ${stats_state.influxdb_success_count} influxdb_error_count: ${stats_state.influxdb_error_count}`);
+};
+
 global.mea_ports_init_expr = function (cfg) {
 	
 	const nic_id = cfg.ace_nic_config[0].nic_name;
@@ -344,6 +435,60 @@ global.mea_ports_init_expr = function (cfg) {
 	expr += `${mea_cli(nic_id)} IPSec global set my_Ipsec_Ipv4 ${vpn_cfg.vpn_gw_ip}\n`;
 	return expr;
 };
+
+
+
+
+
+
+
+
+
+
+global.mea_stats_get_expr = function (cmd) {
+	
+	const nic_id = cmd.cfg.ace_nic_config[0].nic_name;
+	const mea_top = mea_cli_top(nic_id);
+	
+	console.log(`mea_stats_get_expr() nic_id: ${nic_id}`);
+	var expr = `${mea_top}\n`;
+	switch(cmd.state.stats.phase) {
+		case `stats_get`:
+		expr += `${mea_cli(nic_id)} counters rmon collect 104:127\n`;
+		expr += `${mea_cli(nic_id)} counters rmon show 104:127\n`;
+		expr += `date +%s%N\n`;
+		cmd.state.stats.phase = `stats_parse`;
+		break;
+	};
+	return expr;
+};
+
+global.mea_stats_output_parse = function (cmd) {
+
+	console.log(`cmd.output_processor[${cmd.key}]: ${JSON.stringify(cmd.output_processor[cmd.key], null, 2)}`);
+
+	console.log(`mea_stats_output_parse(phase:${cmd.state.stats.phase})`);	
+	switch(cmd.state.stats.phase) {
+		
+		case `stats_get`:
+		cmd.output_processor[cmd.key] = {};
+		return `stats_get`;
+		break;
+		
+		case `stats_parse`:
+		const prev_output = cmd.output_processor[cmd.key].stdout;
+		cmd.output_processor[cmd.key] = {};
+		const result = mea_rmons_parse(cmd.state, prev_output);
+		return `done`;
+		break;
+	};
+};
+
+
+
+
+
+
 
 global.mea_ipsec_inbound_fwd_add_expr = function (cmd) {
 	
@@ -578,12 +723,22 @@ global.mea_expr_init = function (cmd) {
 	return mea_init_expr(cmd.cfg) + mea_ports_init_expr(cmd.cfg);
 };
 
+global.mea_expr_stats_get = function (cmd) {
+
+	if(mea_stats_output_parse(cmd)) {
+		return mea_stats_get_expr(cmd);
+	};
+	cmd.state.UPDATE = `${new Date()}`;
+	return `exit`;
+};
+
 global.mea_expr_inbound_fwd_add = function (cmd) {
 
 	cmd.state.fwd.phase = mea_ipsec_inbound_fwd_add_parse(cmd);
 	if(cmd.state.fwd.phase != `done`) {
 		return mea_ipsec_inbound_fwd_add_expr(cmd);
 	};
+	cmd.state.fwd.UPDATE = `${new Date()}`;
 	return `exit`;
 };
 
@@ -592,6 +747,7 @@ global.mea_expr_inbound_tunnel_add = function (cmd) {
 	if(mea_ipsec_inbound_add_parse(cmd)) {
 		return mea_ipsec_inbound_add_expr(cmd);
 	};
+	cmd.state.UPDATE = `${new Date()}`;
 	return `exit`;
 };
 
@@ -600,6 +756,7 @@ global.mea_expr_outbound_tunnel_add = function (cmd) {
 	if(mea_ipsec_outbound_add_parse(cmd)) {
 		return mea_ipsec_outbound_add_expr(cmd);
 	};
+	cmd.state.UPDATE = `${new Date()}`;
 	return `exit`;
 };
 

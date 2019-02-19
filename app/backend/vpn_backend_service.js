@@ -11,7 +11,10 @@ module.exports = function (host_profile, gw_profiles, service_ip, service_port) 
 
 	this.service_ip = service_ip;
 	this.service_port = service_port;
-	this.vpn_cfg = undefined;
+	this.vpn_cfg = {
+		OBJ: `vpn_cfg`,
+		UPDATE: `never`
+	};
 	this.vpn_backend = new VPN_BACKEND(host_profile, gw_profiles);
 
 	this.find_conn = function (tunnel_spec) {
@@ -38,13 +41,7 @@ module.exports = function (host_profile, gw_profiles, service_ip, service_port) 
 	this.dump_vpn_cfg = function () {
 		
 		var dump_str = `\n`;
-		dump_str += `=========================\n`;
-		dump_str += `==  VPN Configuration  ==\n`;
-		dump_str += `=========================\n`;
 		dump_str += JSON.stringify(this.vpn_cfg, null, 2);
-		dump_str += `\n`;
-		dump_str += `=========================\n`;
-		dump_str += `=========================\n`;
 		dump_str += `\n`;
 		return dump_str;
 	};
@@ -61,9 +58,14 @@ module.exports = function (host_profile, gw_profiles, service_ip, service_port) 
 
 	this.load_vpn_cfg = function (vpn_cfg) {
 		
-		this.vpn_cfg = vpn_cfg;
+		this.vpn_cfg.VPN = vpn_cfg.VPN;
 		this.vpn_backend.vpn_init(this.vpn_cfg.VPN);
-		return `load_vpn_cfg> conns:[${vpn_cfg.VPN.conns.length}]  =>  Done.`;
+		const response = {
+			cmd: `load_vpn_cfg`,
+			conns_count: vpn_cfg.VPN.conns.length,
+			UPDATE: `${new Date()}`
+		};
+		return JSON.stringify(response);
 	};
 	
 	this.add_outbound_tunnel = function (tunnel_spec, ipsec_cfg) {
@@ -71,7 +73,13 @@ module.exports = function (host_profile, gw_profiles, service_ip, service_port) 
 		const conn_id = this.find_conn(tunnel_spec);
 		const remote_tunnel_mac = this.find_remote_tunnel_mac(tunnel_spec);
 		this.vpn_backend.outbound_tunnel_add(this.vpn_cfg.VPN, conn_id, remote_tunnel_mac, ipsec_cfg);
-		return `add_outbound_tunnel> tunnel:[${JSON.stringify(tunnel_spec)}], spi: ${ipsec_cfg.spi}  =>  Done.`;
+		const response = {
+			cmd: `add_outbound_tunnel`,
+			tunnel_spec: tunnel_spec,
+			ipsec_cfg: ipsec_cfg,
+			UPDATE: `${new Date()}`
+		};
+		return JSON.stringify(response);
 	};
 
 	this.add_inbound_tunnel = function (tunnel_spec, ipsec_cfg) {
@@ -79,28 +87,53 @@ module.exports = function (host_profile, gw_profiles, service_ip, service_port) 
 		const conn_id = this.find_conn(tunnel_spec);
 		const remote_tunnel_mac = this.find_remote_tunnel_mac(tunnel_spec);
 		this.vpn_backend.inbound_tunnel_add(this.vpn_cfg.VPN, conn_id, remote_tunnel_mac, ipsec_cfg);
-		return `add_inbound_tunnel> tunnel:[${JSON.stringify(tunnel_spec)}], spi: ${ipsec_cfg.spi}  =>  Done.`;
+		const response = {
+			cmd: `add_inbound_tunnel`,
+			tunnel_spec: tunnel_spec,
+			ipsec_cfg: ipsec_cfg,
+			UPDATE: `${new Date()}`
+		};
+		return JSON.stringify(response);
 	};
 
 	this.add_inbound_fwd = function (tunnel_spec, next_hops) {
 		
 		const conn_id = this.find_conn(tunnel_spec);
-		this.vpn_backend.inbound_fwd_add(this.vpn_cfg.VPN, conn_id, next_hops);
-		return `add_inbound_fwd> tunnel:[${JSON.stringify(tunnel_spec)}], next_hops: ${next_hops.length}  =>  Done.`;
+		const remote_tunnel_mac = this.find_remote_tunnel_mac(tunnel_spec);
+		this.vpn_backend.inbound_fwd_add(this.vpn_cfg.VPN, conn_id, remote_tunnel_mac, next_hops);
+		const response = {
+			cmd: `add_inbound_fwd`,
+			tunnel_spec: tunnel_spec,
+			next_hops: next_hops,
+			UPDATE: `${new Date()}`
+		};
+		return JSON.stringify(response);
 	};
 	
 	this.del_outbound_tunnel = function (tunnel_spec, ipsec_cfg) {
 		
 		const conn_id = this.find_conn(tunnel_spec);
 		this.vpn_backend.outbound_tunnel_del(this.vpn_cfg.VPN, conn_id);
-		return `del_outbound_tunnel> tunnel:[${JSON.stringify(tunnel_spec)}]  =>  Done.`;
+		const response = {
+			cmd: `del_outbound_tunnel`,
+			tunnel_spec: tunnel_spec,
+			ipsec_cfg: ipsec_cfg,
+			UPDATE: `${new Date()}`
+		};
+		return JSON.stringify(response);
 	};
 
 	this.del_inbound_tunnel = function (tunnel_spec, ipsec_cfg) {
 		
 		const conn_id = this.find_conn(tunnel_spec);
 		this.vpn_backend.inbound_tunnel_del(this.vpn_cfg.VPN, conn_id);
-		return `del_inbound_tunnel> tunnel:[${JSON.stringify(tunnel_spec)}]  =>  Done.`;
+		const response = {
+			cmd: `del_inbound_tunnel`,
+			tunnel_spec: tunnel_spec,
+			ipsec_cfg: ipsec_cfg,
+			UPDATE: `${new Date()}`
+		};
+		return JSON.stringify(response);
 	};
 	
 	this.backend_server = http.createServer((req, res) => {
@@ -163,14 +196,26 @@ module.exports = function (host_profile, gw_profiles, service_ip, service_port) 
 								res.end(this.del_inbound_tunnel(content.tunnel_spec, content.ipsec_cfg));
 							break;
 							default:
-								res.end(`Unknown op: ${content.op}`);
+								res.writeHead(405, headers);
+								const response = {
+									op: content.op,
+									err: `Unknown op`,
+									body: body,
+									UPDATE: `${new Date()}`
+								};
+								res.end(JSON.stringify(response));
 							break;
 						};
 					}
 					catch(error) {
 						res.writeHead(405, headers);
-						res.end(`${chunk_no} chunks: [${body}] JSON.parse: ${error}`);
-						console.log(`${chunk_no} chunks: [${body}] JSON.parse: ${error}`);
+						const response = {
+							chunks_count: chunk_no,
+							err: `JSON parse error`,
+							body: body,
+							UPDATE: `${new Date()}`
+						};
+						res.end(JSON.stringify(response));
 						return;
 					};
 				});
@@ -178,7 +223,12 @@ module.exports = function (host_profile, gw_profiles, service_ip, service_port) 
 		};
 		
 		res.writeHead(405, headers);
-		res.end(`${req.method} is not allowed for the request.`);
+		const response = {
+			method: req.method,
+			err: `Method not allowed`,
+			UPDATE: `${new Date()}`
+		};
+		res.end(JSON.stringify(response));
 		
 	}).listen(this.service_port, this.service_ip);
 };

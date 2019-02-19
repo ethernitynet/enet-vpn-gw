@@ -297,14 +297,20 @@
 							"type": "section",
 							"htmlClass": "col-xs-4",
 							"items": [
-								"conns[].enabled"
+								{
+									"key": "conns[].enabled",
+									"onChange": "toggle_enabled(modelValue, form)"
+								}
 							]
 						},
 						{
 							"type": "section",
 							"htmlClass": "col-xs-4",
 							"items": [
-								"conns[].listen"
+								{
+									"key": "conns[].listen",
+									"onChange": "toggle_listen(modelValue, form)"
+								}
 							]
 						},
 						{
