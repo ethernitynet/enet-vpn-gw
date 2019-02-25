@@ -388,8 +388,10 @@ var enet_vpn_inbound_fwd_add_test = function (backend_ip, backend_port, vpn_cfg,
 var enet_vpn_connect_test = function (backend_ip, backend_port, vpn_cfg, conn_id) {
 
 	enet_vpn_outbound_tunnel_connect_test(backend_ip, backend_port, vpn_cfg, conn_id);
-	enet_vpn_inbound_tunnel_connect_test(backend_ip, backend_port, vpn_cfg, conn_id);
-	enet_vpn_inbound_fwd_add_test(backend_ip, backend_port, vpn_cfg, conn_id);
+	enet_vpn_inbound_tunnel_connect_test(backend_ip, backend_port, vpn_cfg, conn_id, function () {
+		
+		enet_vpn_inbound_fwd_add_test(backend_ip, backend_port, vpn_cfg, conn_id);
+	});
 };
 
 var enet_vpn_disconnect_test = function (backend_ip, backend_port, vpn_cfg, conn_id) {
@@ -401,8 +403,10 @@ var enet_vpn_disconnect_test = function (backend_ip, backend_port, vpn_cfg, conn
 var enet_vpn_listen_on_test = function (backend_ip, backend_port, vpn_cfg, conn_id) {
 
 	enet_vpn_outbound_tunnel_connect_test(backend_ip, backend_port, vpn_cfg, conn_id);
-	enet_vpn_inbound_tunnel_connect_test(backend_ip, backend_port, vpn_cfg, conn_id);
-	enet_vpn_inbound_fwd_add_test(backend_ip, backend_port, vpn_cfg, conn_id);
+	enet_vpn_inbound_tunnel_connect_test(backend_ip, backend_port, vpn_cfg, conn_id, function () {
+		
+		enet_vpn_inbound_fwd_add_test(backend_ip, backend_port, vpn_cfg, conn_id);
+	});
 };
 
 var enet_vpn_listen_off_test = function (backend_ip, backend_port, vpn_cfg, conn_id) {
@@ -413,13 +417,14 @@ var enet_vpn_listen_off_test = function (backend_ip, backend_port, vpn_cfg, conn
 
 var enet_vpn_load_cfg_test = function (backend_ip, backend_port, vpn_cfg) {
 
-	enet_vpn_load_cfg(backend_ip, backend_port, { VPN: vpn_cfg });
-	if(vpn_cfg.conns != undefined) {
-		for(var conn_id = 0; conn_id < vpn_cfg.conns.length; ++conn_id) {
-			if((vpn_cfg.conns[conn_id].listen == true) || (vpn_cfg.conns[conn_id].connect == true)) {
-				enet_vpn_connect_test(backend_ip, backend_port, vpn_cfg, conn_id);
+	enet_vpn_load_cfg(backend_ip, backend_port, { VPN: vpn_cfg }, function () {
+		
+		if(vpn_cfg.conns != undefined) {
+			for(var conn_id = 0; conn_id < vpn_cfg.conns.length; ++conn_id) {
+				if((vpn_cfg.conns[conn_id].listen == true) || (vpn_cfg.conns[conn_id].connect == true)) {
+					enet_vpn_connect_test(backend_ip, backend_port, vpn_cfg, conn_id);
+				};
 			};
 		};
-	};
+	});
 };
-

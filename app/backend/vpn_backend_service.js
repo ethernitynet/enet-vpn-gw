@@ -171,6 +171,8 @@ module.exports = function (host_profile, gw_profiles, service_ip, service_port) 
 					try {
 						const content = JSON.parse(body);
 						switch(content.op) {
+							case `get_stats`:
+								res.end(this.get_stats());
 							case `dump_vpn_cfg`:
 								res.end(this.dump_vpn_cfg());
 							break;

@@ -30,7 +30,7 @@ var post_via_xhr = function (label, ip, port, post_content) {
 	xhr.send(post_content_str);
 };
 
-var post_via_ajax = function (label, ip, port, post_content) {
+var post_via_ajax = function (label, ip, port, post_content, on_success_callback) {
 
 	const url = `http://${ip}:${port}/`;
 	const post_content_str = JSON.stringify(post_content);
@@ -43,7 +43,10 @@ var post_via_ajax = function (label, ip, port, post_content) {
 		dataType: "json",
 		success: function(data) {
 			
-			console.log(`${label}> ajax post(${ip}, ${port}, ${JSON.stringify(post_content, null, 2)}) response: ${data}`);
+			console.log(`${label}> ajax post(${ip}, ${port}, post_content) response: ${JSON.stringify(data)}`);
+			if(on_success_callback != undefined) {
+				on_success_callback();
+			};
 		},
 		failure: function(errMsg) {
 			
@@ -67,7 +70,7 @@ var post_via_ajax = function (label, ip, port, post_content) {
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
 
-var enet_vpn_load_cfg = function (backend_ip, backend_port, vpn_cfg) {
+var enet_vpn_load_cfg = function (backend_ip, backend_port, vpn_cfg, on_success_callback) {
 	
 	const post_content = {
 		op: `load_vpn_cfg`,
@@ -76,10 +79,10 @@ var enet_vpn_load_cfg = function (backend_ip, backend_port, vpn_cfg) {
 
 	//post_via_request(post_content.op, backend_ip, backend_port, post_content);
 	//post_via_xhr(post_content.op, backend_ip, backend_port, post_content);
-	post_via_ajax(post_content.op, backend_ip, backend_port, post_content);
+	post_via_ajax(post_content.op, backend_ip, backend_port, post_content, on_success_callback);
 };
 
-var enet_vpn_outbound_tunnel_connect = function (backend_ip, backend_port, tunnel_spec, ipsec_cfg) {
+var enet_vpn_outbound_tunnel_connect = function (backend_ip, backend_port, tunnel_spec, ipsec_cfg, on_success_callback) {
 
 	const post_content = {
 		op: `add_outbound_tunnel`,
@@ -88,10 +91,10 @@ var enet_vpn_outbound_tunnel_connect = function (backend_ip, backend_port, tunne
 	};
 
 	//post_via_request(post_content.op, backend_ip, backend_port, post_content);
-	post_via_ajax(post_content.op, backend_ip, backend_port, post_content);
+	post_via_ajax(post_content.op, backend_ip, backend_port, post_content, on_success_callback);
 };
 
-var enet_vpn_inbound_tunnel_connect = function (backend_ip, backend_port, tunnel_spec, ipsec_cfg) {
+var enet_vpn_inbound_tunnel_connect = function (backend_ip, backend_port, tunnel_spec, ipsec_cfg, on_success_callback) {
 	
 	const post_content = {
 		op: `add_inbound_tunnel`,
@@ -100,10 +103,10 @@ var enet_vpn_inbound_tunnel_connect = function (backend_ip, backend_port, tunnel
 	};
 
 	//post_via_request(post_content.op, backend_ip, backend_port, post_content);
-	post_via_ajax(post_content.op, backend_ip, backend_port, post_content);
+	post_via_ajax(post_content.op, backend_ip, backend_port, post_content, on_success_callback);
 };
 
-var enet_vpn_inbound_fwd_add = function (backend_ip, backend_port, tunnel_spec, next_hops, lan_port) {
+var enet_vpn_inbound_fwd_add = function (backend_ip, backend_port, tunnel_spec, next_hops, lan_port, on_success_callback) {
 	
 	const post_content = {
 		op: `add_inbound_fwd`,
@@ -113,10 +116,10 @@ var enet_vpn_inbound_fwd_add = function (backend_ip, backend_port, tunnel_spec, 
 	};
 
 	//post_via_request(post_content.op, backend_ip, backend_port, post_content);
-	post_via_ajax(post_content.op, backend_ip, backend_port, post_content);
+	post_via_ajax(post_content.op, backend_ip, backend_port, post_content, on_success_callback);
 };
 
-var enet_vpn_outbound_tunnel_disconnect = function (backend_ip, backend_port, tunnel_spec) {
+var enet_vpn_outbound_tunnel_disconnect = function (backend_ip, backend_port, tunnel_spec, on_success_callback) {
 
 	const post_content = {
 		op: `del_outbound_tunnel`,
@@ -124,10 +127,10 @@ var enet_vpn_outbound_tunnel_disconnect = function (backend_ip, backend_port, tu
 	};
 
 	//post_via_request(post_content.op, backend_ip, backend_port, post_content);
-	post_via_ajax(post_content.op, backend_ip, backend_port, post_content);
+	post_via_ajax(post_content.op, backend_ip, backend_port, post_content, on_success_callback);
 };
 
-var enet_vpn_inbound_tunnel_disconnect = function (backend_ip, backend_port, tunnel_spec) {
+var enet_vpn_inbound_tunnel_disconnect = function (backend_ip, backend_port, tunnel_spec, on_success_callback) {
 	
 	const post_content = {
 		op: `del_inbound_tunnel`,
@@ -135,5 +138,5 @@ var enet_vpn_inbound_tunnel_disconnect = function (backend_ip, backend_port, tun
 	};
 
 	//post_via_request(post_content.op, backend_ip, backend_port, post_content);
-	post_via_ajax(post_content.op, backend_ip, backend_port, post_content);
+	post_via_ajax(post_content.op, backend_ip, backend_port, post_content, on_success_callback);
 };
