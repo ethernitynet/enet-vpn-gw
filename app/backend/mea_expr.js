@@ -655,6 +655,7 @@ module.exports = function () {
 			const prev_stdout = output_processor.output[0].stdout;
 			vpn_common.mea_ipsec_add_parse(tunnel_state, `decrypt_profile`, prev_stdout);
 			vpn_common.mea_service_add_parse(tunnel_state, `l3fwd_service`, prev_stdout);
+			return cmd;
 		}
 	};
 	
@@ -719,11 +720,14 @@ module.exports = function () {
 		
 		if(output_processor.output.length === 1) {
 			const prev_stdout = output_processor.output[0].stdout;
-			if(next_hops.length === vpn_common.mea_actions_add_parse(tunnel_state.fwd, prev_stdout) ) {
+			if(next_hops.length === vpn_common.mea_actions_add_parse(tunnel_state.fwd, prev_stdout)) {
 				const prev_next_hops_count = (tunnel_state.fwd.length - next_hops.length);
 				for(var next_hop_idx = 0; next_hop_idx < next_hops.length; ++next_hop_idx) {
 					tunnel_state.fwd[prev_next_hops_count + next_hop_idx].ip = next_hops[next_hop_idx].ip;
 					tunnel_state.fwd[prev_next_hops_count + next_hop_idx].mac = next_hops[next_hop_idx].mac;
+					if((next_hop_idx + 1) === next_hops.length) {
+						return cmd;
+					}
 				}
 			}
 		}

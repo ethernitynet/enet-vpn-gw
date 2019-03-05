@@ -237,7 +237,10 @@ module.exports = function (host_profile, gw_profiles) {
 			const latency = (new Date().getTime() - output_processor.meta.latencies[output_processor.meta.latencies.length - 1]);
 			output_processor.meta.latencies[output_processor.meta.latencies.length - 1] = latency;
 			if(cmd.output_cb) {
-				cmd.output_cb(cmd);
+				const ret_cmd = cmd.output_cb(cmd);
+				if(ret_cmd !== undefined) {
+					return (ret_cmd.delay === undefined) ? 0 : ret_cmd.delay;
+				}
 			}
 			return (cmd.delay === undefined) ? 0 : cmd.delay;
 		case `exit`:
