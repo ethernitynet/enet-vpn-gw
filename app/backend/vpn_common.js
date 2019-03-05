@@ -1,12 +1,40 @@
+
+(function(exports) {
+
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
 
-const enet_mac_pfx = `CC:D3:9D:D`;
-const mea_host_port = 127;
-const mea_cipher_port = 104;
-const mea_lan_ports = [ 105, 106 ];
-const mea_tunnel_port = 107;
+var bitwise_and = function (x, y) {
+	
+	return (x & y);
+};
+
+var bitwise_xor = function (x, y) {
+	
+	return (x ^ y);
+};
+
+var bitwise_shift_right = function (x, bits) {
+	
+	return (x >>> bits);
+};
+
+var to_unsigned = function (x) {
+	
+	return bitwise_shift_right(x, 0);
+};
+
+var influxdb_error_count = 0;
+var influxdb_success_count = 0;
+
+
+const mea_host_port_local = 127;
+const mea_cipher_port_local = 104;
+const mea_tunnel_port_local = 107;
+const mea_lan_ports_local = [ 105, 106 ];
+
+const enet_mac_pfx_local = `CC:D3:9D:D`;
 
 const mask_arr = [
 	0x0000000000000000,
@@ -46,7 +74,9 @@ const mask_arr = [
 
 var uint32_mask = function (num, mask_bits) {
 	
-	return (num & mask_arr[mask_bits]) >>> 0;
+	var mask = bitwise_and(num, mask_arr[mask_bits]);
+	mask = to_unsigned(mask);
+	return mask;
 };
 
 var ip_to_dec = function (ip) {
@@ -58,41 +88,35 @@ var ip_to_dec = function (ip) {
 	var valid = ip_regex.test(ip);
 	if (!valid) {
 		return 0;
-	};
+	}
 	var dots = ip.split('.');
 	// make sure each value is between 0 and 255
 	for (var i = 0; i < dots.length; i++) {
 		var dot = dots[i];
 		if (dot > 255 || dot < 0) {
 			return 0;
-		};
-	};
-	if (dots.length == 4) {
+		}
+	}
+	if (dots.length === 4) {
 		// IPv4
-		return ((((((+dots[0])*256)+(+dots[1]))*256)+(+dots[2]))*256)+(+dots[3]) >>> 0;
-		} else if (dots.length == 6) {
+		return to_unsigned( ((((((+dots[0]) * 256) + (+dots[1])) * 256) + (+dots[2])) * 256) + (+dots[3]) );
+		} else if (dots.length === 6) {
 		// IPv6
-		return ((((((((+dots[0])*256)+(+dots[1]))*256)+(+dots[2]))*256)+(+dots[3])*256)+(+dots[4])*256)+(+dots[5]) >>> 0;
-	};
+		return to_unsigned( ((((((((+dots[0]) * 256) + (+dots[1])) * 256) + (+dots[2])) * 256) + (+dots[3]) * 256) + (+dots[4]) * 256) + (+dots[5]) );
+	}
 	return 0;
 };
 
-var uint32_to_hex = function (num) {
+var uint32_to_hex_local = function (num) {
 	
 	var num_hex = '00000000' + num.toString(16);
 	num_hex = num_hex.substring(num_hex.length - 8);	
 	return num_hex;
 };
 
-var hex_to_uint32 = function (hex_num) {
+exports.hex_to_uint32 = function (hex_num) {
 	
 	return parseInt(hex_num, 16);
-};
-
-var ip_to_hex = function (ip) {
-	
-	const ip_dec = ip_to_dec(ip);
-	return uint32_to_hex(ip_dec);
 };
 
 var str_hash = function (str, mask_bits) {
@@ -101,9 +125,9 @@ var str_hash = function (str, mask_bits) {
 	var i = str.length;
 
 	while(i) {
-		hash = (hash * 33) ^ str.charCodeAt(--i);
-	};
-	const hash_32 = hash >>> 0;
+		hash = bitwise_xor((hash * 33), str.charCodeAt(--i));
+	}
+	const hash_32 = to_unsigned(hash);
 	const hash_32_masked = uint32_mask(hash_32, mask_bits);
 	return hash_32_masked.toString(16).toUpperCase();
 };
@@ -124,60 +148,99 @@ var vpn_conn_hash = function (cfg, conn_id) {
 	return str_hash(`${conn_ns}`, 24);
 };
 
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
+
+var mea_cli_local = function (nic_id) {
+
+	if(nic_id > 0) {
+		return `meaCli -card ${nic_id} mea`;
+	}
+	else {
+		return `meaCli mea`;
+	}
+};
+
 var vpn_conn_tag_base = function (conn_id) {
 	
 	return (64 + conn_id);
 };
 
-var vpn_conn_tag_hex_base = function (conn_id) {
+var vpn_conn_tag_hex_base_local = function (conn_id) {
 	
 	const conn_tag = vpn_conn_tag_base(conn_id);
-	const conn_tag_hex = uint32_to_hex(conn_tag);
+	const conn_tag_hex = uint32_to_hex_local(conn_tag);
 	
 	return conn_tag_hex.substring(conn_tag_hex.length - 2);
 };
 
-var vpn_conn_mac_base = function (nic_id, conn_id, tunnel_port) {
+var vpn_conn_mac_base_local = function (nic_id, conn_id, tunnel_port) {
 	
-	const conn_tag_hex = vpn_conn_tag_hex_base(conn_id);
+	const conn_tag_hex = vpn_conn_tag_hex_base_local(conn_id);
 	
-	return `${enet_mac_pfx}1:${conn_tag_hex}:${nic_id}${tunnel_port - 100}`;
+	return `${enet_mac_pfx_local}1:${conn_tag_hex}:${nic_id}${tunnel_port - 100}`;
 };
 
-var vpn_conn_tag = function (cfg, conn_state) {
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
+
+exports.ip_to_hex = function (ip) {
 	
-	return vpn_conn_tag_base(conn_state.id);
+	const ip_dec = ip_to_dec(ip);
+	return uint32_to_hex_local(ip_dec);
 };
 
-var vpn_conn_tag_hex = function (cfg, conn_state) {
+exports.uint32_to_hex = function (num) {
 	
-	return vpn_conn_tag_hex_base(conn_state.id);
+	return uint32_to_hex_local(num);
 };
 
-var vpn_conn_mac = function (cfg, conn_state) {
+exports.vpn_conn_tag_hex_base = function (conn_id) {
+	
+	return vpn_conn_tag_hex_base_local(conn_id);
+};
+
+exports.vpn_conn_mac_base = function (nic_id, conn_id, tunnel_port) {
+	
+	return vpn_conn_mac_base_local(nic_id, conn_id, tunnel_port);
+};
+
+exports.vpn_conn_tag = function (cfg, tunnel_state) {
+	
+	return vpn_conn_tag_base(tunnel_state.conn_id);
+};
+
+exports.vpn_conn_tag_hex = function (cfg, tunnel_state) {
+	
+	return vpn_conn_tag_hex_base_local(tunnel_state.conn_id);
+};
+
+exports.vpn_conn_mac = function (cfg, tunnel_state) {
 	
 	const nic_id = cfg.ace_nic_config[0].nic_name;
-	const conn_cfg = cfg.conns[conn_state.id];
+	const conn_cfg = cfg.conns[tunnel_state.conn_id];
 	
-	return vpn_conn_mac_base(nic_id, conn_state.id, conn_cfg.tunnel_port);
+	return vpn_conn_mac_base_local(nic_id, tunnel_state.conn_id, conn_cfg.tunnel_port);
 };
 
 const hexc = [ `0`, `1`, `2`, `3`, `4`, `5`, `6`, `7`, `8`, `9`, `A`, `B`, `C`, `D`, `E`, `F` ];
 
-var mea_port_macs = function (nic_id) {
+exports.mea_port_macs = function (nic_id) {
 	
 	const port_macs = {
-		24: `${enet_mac_pfx}0:00:${hexc[10 + nic_id]}4`,
-		27: `${enet_mac_pfx}0:00:${hexc[10 + nic_id]}7`,
-		104: `${enet_mac_pfx}0:00:04`,
-		105: `${enet_mac_pfx}0:00:05`,
-		106: `${enet_mac_pfx}0:00:06`,
-		107: `${enet_mac_pfx}0:00:07`
+		24: `${enet_mac_pfx_local}0:00:${hexc[10 + nic_id]}4`,
+		27: `${enet_mac_pfx_local}0:00:${hexc[10 + nic_id]}7`,
+		104: `${enet_mac_pfx_local}0:00:04`,
+		105: `${enet_mac_pfx_local}0:00:05`,
+		106: `${enet_mac_pfx_local}0:00:06`,
+		107: `${enet_mac_pfx_local}0:00:07`
 	};
 	return port_macs;
 };
 
-var mea_ipsec_format_keys = function (auth_key, cipher_key) {
+exports.mea_ipsec_format_keys = function (auth_key, cipher_key) {
 	
 	var tunnel_keys = {
 		integrity_key: `0x0000000000000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000`,
@@ -188,7 +251,7 @@ var mea_ipsec_format_keys = function (auth_key, cipher_key) {
 	return tunnel_keys;
 };
 
-var mea_ipsec_format_security_type = function (auth_algo, cipher_algo) {
+exports.mea_ipsec_format_security_type = function (auth_algo, cipher_algo) {
 	
 	return `0xCA`;
 };
@@ -197,3 +260,143 @@ var mea_ipsec_format_security_type = function (auth_algo, cipher_algo) {
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
 
+exports.mea_service_add = function (nic_id) {
+	
+	return `${mea_cli_local(nic_id)} service set create`;
+};
+
+exports.mea_action_add = function (nic_id) {
+	
+	return `${mea_cli_local(nic_id)} action set create`;
+};
+
+exports.mea_forwarder_add = function (nic_id) {
+	
+	return `${mea_cli_local(nic_id)} forwarder add`;
+};
+
+exports.mea_ipsec_profile_add = function (nic_id) {
+	
+	return `${mea_cli_local(nic_id)} IPSec ESP set create`;
+};
+
+exports.mea_ipsec_add_parse = function (profiles_obj, profile_key, mea_output) {
+	
+	var ipsec_profile_regex = /Done\s+create\s+IPSecESP\s+with\s+Id\s+=\s+(\d+)/;
+	mea_output.replace(ipsec_profile_regex, function(match, profile_id) {
+		
+		if (profile_id) {
+			profiles_obj[profile_key] = { id: parseInt(profile_id, 10) };
+		}
+	});
+};
+
+exports.mea_action_add_parse = function (actions_obj, action_key, mea_output) {
+	
+	var action_regex = /Done.\s+ActionId=(\d+)\s+\(PmId=([YESNO]+)\/([^,]+),tmId=[YESNO]+\/[^,]+,edId=[YESNO]+\/[^,]+\)/;
+	mea_output.replace(action_regex, function(match, action_id, pm_flag, pm_id) {
+		
+		if(action_id) {
+			actions_obj[action_key] = { id: parseInt(action_id, 10) };
+			if (pm_flag && (pm_flag === `YES`) && pm_id) {
+				actions_obj[action_key].pm = parseInt(pm_id, 10);
+			}
+		}
+	});
+};
+
+exports.mea_actions_add_parse = function (actions_arr, mea_output) {
+	
+	var action_regex = /Done.\s+ActionId=(\d+)\s+\(PmId=([YESNO]+)\/([^,]+),tmId=[YESNO]+\/[^,]+,edId=[YESNO]+\/[^,]+\)/g;
+	
+	var formatted_output = mea_output.replace(action_regex, `{"action_id":$1,"add_pm":"$2","action_pm":$3}`);
+	formatted_output = formatted_output.replace(/}\s*{/, `},{`);
+	var actions_obj = JSON.parse(`[${formatted_output}]`);
+	for(var i = 0; i < actions_obj.length; ++i) {
+		if(actions_obj[i].add_pm === `NO`) {
+			delete actions_obj[i].action_pm;
+		}
+		delete actions_obj[i].add_pm;
+		actions_arr.push(actions_obj[i]);
+	}
+	return actions_obj.length;
+};
+
+exports.mea_forwarder_add_parse = function (forwarders_obj, forwarder_key, forwarder_expr, mea_output) {
+	
+	if(mea_output === ``) {
+		forwarders_obj[forwarder_key] = { expr: forwarder_expr };
+	}
+};
+
+exports.mea_service_add_parse = function (services_obj, service_key, mea_output) {
+	
+	var service_regex = /Done.\s+External\s+serviceId=(\d+)\s+Port=\d+\s+\(PmId=(\d+)\s+TmId=\d+\s+EdId=\d+\s+pol_prof_id=\d+\)/;
+	mea_output.replace(service_regex, function(match, service_id, pm_id) {
+		
+		if(service_id) {
+			services_obj[service_key] = { id: parseInt(service_id, 10) };
+			if (pm_id) {
+				services_obj[service_key].pm = parseInt(pm_id, 10);
+			}
+		}
+	});
+};
+
+exports.mea_rmon_parse_pkts = function(rmon_line) {
+	
+	return rmon_line.replace(/\s*(\d+)\s+Total\s+Pkts\s+(\d+)\s+(\d+)/, `"rmon$1":{"PktsRX":$2,"PktsTX":$3,`);
+};
+
+exports.mea_rmon_parse_bytes = function(rmon_line) {
+	
+	return rmon_line.replace(/\s*Total\s+Bytes\s+(\d+)\s+(\d+)/, `"BytesRX":$1,"BytesTX":$2,`);
+};
+
+exports.mea_rmon_parse_crc_errors = function(rmon_line) {
+	
+	return rmon_line.replace(/\s*CRC\s+Error\s+Pkts\s+(\d+)\s+(\d+)/, `"CRCErrorPktsRX":$1,"CRCErrorPktsTX":$2,`);
+};
+
+exports.mea_rmon_parse_mac_drops = function(rmon_line) {
+	
+	return rmon_line.replace(/\s*Rx\s+Mac\s+Drop\s+Pkts\s+(\d+)/, `"RxMacDropPktsRX":$1}`);
+};
+
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
+
+exports.enet_mac_pfx = enet_mac_pfx_local;
+
+exports.mea_host_port = mea_host_port_local;
+exports.mea_cipher_port = mea_cipher_port_local;
+exports.mea_tunnel_port = mea_tunnel_port_local;
+exports.mea_lan_ports = mea_lan_ports_local;
+
+exports.mea_cli = function (nic_id) {
+	
+	return mea_cli_local(nic_id);
+};
+
+exports.mea_cli_prefix = function (nic_id) {
+	
+	const lock_timeout = 10;
+	
+	var expr = ``;
+	if(nic_id > 0) {
+		expr += `meaCli -card ${nic_id} top\n`;
+	}
+	else {
+		expr += `meaCli top\n`;
+	}
+	return expr;
+};
+
+exports.mea_cli_suffix = function () {
+	
+	var expr = ``;
+	return expr;
+};
+
+})(typeof exports === 'undefined' ? this.vpn_common = {} : exports);

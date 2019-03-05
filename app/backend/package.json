@@ -1,18 +1,26 @@
 {
-  "name": "enet_vpn_backend",
-  "version": "1.0.0",
-  "description": "Backend service for ENET VPN configuration",
+  "name": "backend",
+  "version": "0.1.0",
+  "description": "backend",
   "main": "backend_start.js",
   "dependencies": {
+    "request": "^2.88.0",
     "shelljs": "^0.8.3",
     "ssh2": "^0.8.2"
   },
   "devDependencies": {},
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "node --inspect-brk=172.16.11.152:5858 backend_start.js",
     "start": "node backend_start.js",
     "stop": "pkill --signal SIGINT backend_start"
   },
+  "repository": "",
+  "keywords": [
+    "node.js",
+    "eclipse",
+    "nodeclipse"
+  ],
   "author": "Erez Buchnik",
-  "license": "MIT"
+  "license": "MIT",
+  "readmeFilename": "README.md"
 }

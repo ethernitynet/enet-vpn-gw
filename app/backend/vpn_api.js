@@ -10,27 +10,27 @@ var post_via_request = function (label, ip, port, post_content) {
 		}
 		else {
 			console.log(body);
-		};
+		}
 	});	
 };
 
 var post_via_xhr = function (label, ip, port, post_content) {
 
-	xhr = new XMLHttpRequest();
+	var xhr = new XMLHttpRequest();
 	xhr.open("POST", `http://${ip}:${port}/`, true);
 	xhr.setRequestHeader("Content-type", "application/json;charset=UTF-8");
 	xhr.onreadystatechange = function () {
 
 		console.log(`${label}> xhr post(${ip}, ${port}, ${JSON.stringify(post_content, null, 2)}) xhr.status: ${xhr.status} xhr.readyState: ${xhr.readyState}`);
-		if (xhr.readyState == 4 && xhr.status == 200) {
+		if (xhr.readyState === 4 && xhr.status === 200) {
 			console.log(xhr.responseText);
-		};
+		}
 	};
 	const post_content_str = JSON.stringify({ data: post_content });
 	xhr.send(post_content_str);
 };
 
-var post_via_ajax = function (label, ip, port, post_content, on_success_callback) {
+var post_via_ajax = function (label, ip, port, post_content, finish_cb) {
 
 	const url = `http://${ip}:${port}/`;
 	const post_content_str = JSON.stringify(post_content);
@@ -43,10 +43,10 @@ var post_via_ajax = function (label, ip, port, post_content, on_success_callback
 		dataType: "json",
 		success: function(data) {
 			
-			console.log(`${label}> ajax post(${ip}, ${port}, post_content) response: ${JSON.stringify(data)}`);
-			if(on_success_callback != undefined) {
-				on_success_callback();
-			};
+			console.log(JSON.stringify(data));
+			if(finish_cb !== undefined) {
+				finish_cb();
+			}
 		},
 		failure: function(errMsg) {
 			
@@ -60,7 +60,7 @@ var post_via_ajax = function (label, ip, port, post_content, on_success_callback
 				console.log(`${label}> ajax post(${ip}, ${port}, ${JSON.stringify(post_content, null, 2)}) code: 405`);
 			},
 			200: function (data) {
-				console.log(`${label}> ajax post(${ip}, ${port}, ${JSON.stringify(post_content, null, 2)}) code: 200`);
+				//console.log(`${label}> ajax post(${ip}, ${port}, ${JSON.stringify(post_content, null, 2)}) code: 200`);
 			}
 		}
 	});
@@ -70,7 +70,7 @@ var post_via_ajax = function (label, ip, port, post_content, on_success_callback
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
 
-var enet_vpn_load_cfg = function (backend_ip, backend_port, vpn_cfg, on_success_callback) {
+var enet_vpn_load_cfg = function (backend_ip, backend_port, vpn_cfg, finish_cb) {
 	
 	const post_content = {
 		op: `load_vpn_cfg`,
@@ -79,47 +79,47 @@ var enet_vpn_load_cfg = function (backend_ip, backend_port, vpn_cfg, on_success_
 
 	//post_via_request(post_content.op, backend_ip, backend_port, post_content);
 	//post_via_xhr(post_content.op, backend_ip, backend_port, post_content);
-	post_via_ajax(post_content.op, backend_ip, backend_port, post_content, on_success_callback);
+	post_via_ajax(post_content.op, backend_ip, backend_port, post_content, finish_cb);
 };
 
-var enet_vpn_outbound_tunnel_connect = function (backend_ip, backend_port, tunnel_spec, ipsec_cfg, on_success_callback) {
+var enet_vpn_outbound_tunnel_add = function (backend_ip, backend_port, tunnel_spec, ipsec_cfg, finish_cb) {
 
 	const post_content = {
-		op: `add_outbound_tunnel`,
+		op: `outbound_tunnel_add`,
 		tunnel_spec: tunnel_spec,
 		ipsec_cfg: ipsec_cfg
 	};
 
 	//post_via_request(post_content.op, backend_ip, backend_port, post_content);
-	post_via_ajax(post_content.op, backend_ip, backend_port, post_content, on_success_callback);
+	post_via_ajax(post_content.op, backend_ip, backend_port, post_content, finish_cb);
 };
 
-var enet_vpn_inbound_tunnel_connect = function (backend_ip, backend_port, tunnel_spec, ipsec_cfg, on_success_callback) {
+var enet_vpn_inbound_tunnel_add = function (backend_ip, backend_port, tunnel_spec, ipsec_cfg, finish_cb) {
 	
 	const post_content = {
-		op: `add_inbound_tunnel`,
+		op: `inbound_tunnel_add`,
 		tunnel_spec: tunnel_spec,
 		ipsec_cfg: ipsec_cfg
 	};
 
 	//post_via_request(post_content.op, backend_ip, backend_port, post_content);
-	post_via_ajax(post_content.op, backend_ip, backend_port, post_content, on_success_callback);
+	post_via_ajax(post_content.op, backend_ip, backend_port, post_content, finish_cb);
 };
 
-var enet_vpn_inbound_fwd_add = function (backend_ip, backend_port, tunnel_spec, next_hops, lan_port, on_success_callback) {
+var enet_vpn_inbound_fwd_add = function (backend_ip, backend_port, tunnel_spec, next_hops, lan_port, finish_cb) {
 	
 	const post_content = {
-		op: `add_inbound_fwd`,
+		op: `inbound_fwd_add`,
 		tunnel_spec: tunnel_spec,
 		next_hops: next_hops,
 		lan_port: lan_port
 	};
 
 	//post_via_request(post_content.op, backend_ip, backend_port, post_content);
-	post_via_ajax(post_content.op, backend_ip, backend_port, post_content, on_success_callback);
+	post_via_ajax(post_content.op, backend_ip, backend_port, post_content, finish_cb);
 };
 
-var enet_vpn_outbound_tunnel_disconnect = function (backend_ip, backend_port, tunnel_spec, on_success_callback) {
+var enet_vpn_outbound_tunnel_disconnect = function (backend_ip, backend_port, tunnel_spec, finish_cb) {
 
 	const post_content = {
 		op: `del_outbound_tunnel`,
@@ -127,10 +127,10 @@ var enet_vpn_outbound_tunnel_disconnect = function (backend_ip, backend_port, tu
 	};
 
 	//post_via_request(post_content.op, backend_ip, backend_port, post_content);
-	post_via_ajax(post_content.op, backend_ip, backend_port, post_content, on_success_callback);
+	post_via_ajax(post_content.op, backend_ip, backend_port, post_content, finish_cb);
 };
 
-var enet_vpn_inbound_tunnel_disconnect = function (backend_ip, backend_port, tunnel_spec, on_success_callback) {
+var enet_vpn_inbound_tunnel_disconnect = function (backend_ip, backend_port, tunnel_spec, finish_cb) {
 	
 	const post_content = {
 		op: `del_inbound_tunnel`,
@@ -138,5 +138,5 @@ var enet_vpn_inbound_tunnel_disconnect = function (backend_ip, backend_port, tun
 	};
 
 	//post_via_request(post_content.op, backend_ip, backend_port, post_content);
-	post_via_ajax(post_content.op, backend_ip, backend_port, post_content, on_success_callback);
+	post_via_ajax(post_content.op, backend_ip, backend_port, post_content, finish_cb);
 };

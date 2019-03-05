@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set +x
+set -x
 
 ACENIC_ID=${1:-0}
 ACENIC_LABEL=${2:-ACENIC1_127}
@@ -82,6 +82,10 @@ enet_restart() {
 	ACENIC_XIL_SLOT="ACENIC$(( ${ACENIC_ID} + 1 ))_XIL_SLOT"
 	echo "Rebooting ${ACENIC_LABEL}:"
 	cd ${ENET_INSTALL_DIR}/Ethernity/lib/pcicard
+
+	if false
+	then
+	#############################
 	ENV_SETUP="$(./env_setup.sh)"
 	echo "${ENV_SETUP}"
 	ACENIC_CHECK=$(grep "${ACENIC_XIL_SLOT}" <<< "${ENV_SETUP}")
@@ -91,7 +95,9 @@ enet_restart() {
 		cd -
 		exit
 	fi
-	
+	#############################
+	fi
+
 	if [[ ${ACENIC_ID} == 0 ]]
 	then
 		pkill pcicard_mea.ex

@@ -3,6 +3,7 @@
 process.title = `backend_test`;
 /////////////////////////////
 
+var vpn_common = require('./vpn_common.js');
 var VPN_BACKEND_SERVICE = require('./vpn_backend_service.js');
 const request = require('request');
 var fs = require('fs');
@@ -29,7 +30,7 @@ var enet_load_vpn_cfg = function (nic_id, backend_ip, backend_port) {
 		else {
 			console.log(`enet_load_vpn_cfg(${nic_id}, ${backend_ip}, ${backend_port}) statusCode: ${res.statusCode}`);
 			console.log(body);
-		};
+		}
 	});
 };
 
@@ -40,9 +41,9 @@ var nic0_outbound_tunnel_add = function (backend_ip, backend_port, id) {
 		tunnel_spec: {
 			"local_subnet": `${10 + id}.0.1.0/24`,
 			"remote_subnet": `${10 + id}.0.2.0/24`,
-			"lan_port": `${mea_lan_ports[0]}`,
-			"tunnel_port": `${mea_tunnel_port}`,
-			"remote_tunnel_mac": vpn_conn_mac_base(1, id, mea_tunnel_port)
+			"lan_port": `${vpn_common.mea_lan_ports[0]}`,
+			"tunnel_port": `${vpn_common.mea_tunnel_port}`,
+			"remote_tunnel_mac": vpn_common.vpn_conn_mac_base(1, id, vpn_common.mea_tunnel_port)
 		},
 		ipsec_cfg: {
 			spi: (1000 + id),
@@ -61,7 +62,7 @@ var nic0_outbound_tunnel_add = function (backend_ip, backend_port, id) {
 		else {
 			console.log(`nic0_outbound_tunnel_add(${backend_ip}, ${backend_port}, ${id}) statusCode: ${res.statusCode}`);
 			console.log(body);
-		};
+		}
 	});
 };
 
@@ -72,9 +73,9 @@ var nic1_outbound_tunnel_add = function (backend_ip, backend_port, id) {
 		tunnel_spec: {
 			"remote_subnet": `${10 + id}.0.1.0/24`,
 			"local_subnet": `${10 + id}.0.2.0/24`,
-			"lan_port": `${mea_lan_ports[1]}`,
-			"tunnel_port": `${mea_tunnel_port}`,
-			"remote_tunnel_mac": vpn_conn_mac_base(0, id, mea_tunnel_port)
+			"lan_port": `${vpn_common.mea_lan_ports[1]}`,
+			"tunnel_port": `${vpn_common.mea_tunnel_port}`,
+			"remote_tunnel_mac": vpn_common.vpn_conn_mac_base(0, id, vpn_common.mea_tunnel_port)
 		},
 		ipsec_cfg: {
 			spi: (1100 + id),
@@ -93,7 +94,7 @@ var nic1_outbound_tunnel_add = function (backend_ip, backend_port, id) {
 		else {
 			console.log(`nic1_outbound_tunnel_add(${backend_ip}, ${backend_port}, ${id}) statusCode: ${res.statusCode}`);
 			console.log(body);
-		};
+		}
 	});
 };
 
@@ -104,9 +105,9 @@ var nic0_inbound_tunnel_add = function (backend_ip, backend_port, id) {
 		tunnel_spec: {
 			"local_subnet": `${10 + id}.0.1.0/24`,
 			"remote_subnet": `${10 + id}.0.2.0/24`,
-			"lan_port": `${mea_lan_ports[0]}`,
-			"tunnel_port": `${mea_tunnel_port}`,
-			"remote_tunnel_mac": vpn_conn_mac_base(1, id, mea_tunnel_port)
+			"lan_port": `${vpn_common.mea_lan_ports[0]}`,
+			"tunnel_port": `${vpn_common.mea_tunnel_port}`,
+			"remote_tunnel_mac": vpn_common.vpn_conn_mac_base(1, id, vpn_common.mea_tunnel_port)
 		},
 		ipsec_cfg: {
 			spi: (1100 + id),
@@ -125,7 +126,7 @@ var nic0_inbound_tunnel_add = function (backend_ip, backend_port, id) {
 		else {
 			console.log(`nic0_inbound_tunnel_add(${backend_ip}, ${backend_port}, ${id}) statusCode: ${res.statusCode}`);
 			console.log(body);
-		};
+		}
 	});
 };
 
@@ -136,9 +137,9 @@ var nic1_inbound_tunnel_add = function (backend_ip, backend_port, id) {
 		tunnel_spec: {
 			"remote_subnet": `${10 + id}.0.1.0/24`,
 			"local_subnet": `${10 + id}.0.2.0/24`,
-			"lan_port": `${mea_lan_ports[1]}`,
-			"tunnel_port": `${mea_tunnel_port}`,
-			"remote_tunnel_mac": vpn_conn_mac_base(0, id, mea_tunnel_port)
+			"lan_port": `${vpn_common.mea_lan_ports[1]}`,
+			"tunnel_port": `${vpn_common.mea_tunnel_port}`,
+			"remote_tunnel_mac": vpn_common.vpn_conn_mac_base(0, id, vpn_common.mea_tunnel_port)
 		},
 		ipsec_cfg: {
 			spi: (1000 + id),
@@ -157,7 +158,7 @@ var nic1_inbound_tunnel_add = function (backend_ip, backend_port, id) {
 		else {
 			console.log(`nic1_inbound_tunnel_add(${backend_ip}, ${backend_port}, ${id}) statusCode: ${res.statusCode}`);
 			console.log(body);
-		};
+		}
 	});
 };
 
@@ -168,9 +169,9 @@ var nic0_inbound_fwd_add = function (backend_ip, backend_port, id) {
 		tunnel_spec: {
 			"local_subnet": `${10 + id}.0.1.0/24`,
 			"remote_subnet": `${10 + id}.0.2.0/24`,
-			"lan_port": `${mea_lan_ports[0]}`,
-			"tunnel_port": `${mea_tunnel_port}`,
-			"remote_tunnel_mac": vpn_conn_mac_base(1, id, mea_tunnel_port)
+			"lan_port": `${vpn_common.mea_lan_ports[0]}`,
+			"tunnel_port": `${vpn_common.mea_tunnel_port}`,
+			"remote_tunnel_mac": vpn_common.vpn_conn_mac_base(1, id, vpn_common.mea_tunnel_port)
 		},
 		next_hops: [
 			{
@@ -192,7 +193,7 @@ var nic0_inbound_fwd_add = function (backend_ip, backend_port, id) {
 		else {
 			console.log(`nic0_inbound_fwd_add(${backend_ip}, ${backend_port}, ${id}) statusCode: ${res.statusCode}`);
 			console.log(body);
-		};
+		}
 	});
 };
 
@@ -203,9 +204,9 @@ var nic1_inbound_fwd_add = function (backend_ip, backend_port, id) {
 		tunnel_spec: {
 			"remote_subnet": `${10 + id}.0.1.0/24`,
 			"local_subnet": `${10 + id}.0.2.0/24`,
-			"lan_port": `${mea_lan_ports[1]}`,
-			"tunnel_port": `${mea_tunnel_port}`,
-			"remote_tunnel_mac": vpn_conn_mac_base(0, id, mea_tunnel_port)
+			"lan_port": `${vpn_common.mea_lan_ports[1]}`,
+			"tunnel_port": `${vpn_common.mea_tunnel_port}`,
+			"remote_tunnel_mac": vpn_common.vpn_conn_mac_base(0, id, vpn_common.mea_tunnel_port)
 		},
 		next_hops: [
 			{
@@ -231,7 +232,7 @@ var nic1_inbound_fwd_add = function (backend_ip, backend_port, id) {
 		else {
 			console.log(`nic1_inbound_fwd_add(${backend_ip}, ${backend_port}, ${id}) statusCode: ${res.statusCode}`);
 			console.log(body);
-		};
+		}
 	});
 };
 
@@ -250,7 +251,7 @@ const nic1_host_profile = {
 var nic0_backend_start = function (host_profile) {
 
 	var nic0_gw0_profiles = {};
-	nic0_gw0_profiles[mea_tunnel_port] = {
+	nic0_gw0_profiles[vpn_common.mea_tunnel_port] = {
 		host: `172.17.0.2`,
 		username: `root`,
 		password: `root`
@@ -263,13 +264,13 @@ var nic0_backend_start = function (host_profile) {
 		nic0_outbound_tunnel_add(`172.17.0.1`, 4400, id0);
 		nic0_inbound_tunnel_add(`172.17.0.1`, 4400, id0);
 		nic0_inbound_fwd_add(`172.17.0.1`, 4400, id0);
-	};
+	}
 };
 
 var nic1_backend_start = function (host_profile) {
 	
 	var nic1_gw0_profiles = {};
-	nic1_gw0_profiles[mea_tunnel_port] = {
+	nic1_gw0_profiles[vpn_common.mea_tunnel_port] = {
 		host: `172.17.0.5`,
 		username: `root`,
 		password: `root`
@@ -282,7 +283,7 @@ var nic1_backend_start = function (host_profile) {
 		nic1_outbound_tunnel_add(`172.17.0.1`, 4401, id1);
 		nic1_inbound_tunnel_add(`172.17.0.1`, 4401, id1);
 		nic1_inbound_fwd_add(`172.17.0.1`, 4401, id1);
-	};
+	}
 };
 
 
@@ -304,7 +305,7 @@ var backend_test_start = function () {
 		default:
 		console.log(`Please enter NIC ID (0 or 1)`);
 		break;
-	};
+	}
 };
 
 backend_test_start();
