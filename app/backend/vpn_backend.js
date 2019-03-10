@@ -36,7 +36,7 @@ module.exports = function (host_profile, gw_profiles) {
 		}
 	};
 	
-	this.vpn_test = function (output_cb) {
+	this.vpn_test = function (ret_cb) {
 		
 		const exec_time = new Date().getTime();
 		const cmd_key = `vpn_test_${exec_time}`;
@@ -44,6 +44,16 @@ module.exports = function (host_profile, gw_profiles) {
 			meta: { key: cmd_key, exec_time: exec_time, latencies: [], ret: [] },
 			expr: [],
 			output: []
+		};
+		
+		var that = this;
+		var finish_cb = function(cmd) {
+			
+			that.cmd_log.push(cmd.output_processor[cmd_key]);
+			if(ret_cb) {
+				ret_cb(cmd);
+			}
+			return cmd;
 		};
 		
 		const host_cmds = [
@@ -57,7 +67,7 @@ module.exports = function (host_profile, gw_profiles) {
 				key: cmd_key,
 				output_processor: this.output_processor,
 				expr_builder: this.mea_expr.test_end,
-				output_cb: output_cb
+				output_cb: finish_cb
 			}
 		];
 		this.gw_config.host_exec_cmd(host_cmds);
@@ -67,7 +77,7 @@ module.exports = function (host_profile, gw_profiles) {
 	/////////////////////////////////////////////////
 	/////////////////[load_vpn_cfg]//////////////////
 		
-	this.load_vpn_cfg = function (cfg, output_cb) {
+	this.load_vpn_cfg = function (cfg, ret_cb) {
 		
 		//console.log(`load_vpn_cfg(${nic_id})`);
 		const nic_id = cfg.ace_nic_config[0].nic_name;		
@@ -85,9 +95,10 @@ module.exports = function (host_profile, gw_profiles) {
 		var finish_cb = function(cmd) {
 			
 			that.cmd_log.push(cmd.output_processor[cmd_key]);
-			if(output_cb) {
-				output_cb(cmd);
+			if(ret_cb) {
+				ret_cb(cmd);
 			}
+			return cmd;
 		};
 		
 		const host_cmds = [
@@ -106,7 +117,7 @@ module.exports = function (host_profile, gw_profiles) {
 	/////////////////////////////////////////////////
 	//////////////[outbound_tunnel_add]//////////////
 	
-	this.outbound_tunnel_add = function (cfg, conn_id, remote_tunnel_mac, ipsec_cfg, output_cb) {
+	this.outbound_tunnel_add = function (cfg, conn_id, remote_tunnel_mac, ipsec_cfg, ret_cb) {
 		
 		const nic_id = cfg.ace_nic_config[0].nic_name;		
 		const exec_time = new Date().getTime();
@@ -135,9 +146,14 @@ module.exports = function (host_profile, gw_profiles) {
 		var that = this;
 		var finish_cb = function(cmd) {
 			
-			cmd.prefinish_cb(cmd, output_cb);
-			that.cmd_log.push(cmd.output_processor[cmd.key]);
-			delete that.cmd_log[that.cmd_log.length - 1][`cfg`];
+			that.mea_expr.outbound_forwarders_parse(cmd, function () {
+				
+				that.cmd_log.push(cmd.output_processor[cmd.key]);
+				delete that.cmd_log[that.cmd_log.length - 1][`cfg`];
+				if(ret_cb) {
+					ret_cb(cmd);
+				}
+			});
 		};
 		
 		const host_cmds = [
@@ -157,7 +173,6 @@ module.exports = function (host_profile, gw_profiles) {
 				key: cmd_key,
 				output_processor: this.output_processor,
 				expr_builder: this.mea_expr.outbound_forwarders_add,
-				prefinish_cb: this.mea_expr.outbound_forwarders_parse,
 				output_cb: finish_cb
 			}
 		];
@@ -169,7 +184,7 @@ module.exports = function (host_profile, gw_profiles) {
 	/////////////////////////////////////////////////
 	///////////////[inbound_tunnel_add]//////////////
 	
-	this.inbound_tunnel_add = function (cfg, conn_id, remote_tunnel_mac, ipsec_cfg, output_cb) {
+	this.inbound_tunnel_add = function (cfg, conn_id, remote_tunnel_mac, ipsec_cfg, ret_cb) {
 		
 		const nic_id = cfg.ace_nic_config[0].nic_name;		
 		const exec_time = new Date().getTime();
@@ -199,9 +214,14 @@ module.exports = function (host_profile, gw_profiles) {
 		var that = this;
 		var finish_cb = function(cmd) {
 			
-			cmd.prefinish_cb(cmd, output_cb);
-			that.cmd_log.push(cmd.output_processor[cmd.key]);
-			delete that.cmd_log[that.cmd_log.length - 1][`cfg`];
+			that.mea_expr.inbound_service_parse(cmd, function () {
+				
+				that.cmd_log.push(cmd.output_processor[cmd.key]);
+				delete that.cmd_log[that.cmd_log.length - 1][`cfg`];
+				if(ret_cb) {
+					ret_cb(cmd);
+				}
+			});
 		};
 		
 		const host_cmds = [
@@ -215,7 +235,6 @@ module.exports = function (host_profile, gw_profiles) {
 				key: cmd_key,
 				output_processor: this.output_processor,
 				expr_builder: this.mea_expr.inbound_service_add,
-				prefinish_cb: this.mea_expr.inbound_service_parse,
 				output_cb: finish_cb
 			}
 		];
@@ -227,7 +246,7 @@ module.exports = function (host_profile, gw_profiles) {
 	/////////////////////////////////////////////////
 	////////////////[inbound_fwd_add]////////////////
 	
-	this.inbound_fwd_add = function (cfg, conn_id, remote_tunnel_mac, next_hops, lan_port, output_cb) {
+	this.inbound_fwd_add = function (cfg, conn_id, remote_tunnel_mac, next_hops, lan_port, ret_cb) {
 		
 		const nic_id = cfg.ace_nic_config[0].nic_name;		
 		const exec_time = new Date().getTime();
@@ -246,19 +265,24 @@ module.exports = function (host_profile, gw_profiles) {
 
 		if(this.tunnel_states[tunnel_key] === undefined) {			
 			this.output_processor[cmd_key].meta.error = `Inbound tunnel ${tunnel_key} not found.`;
-			output_cb({ key: cmd_key, output_processor: this.output_processor });
+			ret_cb({ key: cmd_key, output_processor: this.output_processor });
 		}
 		else if(this.tunnel_states[tunnel_key].port_out !== lan_port) {
 			this.output_processor[cmd_key].meta.error = `Tunnel ${tunnel_key} LAN port ${this.tunnel_states[tunnel_key].port_out} != ${lan_port}.`;
-			output_cb({ key: cmd_key, output_processor: this.output_processor });
+			ret_cb({ key: cmd_key, output_processor: this.output_processor });
 		}
-		else {
+		else {			
 			var that = this;
 			var finish_cb = function(cmd) {
 				
-				cmd.prefinish_cb(cmd, output_cb);
-				that.cmd_log.push(cmd.output_processor[cmd.key]);
-				delete that.cmd_log[that.cmd_log.length - 1][`cfg`];
+				that.mea_expr.inbound_fwd_forwarder_parse(cmd, function () {
+					
+					that.cmd_log.push(cmd.output_processor[cmd.key]);
+					delete that.cmd_log[that.cmd_log.length - 1][`cfg`];
+					if(ret_cb) {
+						ret_cb(cmd);
+					}
+				});
 			};
 			
 			const host_cmds = [
@@ -272,7 +296,6 @@ module.exports = function (host_profile, gw_profiles) {
 					key: cmd_key,
 					output_processor: this.output_processor,
 					expr_builder: this.mea_expr.inbound_fwd_forwarder_add,
-					prefinish_cb: this.mea_expr.inbound_fwd_forwarder_parse,
 					output_cb: finish_cb
 				}
 			];

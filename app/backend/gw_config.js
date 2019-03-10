@@ -192,7 +192,7 @@ var host_do_exec = function (gw_config_inst, host_exec_conn) {
 		});
 	}
 	else {
-		gw_config_inst.cmd_advance();
+		gw_config_inst.host_exec_cmd_handler(`close`, {});
 	}
 };
 
@@ -236,13 +236,8 @@ module.exports = function (host_profile, gw_profiles) {
 		case `close`:
 			const latency = (new Date().getTime() - output_processor.meta.latencies[output_processor.meta.latencies.length - 1]);
 			output_processor.meta.latencies[output_processor.meta.latencies.length - 1] = latency;
-			if(cmd.output_cb) {
-				const ret_cmd = cmd.output_cb(cmd);
-				if(ret_cmd !== undefined) {
-					return (ret_cmd.delay === undefined) ? 0 : ret_cmd.delay;
-				}
-			}
-			return (cmd.delay === undefined) ? 0 : cmd.delay;
+			this.cmd_advance(cmd);
+			return ``;
 		case `exit`:
 			output_processor.meta.ret.push({ code: data.code, signal: data.signal });
 			return ``;
@@ -251,10 +246,12 @@ module.exports = function (host_profile, gw_profiles) {
 		}
 	};
 	
-	this.cmd_advance = function () {
+	this.cmd_advance = function (prev_cmd) {
 		
-		console.log(`Exec#${this.host_execs_count} Stream :: close`);
-		const delay = this.host_exec_cmd_handler(`close`, {});
+		if(prev_cmd.output_cb) {
+			prev_cmd = prev_cmd.output_cb(prev_cmd);
+		}
+		const delay = ((prev_cmd !== undefined) && (prev_cmd.delay !== undefined)) ? prev_cmd.delay : 0;
 		this.host_cmds_arr.shift();
 		if(this.host_cmds_arr.length > 0) {
 			if(delay > 0) {
@@ -283,7 +280,7 @@ module.exports = function (host_profile, gw_profiles) {
 		});
 		this.host_exec_stream.on('close', function() {
 			
-			that.cmd_advance();
+			that.host_exec_cmd_handler(`close`, {});
 		});
 		this.host_exec_stream.on('exit', function(code, signal) {
 			

@@ -280,32 +280,48 @@ exports.mea_ipsec_profile_add = function (nic_id) {
 	return `${mea_cli_local(nic_id)} IPSec ESP set create`;
 };
 
-exports.mea_ipsec_add_parse = function (profiles_obj, profile_key, mea_output) {
+exports.mea_ipsec_add_parse = function (profiles_obj, profile_key, mea_output, finish_cb) {
 	
 	var ipsec_profile_regex = /Done\s+create\s+IPSecESP\s+with\s+Id\s+=\s+(\d+)/;
 	mea_output.replace(ipsec_profile_regex, function(match, profile_id) {
 		
+		var match_count = 0;
 		if (profile_id) {
 			profiles_obj[profile_key] = { id: parseInt(profile_id, 10) };
+			match_count = 1;
+		}
+		else {
+			profiles_obj.no_match = (profiles_obj.no_match) ? (profiles_obj.no_match + 1) : 1;
+		}
+		if(finish_cb) {
+			finish_cb(match_count);
 		}
 	});
 };
 
-exports.mea_action_add_parse = function (actions_obj, action_key, mea_output) {
+exports.mea_action_add_parse = function (actions_obj, action_key, mea_output, finish_cb) {
 	
 	var action_regex = /Done.\s+ActionId=(\d+)\s+\(PmId=([YESNO]+)\/([^,]+),tmId=[YESNO]+\/[^,]+,edId=[YESNO]+\/[^,]+\)/;
 	mea_output.replace(action_regex, function(match, action_id, pm_flag, pm_id) {
 		
+		var match_count = 0;
 		if(action_id) {
 			actions_obj[action_key] = { id: parseInt(action_id, 10) };
 			if (pm_flag && (pm_flag === `YES`) && pm_id) {
 				actions_obj[action_key].pm = parseInt(pm_id, 10);
 			}
+			match_count = 1;
+		}
+		else {
+			actions_obj.no_match = (actions_obj.no_match) ? (actions_obj.no_match + 1) : 1;
+		}
+		if(finish_cb) {
+			finish_cb(match_count);
 		}
 	});
 };
 
-exports.mea_actions_add_parse = function (actions_arr, mea_output) {
+exports.mea_actions_add_parse = function (actions_arr, mea_output, finish_cb) {
 	
 	var action_regex = /Done.\s+ActionId=(\d+)\s+\(PmId=([YESNO]+)\/([^,]+),tmId=[YESNO]+\/[^,]+,edId=[YESNO]+\/[^,]+\)/g;
 	
@@ -319,26 +335,44 @@ exports.mea_actions_add_parse = function (actions_arr, mea_output) {
 		delete actions_obj[i].add_pm;
 		actions_arr.push(actions_obj[i]);
 	}
-	return actions_obj.length;
-};
-
-exports.mea_forwarder_add_parse = function (forwarders_obj, forwarder_key, forwarder_expr, mea_output) {
-	
-	if(mea_output === ``) {
-		forwarders_obj[forwarder_key] = { expr: forwarder_expr };
+	if(finish_cb) {
+		finish_cb(actions_obj.length);
 	}
 };
 
-exports.mea_service_add_parse = function (services_obj, service_key, mea_output) {
+exports.mea_forwarder_add_parse = function (forwarders_obj, forwarder_key, forwarder_expr, mea_output, finish_cb) {
+	
+	var match_count = 0;
+	if(mea_output === ``) {
+		forwarders_obj[forwarder_key] = { expr: forwarder_expr };
+		match_count = 1;
+	}
+	else {
+		forwarders_obj.no_match = (forwarders_obj.no_match) ? (forwarders_obj.no_match + 1) : 1;
+	}
+	if(finish_cb) {
+		finish_cb(match_count);
+	}
+};
+
+exports.mea_service_add_parse = function (services_obj, service_key, mea_output, finish_cb) {
 	
 	var service_regex = /Done.\s+External\s+serviceId=(\d+)\s+Port=\d+\s+\(PmId=(\d+)\s+TmId=\d+\s+EdId=\d+\s+pol_prof_id=\d+\)/;
 	mea_output.replace(service_regex, function(match, service_id, pm_id) {
 		
+		var match_count = 0;
 		if(service_id) {
 			services_obj[service_key] = { id: parseInt(service_id, 10) };
 			if (pm_id) {
 				services_obj[service_key].pm = parseInt(pm_id, 10);
 			}
+			match_count = 1;
+		}
+		else {
+			services_obj.no_match = (services_obj.no_match) ? (services_obj.no_match + 1) : 1;
+		}
+		if(finish_cb) {
+			finish_cb(match_count);
 		}
 	});
 };
