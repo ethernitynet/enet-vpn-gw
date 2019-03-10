@@ -236,7 +236,16 @@ module.exports = function (host_profile, gw_profiles) {
 		case `close`:
 			const latency = (new Date().getTime() - output_processor.meta.latencies[output_processor.meta.latencies.length - 1]);
 			output_processor.meta.latencies[output_processor.meta.latencies.length - 1] = latency;
-			this.cmd_advance(cmd);
+			if(cmd.output_cb) {
+				var that = this;
+				cmd.output_cb(cmd, function (cmd) {
+					
+					that.cmd_advance(cmd);
+				});
+			}
+			else {
+				this.cmd_advance(cmd);
+			}
 			return ``;
 		case `exit`:
 			output_processor.meta.ret.push({ code: data.code, signal: data.signal });
@@ -248,9 +257,6 @@ module.exports = function (host_profile, gw_profiles) {
 	
 	this.cmd_advance = function (prev_cmd) {
 		
-		if(prev_cmd.output_cb) {
-			prev_cmd = prev_cmd.output_cb(prev_cmd);
-		}
 		const delay = ((prev_cmd !== undefined) && (prev_cmd.delay !== undefined)) ? prev_cmd.delay : 0;
 		this.host_cmds_arr.shift();
 		if(this.host_cmds_arr.length > 0) {

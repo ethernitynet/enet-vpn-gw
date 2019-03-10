@@ -56,22 +56,24 @@ module.exports = function (host_profile, gw_profiles, service_ip, service_port) 
 
 	this.vpn_test = function (res) {
 		
-		this.vpn_backend.vpn_test(function (cmd) {
+		this.vpn_backend.vpn_test(function (cmd, gw_config) {
 
 			const output_processor = cmd.output_processor[cmd.key];
 			const output_str = JSON.stringify(output_processor.meta);
 			res.end(output_str);
+			gw_config.cmd_advance(cmd);
 		});
 	};
 
 	this.load_vpn_cfg = function (vpn_cfg, res) {
 		
 		this.vpn_cfg.VPN = vpn_cfg.VPN;
-		this.vpn_backend.load_vpn_cfg(this.vpn_cfg.VPN, function (cmd) {
+		this.vpn_backend.load_vpn_cfg(this.vpn_cfg.VPN, function (cmd, gw_config) {
 
 			const output_processor = cmd.output_processor[cmd.key];
 			const output_str = JSON.stringify(output_processor.meta);
 			res.end(output_str);
+			gw_config.cmd_advance(cmd);
 		});
 	};
 	
@@ -79,11 +81,12 @@ module.exports = function (host_profile, gw_profiles, service_ip, service_port) 
 		
 		const conn_id = this.find_conn(tunnel_spec);
 		const remote_tunnel_mac = this.find_remote_tunnel_mac(tunnel_spec);
-		this.vpn_backend.outbound_tunnel_add(this.vpn_cfg.VPN, conn_id, remote_tunnel_mac, ipsec_cfg, function (cmd) {
+		this.vpn_backend.outbound_tunnel_add(this.vpn_cfg.VPN, conn_id, remote_tunnel_mac, ipsec_cfg, function (cmd, gw_config) {
 			
 			const output_processor = cmd.output_processor[cmd.key];
 			const output_str = JSON.stringify(output_processor.meta);
 			res.end(output_str);
+			gw_config.cmd_advance(cmd);
 		});
 	};
 
@@ -91,11 +94,12 @@ module.exports = function (host_profile, gw_profiles, service_ip, service_port) 
 		
 		const conn_id = this.find_conn(tunnel_spec);
 		const remote_tunnel_mac = this.find_remote_tunnel_mac(tunnel_spec);
-		this.vpn_backend.inbound_tunnel_add(this.vpn_cfg.VPN, conn_id, remote_tunnel_mac, ipsec_cfg, function (cmd) {
+		this.vpn_backend.inbound_tunnel_add(this.vpn_cfg.VPN, conn_id, remote_tunnel_mac, ipsec_cfg, function (cmd, gw_config) {
 			
 			const output_processor = cmd.output_processor[cmd.key];
 			const output_str = JSON.stringify(output_processor.meta);
 			res.end(output_str);
+			gw_config.cmd_advance(cmd);
 		});
 	};
 
@@ -103,11 +107,12 @@ module.exports = function (host_profile, gw_profiles, service_ip, service_port) 
 		
 		const conn_id = this.find_conn(tunnel_spec);
 		const remote_tunnel_mac = this.find_remote_tunnel_mac(tunnel_spec);
-		this.vpn_backend.inbound_fwd_add(this.vpn_cfg.VPN, conn_id, remote_tunnel_mac, next_hops, lan_port, function (cmd) {
+		this.vpn_backend.inbound_fwd_add(this.vpn_cfg.VPN, conn_id, remote_tunnel_mac, next_hops, lan_port, function (cmd, gw_config) {
 			
 			const output_processor = cmd.output_processor[cmd.key];
 			const output_str = JSON.stringify(output_processor.meta);
 			res.end(output_str);
+			gw_config.cmd_advance(cmd);
 		});
 	};
 

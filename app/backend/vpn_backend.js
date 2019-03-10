@@ -35,7 +35,11 @@ module.exports = function (host_profile, gw_profiles) {
 			});
 		}
 	};
+
 	
+	/////////////////////////////////////////////////
+	///////////////////[vpn_test]////////////////////
+		
 	this.vpn_test = function (ret_cb) {
 		
 		const exec_time = new Date().getTime();
@@ -43,15 +47,22 @@ module.exports = function (host_profile, gw_profiles) {
 		this.output_processor[cmd_key] = {
 			meta: { key: cmd_key, exec_time: exec_time, latencies: [], ret: [] },
 			expr: [],
-			output: []
+			output: [],
+			ret_cb: ret_cb
 		};
 		
 		var that = this;
 		var finish_cb = function(cmd) {
 			
-			that.cmd_log.push(cmd.output_processor[cmd_key]);
-			if(ret_cb) {
-				ret_cb(cmd);
+			var output_processor = cmd.output_processor[cmd.key];
+			that.cmd_log.push(output_processor);
+			if(output_processor.ret_cb) {
+				var ret_cb = output_processor.ret_cb;
+				ret_cb(cmd, that.gw_config);
+				delete that.cmd_log[that.cmd_log.length - 1][`ret_cb`];
+			}
+			else {
+				that.gw_config.cmd_advance(cmd);
 			}
 			return cmd;
 		};
@@ -88,15 +99,22 @@ module.exports = function (host_profile, gw_profiles) {
 			meta: { key: cmd_key, exec_time: exec_time, latencies: [], ret: [] },
 			cfg: cfg,
 			expr: [],
-			output: []
+			output: [],
+			ret_cb: ret_cb
 		};
 		
 		var that = this;
 		var finish_cb = function(cmd) {
 			
-			that.cmd_log.push(cmd.output_processor[cmd_key]);
-			if(ret_cb) {
-				ret_cb(cmd);
+			var output_processor = cmd.output_processor[cmd.key];
+			that.cmd_log.push(output_processor);
+			if(output_processor.ret_cb) {
+				var ret_cb = output_processor.ret_cb;
+				ret_cb(cmd, that.gw_config);
+				delete that.cmd_log[that.cmd_log.length - 1][`ret_cb`];
+			}
+			else {
+				that.gw_config.cmd_advance(cmd);
 			}
 			return cmd;
 		};
@@ -140,18 +158,25 @@ module.exports = function (host_profile, gw_profiles) {
 			tunnel_state: this.tunnel_states[tunnel_key],
 			cfg: cfg,
 			expr: [],
-			output: []
+			output: [],
+			ret_cb: ret_cb
 		};
 		
 		var that = this;
 		var finish_cb = function(cmd) {
 			
-			that.mea_expr.outbound_forwarders_parse(cmd, function () {
+			that.mea_expr.ipsec_outbound.outbound_forwarders_parse(cmd, function () {
 				
-				that.cmd_log.push(cmd.output_processor[cmd.key]);
+				var output_processor = cmd.output_processor[cmd.key];
+				that.cmd_log.push(output_processor);
 				delete that.cmd_log[that.cmd_log.length - 1][`cfg`];
-				if(ret_cb) {
-					ret_cb(cmd);
+				if(output_processor.ret_cb) {
+					var ret_cb = output_processor.ret_cb;
+					ret_cb(cmd, that.gw_config);
+					delete that.cmd_log[that.cmd_log.length - 1][`ret_cb`];
+				}
+				else {
+					that.gw_config.cmd_advance(cmd);
 				}
 			});
 		};
@@ -160,19 +185,19 @@ module.exports = function (host_profile, gw_profiles) {
 			{
 				key: cmd_key,
 				output_processor: this.output_processor,
-				expr_builder: this.mea_expr.outbound_profile_add,
-				output_cb: this.mea_expr.outbound_profile_parse
+				expr_builder: this.mea_expr.ipsec_outbound.outbound_profile_add,
+				output_cb: this.mea_expr.ipsec_outbound.outbound_profile_parse
 			},
 			{
 				key: cmd_key,
 				output_processor: this.output_processor,
-				expr_builder: this.mea_expr.outbound_encrypt_action_add,
-				output_cb: this.mea_expr.outbound_encrypt_action_parse
+				expr_builder: this.mea_expr.ipsec_outbound.outbound_encrypt_action_add,
+				output_cb: this.mea_expr.ipsec_outbound.outbound_encrypt_action_parse
 			},
 			{
 				key: cmd_key,
 				output_processor: this.output_processor,
-				expr_builder: this.mea_expr.outbound_forwarders_add,
+				expr_builder: this.mea_expr.ipsec_outbound.outbound_forwarders_add,
 				output_cb: finish_cb
 			}
 		];
@@ -208,18 +233,25 @@ module.exports = function (host_profile, gw_profiles) {
 			tunnel_state: this.tunnel_states[tunnel_key],
 			cfg: cfg,
 			expr: [],
-			output: []
+			output: [],
+			ret_cb: ret_cb
 		};
 		
 		var that = this;
 		var finish_cb = function(cmd) {
 			
-			that.mea_expr.inbound_service_parse(cmd, function () {
+			that.mea_expr.ipsec_inbound.inbound_service_parse(cmd, function () {
 				
-				that.cmd_log.push(cmd.output_processor[cmd.key]);
+				var output_processor = cmd.output_processor[cmd.key];
+				that.cmd_log.push(output_processor);
 				delete that.cmd_log[that.cmd_log.length - 1][`cfg`];
-				if(ret_cb) {
-					ret_cb(cmd);
+				if(output_processor.ret_cb) {
+					var ret_cb = output_processor.ret_cb;
+					ret_cb(cmd, that.gw_config);
+					delete that.cmd_log[that.cmd_log.length - 1][`ret_cb`];
+				}
+				else {
+					that.gw_config.cmd_advance(cmd);
 				}
 			});
 		};
@@ -228,13 +260,13 @@ module.exports = function (host_profile, gw_profiles) {
 			{
 				key: cmd_key,
 				output_processor: this.output_processor,
-				expr_builder: this.mea_expr.inbound_profile_add,
-				output_cb: this.mea_expr.inbound_profile_parse
+				expr_builder: this.mea_expr.ipsec_inbound.inbound_profile_add,
+				output_cb: this.mea_expr.ipsec_inbound.inbound_profile_parse
 			},
 			{
 				key: cmd_key,
 				output_processor: this.output_processor,
-				expr_builder: this.mea_expr.inbound_service_add,
+				expr_builder: this.mea_expr.ipsec_inbound.inbound_service_add,
 				output_cb: finish_cb
 			}
 		];
@@ -260,14 +292,17 @@ module.exports = function (host_profile, gw_profiles) {
 			next_hops: next_hops,
 			cfg: cfg,
 			expr: [],
-			output: []
+			output: [],
+			ret_cb: ret_cb
 		};
 
 		if(this.tunnel_states[tunnel_key] === undefined) {			
+			delete this.output_processor[cmd_key].ret_cb;
 			this.output_processor[cmd_key].meta.error = `Inbound tunnel ${tunnel_key} not found.`;
 			ret_cb({ key: cmd_key, output_processor: this.output_processor });
 		}
 		else if(this.tunnel_states[tunnel_key].port_out !== lan_port) {
+			delete this.output_processor[cmd_key].ret_cb;
 			this.output_processor[cmd_key].meta.error = `Tunnel ${tunnel_key} LAN port ${this.tunnel_states[tunnel_key].port_out} != ${lan_port}.`;
 			ret_cb({ key: cmd_key, output_processor: this.output_processor });
 		}
@@ -275,12 +310,18 @@ module.exports = function (host_profile, gw_profiles) {
 			var that = this;
 			var finish_cb = function(cmd) {
 				
-				that.mea_expr.inbound_fwd_forwarder_parse(cmd, function () {
+				that.mea_expr.ipsec_inbound.inbound_fwd_forwarder_parse(cmd, function () {
 					
-					that.cmd_log.push(cmd.output_processor[cmd.key]);
+					var output_processor = cmd.output_processor[cmd.key];
+					that.cmd_log.push(output_processor);
 					delete that.cmd_log[that.cmd_log.length - 1][`cfg`];
-					if(ret_cb) {
-						ret_cb(cmd);
+					if(output_processor.ret_cb) {
+						var ret_cb = output_processor.ret_cb;
+						ret_cb(cmd, that.gw_config);
+						delete that.cmd_log[that.cmd_log.length - 1][`ret_cb`];
+					}
+					else {
+						that.gw_config.cmd_advance(cmd);
 					}
 				});
 			};
@@ -289,13 +330,13 @@ module.exports = function (host_profile, gw_profiles) {
 				{
 					key: cmd_key,
 					output_processor: this.output_processor,
-					expr_builder: this.mea_expr.inbound_fwd_action_add,
-					output_cb: this.mea_expr.inbound_fwd_action_parse
+					expr_builder: this.mea_expr.ipsec_inbound.inbound_fwd_action_add,
+					output_cb: this.mea_expr.ipsec_inbound.inbound_fwd_action_parse
 				},
 				{
 					key: cmd_key,
 					output_processor: this.output_processor,
-					expr_builder: this.mea_expr.inbound_fwd_forwarder_add,
+					expr_builder: this.mea_expr.ipsec_inbound.inbound_fwd_forwarder_add,
 					output_cb: finish_cb
 				}
 			];
@@ -308,7 +349,7 @@ module.exports = function (host_profile, gw_profiles) {
 	/////////////////////////////////////////////////
 	////////////////[dump_cmd_log]///////////////////
 	
-	this.dump_cmd_log = function (output_cb) {
+	this.dump_cmd_log = function (ret_cb) {
 		
 		const exec_time = new Date().getTime();
 		const cmd_key = `dump_cmd_log_${exec_time}`;
@@ -318,7 +359,7 @@ module.exports = function (host_profile, gw_profiles) {
 			meta: { key: cmd_key, exec_time: exec_time, ret: this.cmd_log }
 		};
 		
-		output_cb({ key: cmd_key, output_processor: output_processor });
+		ret_cb({ key: cmd_key, output_processor: output_processor });
 	};
 
 	
