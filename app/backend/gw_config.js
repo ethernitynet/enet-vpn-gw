@@ -1,6 +1,11 @@
 
 var shell = require('shelljs');
 var SSH = require('ssh2').Client;
+var LOG4JS = require('log4js');
+LOG4JS.configure({
+	appenders: { gw_config: { type: 'file', filename: '/tmp/enet_vpn_gw.log' } },
+	categories: { default: { appenders: ['gw_config'], level: 'debug' } }
+});
 
 const host_cmd_lock_timeout = 10;
 const host_cmd_lockfile = `/var/lock/host_cmd_lockfile`;
@@ -176,7 +181,7 @@ var host_cmd_exec = function (gw_config_inst) {
 var host_do_exec = function (gw_config_inst, host_exec_conn) {
 	
 	const exec_cmd = gw_config_inst.host_exec_cmd_handler(`exec`, {});
-	if(exec_cmd) {		
+	if(exec_cmd) {
 		host_exec_conn.exec(exec_cmd, function(err, stream) {
 			
 			if (err) {
@@ -202,6 +207,7 @@ var host_do_exec = function (gw_config_inst, host_exec_conn) {
 
 module.exports = function (host_profile, gw_profiles) {
 
+	this.log = LOG4JS.getLogger('gw_config');
 	this.host_profile = host_profile;
 	this.gw_profiles = gw_profiles;
 	this.host_cmds_arr = [];
@@ -223,6 +229,7 @@ module.exports = function (host_profile, gw_profiles) {
 			if(expr) {
 				expr = host_cmd_prefix() + expr + host_cmd_suffix();
 				output_processor.expr.push(expr);
+				this.log.debug(JSON.stringify(output_processor.expr[output_processor.expr.length - 1]));
 				output_processor.output.push({ stdout: ``, stderr: `` });
 				output_processor.meta.latencies.push(new Date().getTime());
 			}
@@ -236,6 +243,7 @@ module.exports = function (host_profile, gw_profiles) {
 		case `close`:
 			const latency = (new Date().getTime() - output_processor.meta.latencies[output_processor.meta.latencies.length - 1]);
 			output_processor.meta.latencies[output_processor.meta.latencies.length - 1] = latency;
+			this.log.debug(JSON.stringify(output_processor.output[output_processor.output.length - 1]));
 			if(cmd.output_cb) {
 				var that = this;
 				cmd.output_cb(cmd, function (cmd) {
