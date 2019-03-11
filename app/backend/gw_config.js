@@ -7,8 +7,7 @@ LOG4JS.configure({
 	categories: { default: { appenders: ['gw_config'], level: 'debug' } }
 });
 
-const host_cmd_lock_timeout = 10;
-const host_cmd_lockfile = `/var/lock/host_cmd_lockfile`;
+/*
 	
 var output_merge = function (output_processor, cmd_key, output) {
 
@@ -22,24 +21,6 @@ var output_merge = function (output_processor, cmd_key, output) {
 	if(output.stderr !== undefined) {
 		output_processor[cmd_key].stderr += output.stderr;
 	}
-};
-
-var host_cmd_prefix = function () {
-	
-	var expr = ``;
-	//expr += `lockfile ${host_cmd_lockfile}\n`;
-	expr += `(\n`;
-	expr += `flock -o -x -w ${host_cmd_lock_timeout} 200\n`;
-	return expr;
-};
-
-var host_cmd_suffix = function () {
-	
-	var expr = ``;
-	//expr += `rm -f ${host_cmd_lockfile}\n`;
-	expr += `)200>${host_cmd_lockfile}\n`;
-	expr += `exit\n`;
-	return expr;
 };
 
 var host_shell_exec = function (gw_config_inst, cmd) {
@@ -173,7 +154,7 @@ var host_cmd_exec = function (gw_config_inst) {
 	}
 };
 
-
+*/
 
 
 
@@ -219,6 +200,26 @@ module.exports = function (host_profile, gw_profiles) {
 	this.host_exec_stream = undefined;
 	this.host_execs_count = 0;
 
+	this.host_cmd_prefix = function () {
+		
+		const host_cmd_lock_timeout = 10;
+		
+		var expr = ``;
+		expr += `(\n`;
+		expr += `flock -o -x -w ${host_cmd_lock_timeout} 200\n`;
+		return expr;
+	};
+
+	this.host_cmd_suffix = function () {
+		
+		const host_cmd_lockfile = `/var/lock/host_cmd_lockfile`;
+		
+		var expr = ``;
+		expr += `)200>${host_cmd_lockfile}\n`;
+		expr += `exit\n`;
+		return expr;
+	};
+
 	this.host_exec_cmd_handler = function (event, data) {
 		
 		const cmd = this.host_cmds_arr[0];
@@ -227,7 +228,7 @@ module.exports = function (host_profile, gw_profiles) {
 		case `exec`:
 			var expr = cmd.expr_builder(cmd);
 			if(expr) {
-				expr = host_cmd_prefix() + expr + host_cmd_suffix();
+				expr = this.host_cmd_prefix() + expr + this.host_cmd_suffix();
 				output_processor.expr.push(expr);
 				this.log.debug(JSON.stringify(output_processor.expr[output_processor.expr.length - 1]));
 				output_processor.output.push({ stdout: ``, stderr: `` });
@@ -360,17 +361,7 @@ module.exports = function (host_profile, gw_profiles) {
 		}
 	};
 	
-	this.host_cmd = function (cmds_arr) {
-
-		if(cmds_arr !== undefined) {
-			this.host_cmds_append(cmds_arr);
-		}
-		console.log(`<<<<==  this.host_conn: ${this.host_conn}  ==>>>>`);
-		if(this.host_conn === undefined) {
-			host_cmd_exec(this);
-		}
-	};
-	
+	/*
 	this.gw_cmd = function (output_processor, nic_id, cmd_key, gw_port, cmd) {
 		
 		console.log(`>>>>==============================================>`);
@@ -413,4 +404,5 @@ module.exports = function (host_profile, gw_profiles) {
 		output_merge(output_processor, nic_id, cmd_key, { output_time: `${new Date().getTime()}`, code: exec_res.code, stdout: `${exec_res.stdout}`, stderr: `${exec_res.stderr}` });
 		console.log(`<==============================================`);
 	};
+	*/
 };

@@ -1,6 +1,7 @@
 
 var vpn_common = require('./vpn_common.js');
 var MEA_EXPR = require('./mea_expr.js');
+var DOCKER_EXPR = require('./docker_expr.js');
 var GW_CONFIG = require('./gw_config.js');
 
 /////////////////////////////////////////////////
@@ -12,8 +13,13 @@ module.exports = function (host_profile, gw_profiles) {
 
 	this.gw_config = new GW_CONFIG(host_profile, gw_profiles);
 	this.mea_expr = new MEA_EXPR();
+	this.docker_expr = new DOCKER_EXPR();
 	this.cmd_log = [];
 	this.output_processor = {};
+	this.libreswan_states = {
+		OBJ: `libreswan_states`,
+		UPDATE: `never`
+	};
 	this.tunnel_states = {
 		OBJ: `tunnel_states`,
 		UPDATE: `never`
@@ -97,6 +103,7 @@ module.exports = function (host_profile, gw_profiles) {
 		
 		this.output_processor[cmd_key] = {
 			meta: { key: cmd_key, exec_time: exec_time, latencies: [], ret: [] },
+			libreswan_states: this.libreswan_states,
 			cfg: cfg,
 			expr: [],
 			output: [],
@@ -120,6 +127,12 @@ module.exports = function (host_profile, gw_profiles) {
 		};
 		
 		const host_cmds = [
+			{
+				key: cmd_key,
+				output_processor: this.output_processor,
+				expr_builder: this.docker_expr.boot_libreswan,
+				output_cb: this.docker_expr.parse_libreswan_ips
+			},
 			{
 				key: cmd_key,
 				output_processor: this.output_processor,
