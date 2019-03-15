@@ -161,21 +161,35 @@ var host_cmd_exec = function (gw_config_inst) {
 
 var host_do_exec = function (gw_config_inst, host_exec_conn) {
 	
-	const exec_cmd = gw_config_inst.host_exec_cmd_handler(`exec`, {});
+	const cmd = gw_config_inst.host_cmds_arr[0];
+	var exec_cmd = gw_config_inst.host_exec_cmd_handler(`exec`, {});
 	if(exec_cmd) {
-		host_exec_conn.exec(exec_cmd, function(err, stream) {
-			
-			if (err) {
-				console.error(`host_do_exec()#${gw_config_inst.host_execs_count} ERROR: ${err}`);
-				gw_config_inst.host_exec_end();
-			}
-			else {
-				gw_config_inst.host_exec_conn = host_exec_conn;	
-				gw_config_inst.host_exec_stream = stream;
-				++gw_config_inst.host_execs_count;
-				gw_config_inst.host_exec_stream_init();
-			}
-		});
+		if(cmd.target === `localhost`) {
+			exec_cmd = `/bin/bash -c '${exec_cmd}'`;
+			gw_config_inst.host_exec_conn = host_exec_conn;	
+			const exec_result = shell.exec(exec_cmd, function (code, stdout, stderr) {
+				
+				gw_config_inst.host_exec_cmd_handler(`exit`, { code: code });
+				gw_config_inst.host_exec_cmd_handler(`stdout`, { stdout: stdout });
+				gw_config_inst.host_exec_cmd_handler(`stderr`, { stderr: stderr });
+				gw_config_inst.host_exec_cmd_handler(`close`, {});
+			});
+		}
+		else {
+			host_exec_conn.exec(exec_cmd, function(err, stream) {
+				
+				if (err) {
+					console.error(`host_do_exec()#${gw_config_inst.host_execs_count} ERROR: ${err}`);
+					gw_config_inst.host_exec_end();
+				}
+				else {
+					gw_config_inst.host_exec_conn = host_exec_conn;	
+					gw_config_inst.host_exec_stream = stream;
+					++gw_config_inst.host_execs_count;
+					gw_config_inst.host_exec_stream_init();
+				}
+			});
+		}
 	}
 	else {
 		gw_config_inst.host_exec_cmd_handler(`close`, {});
@@ -199,6 +213,17 @@ module.exports = function (host_profile, gw_profiles) {
 	this.host_exec_conn = undefined;
 	this.host_exec_stream = undefined;
 	this.host_execs_count = 0;
+
+	this.reset = function () {
+		
+		if(this.host_cmds_arr.length > 0) {
+			const cmd = this.host_cmds_arr[0];
+			var output_processor = cmd.output_processor[cmd.key];
+			output_processor.meta.orphan_cmds = this.host_cmds_arr;
+			this.host_cmds_arr = [];
+		}
+		this.host_exec_end();
+	};
 
 	this.host_cmd_prefix = function () {
 		
@@ -230,7 +255,7 @@ module.exports = function (host_profile, gw_profiles) {
 			if(expr) {
 				expr = this.host_cmd_prefix() + expr + this.host_cmd_suffix();
 				output_processor.expr.push(expr);
-				this.log.debug(JSON.stringify(output_processor.expr[output_processor.expr.length - 1]));
+				this.log.debug(`${cmd.key} EXEC: ${JSON.stringify(output_processor.expr[output_processor.expr.length - 1])}`);
 				output_processor.output.push({ stdout: ``, stderr: `` });
 				output_processor.meta.latencies.push(new Date().getTime());
 			}
@@ -239,12 +264,13 @@ module.exports = function (host_profile, gw_profiles) {
 			output_processor.output[output_processor.output.length - 1].stdout += data.stdout;
 			return ``;
 		case `stderr`:
+			this.log.error(`${cmd.key} STDERR: ${data.stderr}`);
 			output_processor.output[output_processor.output.length - 1].stderr += data.stderr;
 			return ``;
 		case `close`:
 			const latency = (new Date().getTime() - output_processor.meta.latencies[output_processor.meta.latencies.length - 1]);
 			output_processor.meta.latencies[output_processor.meta.latencies.length - 1] = latency;
-			this.log.debug(JSON.stringify(output_processor.output[output_processor.output.length - 1]));
+			this.log.debug(`${cmd.key} CLOSE: ${JSON.stringify(output_processor.output[output_processor.output.length - 1])}`);
 			if(cmd.output_cb) {
 				var that = this;
 				cmd.output_cb(cmd, function (cmd) {
@@ -257,6 +283,7 @@ module.exports = function (host_profile, gw_profiles) {
 			}
 			return ``;
 		case `exit`:
+			this.log.debug(`${cmd.key} EXIT: ${JSON.stringify(data)}`);
 			output_processor.meta.ret.push({ code: data.code, signal: data.signal });
 			return ``;
 		default:
@@ -290,7 +317,6 @@ module.exports = function (host_profile, gw_profiles) {
 		});
 		this.host_exec_stream.stderr.on('data', function(data) {
 			
-			console.log(`Exec#${that.host_execs_count} Stream :: STDERR :: data: ${data}`);
 			that.host_exec_cmd_handler(`stderr`, { stderr: data });
 		});
 		this.host_exec_stream.on('close', function() {
@@ -299,8 +325,8 @@ module.exports = function (host_profile, gw_profiles) {
 		});
 		this.host_exec_stream.on('exit', function(code, signal) {
 			
-			console.log(`Exec#${that.host_execs_count} :: exit :: code: ${code}, signal: ${signal}`);
-			that.host_exec_cmd_handler(`exit`, { code: code, signal: signal });
+			const exit_obj = { code: code, signal: signal };
+			that.host_exec_cmd_handler(`exit`, exit_obj);
 		});
 	};
 
@@ -309,6 +335,7 @@ module.exports = function (host_profile, gw_profiles) {
 		var that = this;
 		if(this.host_exec_conn === undefined) {
 			if(this.host_exec_stream !== undefined) {
+				this.log.debug(`Exec#${this.host_execs_count} STREAM RESET (host_exec_conn: ${this.host_exec_conn})`);
 				this.host_exec_stream.end();
 				this.host_exec_stream = undefined;
 				--this.host_execs_count;
@@ -316,7 +343,7 @@ module.exports = function (host_profile, gw_profiles) {
 			var host_exec_conn = new SSH();
 			host_exec_conn.on('ready', function() {
 				
-				console.log(`Exec#${that.host_execs_count} Connection :: ready`);				
+				that.log.info(`Exec#${that.host_execs_count} Connection: ready`);
 				host_do_exec(that, host_exec_conn);
 			}).connect(this.host_profile);				
 		}
@@ -326,15 +353,18 @@ module.exports = function (host_profile, gw_profiles) {
 		
 		if(this.host_exec_conn !== undefined) {
 			if(this.host_exec_stream !== undefined) {
+				this.log.debug(`Exec#${this.host_execs_count} STREAM END (host_exec_conn: ${this.host_exec_conn})`);
 				this.host_exec_stream.end();
 				this.host_exec_stream = undefined;
 				--this.host_execs_count;
 			}
+			this.log.debug(`Exec#${this.host_execs_count} CONN END`);
 			this.host_exec_conn.end();
 			this.host_exec_conn = undefined;
 		}
 		else {
 			if(this.host_exec_stream !== undefined) {
+				this.log.debug(`Exec#${this.host_execs_count} STREAM END (host_exec_conn: ${this.host_exec_conn})`);
 				this.host_exec_stream.end();
 				this.host_exec_stream = undefined;
 				--this.host_execs_count;
@@ -349,10 +379,10 @@ module.exports = function (host_profile, gw_profiles) {
 	
 	this.host_exec_cmd = function (cmds_arr) {
 
-		console.log(`<<<<==  host_exec_cmd(${cmds_arr.length} => ${this.host_cmds_arr.length}) this.host_exec_stream: ${this.host_exec_stream} ==>>>>`);
 		if(cmds_arr !== undefined) {
 			this.host_cmds_append(cmds_arr);
 		}
+		this.log.debug(`Exec#${this.host_execs_count} host_exec_cmd() host_cmds_arr.length: ${this.host_cmds_arr.length}`);
 		if(this.host_cmds_arr.length > 0) {
 			this.host_exec_start();
 		}

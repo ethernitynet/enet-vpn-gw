@@ -419,9 +419,9 @@ var enet_vpn_listen_off_test = function (backend_ip, backend_port, vpn_cfg, conn
 	enet_vpn_inbound_tunnel_disconnect_test(backend_ip, backend_port, vpn_cfg, conn_id);
 };
 
-var enet_vpn_load_cfg_test = function (backend_ip, backend_port, vpn_cfg) {
+var enet_boot_vpn_test = function (backend_ip, backend_port, vpn_cfg) {
 
-	enet_vpn_load_cfg(backend_ip, backend_port, { VPN: vpn_cfg }, function () {
+	enet_boot_vpn(backend_ip, backend_port, { VPN: vpn_cfg }, function () {
 		
 		if(vpn_cfg.conns !== undefined) {
 			for(var conn_id = 0; conn_id < vpn_cfg.conns.length; ++conn_id) {

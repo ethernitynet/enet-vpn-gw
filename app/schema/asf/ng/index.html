@@ -187,9 +187,9 @@ var vpn_api_op = function (vpn_cfg_str, op, conn_id) {
 		const backend_params = enet_vpn_get_backend_params_test(vpn_cfg);
 		switch(op) {
 		
-			case `load_cfg`:
+			case `boot_vpn`:
 			console.log(`vpn_api_op> ${op}`);
-			enet_vpn_load_cfg_test(backend_params.ip, backend_params.port, vpn_cfg);
+			enet_boot_vpn_test(backend_params.ip, backend_params.port, vpn_cfg);
 			break;
 		
 			case `connect`:
@@ -711,7 +711,7 @@ const initial_nic_id = (host_port - 44443);
 	var expr = '\n';
 
 	const json_cfg = $scope.modelData;
-	vpn_api_op(JSON.stringify(json_cfg), `load_cfg`);
+	vpn_api_op(JSON.stringify(json_cfg), `boot_vpn`);
 	/*
 	var conn_dictionary = { };
 	const conns_count = json_cfg.conns.length;

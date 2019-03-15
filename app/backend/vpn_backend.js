@@ -92,14 +92,15 @@ module.exports = function (host_profile, gw_profiles) {
 
 	
 	/////////////////////////////////////////////////
-	/////////////////[load_vpn_cfg]//////////////////
+	///////////////////[boot_vpn]////////////////////
 		
-	this.load_vpn_cfg = function (cfg, ret_cb) {
+	this.boot_vpn = function (cfg, ret_cb) {
 		
-		//console.log(`load_vpn_cfg(${nic_id})`);
 		const nic_id = cfg.ace_nic_config[0].nic_name;		
 		const exec_time = new Date().getTime();
-		const cmd_key = `load_vpn_cfg${nic_id}_${exec_time}`;
+		const cmd_key = `boot_vpn${nic_id}_${exec_time}`;
+		
+		this.gw_config.reset();
 		
 		this.output_processor[cmd_key] = {
 			meta: { key: cmd_key, exec_time: exec_time, latencies: [], ret: [] },
@@ -129,8 +130,15 @@ module.exports = function (host_profile, gw_profiles) {
 		const host_cmds = [
 			{
 				key: cmd_key,
+				target: `localhost`,
 				output_processor: this.output_processor,
-				expr_builder: this.docker_expr.boot_libreswan,
+				expr_builder: this.docker_expr.init_vpn_dirs,
+				output_cb: this.docker_expr.update_vpn_conf
+			},
+			{
+				key: cmd_key,
+				output_processor: this.output_processor,
+				expr_builder: this.docker_expr.boot_vpn,
 				output_cb: this.docker_expr.parse_libreswan_ips
 			},
 			{

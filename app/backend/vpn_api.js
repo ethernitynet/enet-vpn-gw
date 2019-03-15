@@ -70,10 +70,10 @@ var post_via_ajax = function (label, ip, port, post_content, finish_cb) {
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
 
-var enet_vpn_load_cfg = function (backend_ip, backend_port, vpn_cfg, finish_cb) {
+var enet_boot_vpn = function (backend_ip, backend_port, vpn_cfg, finish_cb) {
 	
 	const post_content = {
-		op: `load_vpn_cfg`,
+		op: `boot_vpn`,
 		vpn_cfg: vpn_cfg
 	};
 

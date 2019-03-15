@@ -65,10 +65,10 @@ module.exports = function (host_profile, gw_profiles, service_ip, service_port) 
 		});
 	};
 
-	this.load_vpn_cfg = function (vpn_cfg, res) {
+	this.boot_vpn = function (vpn_cfg, res) {
 		
 		this.vpn_cfg.VPN = vpn_cfg.VPN;
-		this.vpn_backend.load_vpn_cfg(this.vpn_cfg.VPN, function (cmd, gw_config) {
+		this.vpn_backend.boot_vpn(this.vpn_cfg.VPN, function (cmd, gw_config) {
 
 			const output_processor = cmd.output_processor[cmd.key];
 			const output_str = JSON.stringify(output_processor.meta);
@@ -213,8 +213,8 @@ module.exports = function (host_profile, gw_profiles, service_ip, service_port) 
 							case `vpn_test`:
 								this.vpn_test(res);
 							break;
-							case `load_vpn_cfg`:
-								this.load_vpn_cfg(content.vpn_cfg, res);
+							case `boot_vpn`:
+								this.boot_vpn(content.vpn_cfg, res);
 							break;
 							case `outbound_tunnel_add`:
 								this.outbound_tunnel_add(content.tunnel_spec, content.ipsec_cfg, res);
