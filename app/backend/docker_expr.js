@@ -108,8 +108,10 @@ module.exports = function () {
 			const ipv4_regex = /(\d+\.\d+\.\d+\.\d+)/g;
 			
 			const ips_arr = prev_stdout.match(ipv4_regex);
-			for(var i = 0; i < ips_arr.length; ++i) {
-				libreswan_states[`enet${nic_id}_libreswan${104 + i}`] = { ip: ips_arr[i] };
+			if((ips_arr !== undefined) && (ips_arr !== null)) {
+				for(var i = 0; i < ips_arr.length; ++i) {
+					libreswan_states[`enet${nic_id}_libreswan${104 + i}`] = { ip: ips_arr[i] };
+				}
 			}
 			if(return_cb) {
 				return_cb(cmd);
