@@ -6,8 +6,7 @@
 			"vpn_gw_ip": "192.168.22.1",
 			"libreswan_ver": "v3.27"
 		}],
-		"conns": [			
-			{
+		"conns": [{
 				"name": "tun10_full_hw",
 				"inbound_accel": "full",
 				"outbound_accel": "full",
@@ -189,13 +188,13 @@
 			}
 		],
 		"ace_nic_config": [{
-			"nic_name": "1",
+			"nic_name": "0",
 			"dataplane": "kernel",
-			"sw_ver": "450.08.122A#1 (Jan 06 2018 12:30:00)",
-			"hw_ver": "d02.1.11.3   (Date 03/01/19: hour 12:00 )",
+			"sw_ver": "450.08.130 (Feb 07 2019 20:00:01)",
+			"hw_ver": "1302.1.11.6   (Date 14/02/19: hour 15:00 )",
 			"log_file": "/tmp/enet_vpn.log",
-			"install_dir": "/home/devops/workspace/SDK_1Core",
-			"nic_pci": "0000:88:00.0"
+			"install_dir": "/home/devops/ethernity/enet-driver/VPN_GW/ethernitysdk",
+			"nic_pci": "0000:0a:00.0"
 		}],
 		"dpdk_config": [{
 			"dpdk_ver": "v17.11-rc4",
