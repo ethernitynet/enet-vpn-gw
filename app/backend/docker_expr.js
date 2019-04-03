@@ -14,6 +14,13 @@ var shutdown_libreswan_inst = function (cmd, libreswan_inst) {
 	return expr;
 };
 
+var restart_libreswan_service = function (cmd, libreswan_inst) {
+
+	var expr = ``;
+	expr += `docker exec ${libreswan_inst} /bin/bash -c 'ipsec restart'\n`;
+	return expr;
+};
+
 var boot_libreswan_inst = function (cmd, libreswan_inst, libreswan_img) {
 
 	var output_processor = cmd.output_processor[cmd.key];
@@ -116,6 +123,19 @@ module.exports = function () {
 				return_cb(cmd);
 			}
 		}
+	};
+	
+	this.restart_libreswan = function (cmd) {
+	
+		var output_processor = cmd.output_processor[cmd.key];
+		const nic_id = output_processor.cfg.ace_nic_config[0].nic_name;
+		
+		var expr = ``;
+		expr += restart_libreswan_service(cmd, `enet${nic_id}_libreswan104`);
+		expr += restart_libreswan_service(cmd, `enet${nic_id}_libreswan105`);
+		expr += restart_libreswan_service(cmd, `enet${nic_id}_libreswan106`);
+		expr += restart_libreswan_service(cmd, `enet${nic_id}_libreswan107`);
+		return expr;
 	};
 		
 	/////////////////////////////////////////////////
