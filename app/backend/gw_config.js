@@ -156,33 +156,28 @@ var host_cmd_exec = function (gw_config_inst) {
 
 */
 
-
-
-
 var host_do_exec = function (gw_config_inst, host_exec_conn) {
 	
 	const cmd = gw_config_inst.host_cmds_arr[0];
 	var exec_cmd = gw_config_inst.host_exec_cmd_handler(`exec`, {});
-	if(exec_cmd) {
-		if(cmd.target === `localhost`) {
+	if (exec_cmd) {
+		if (cmd.target === `localhost`) {
 			exec_cmd = `/bin/bash -c '${exec_cmd}'`;
 			gw_config_inst.host_exec_conn = host_exec_conn;	
-			const exec_result = shell.exec(exec_cmd, function (code, stdout, stderr) {
+			shell.exec(exec_cmd, function (code, stdout, stderr) {
 				
 				gw_config_inst.host_exec_cmd_handler(`exit`, { code: code });
 				gw_config_inst.host_exec_cmd_handler(`stdout`, { stdout: stdout });
 				gw_config_inst.host_exec_cmd_handler(`stderr`, { stderr: stderr });
 				gw_config_inst.host_exec_cmd_handler(`close`, {});
 			});
-		}
-		else {
-			host_exec_conn.exec(exec_cmd, function(err, stream) {
+		} else {
+			host_exec_conn.exec(exec_cmd, function (err, stream) {
 				
 				if (err) {
 					console.error(`host_do_exec()#${gw_config_inst.host_execs_count} ERROR: ${err}`);
 					gw_config_inst.host_exec_end();
-				}
-				else {
+				} else {
 					gw_config_inst.host_exec_conn = host_exec_conn;	
 					gw_config_inst.host_exec_stream = stream;
 					++gw_config_inst.host_execs_count;
@@ -190,8 +185,7 @@ var host_do_exec = function (gw_config_inst, host_exec_conn) {
 				}
 			});
 		}
-	}
-	else {
+	} else {
 		gw_config_inst.host_exec_cmd_handler(`close`, {});
 	}
 };
@@ -216,7 +210,7 @@ module.exports = function (host_profile, gw_profiles) {
 
 	this.reset = function () {
 		
-		if(this.host_cmds_arr.length > 0) {
+		if (this.host_cmds_arr.length > 0) {
 			const cmd = this.host_cmds_arr[0];
 			var output_processor = cmd.output_processor[cmd.key];
 			output_processor.meta.orphan_cmds = this.host_cmds_arr;
@@ -225,22 +219,25 @@ module.exports = function (host_profile, gw_profiles) {
 		this.host_exec_end();
 	};
 
-	this.host_cmd_prefix = function () {
+	this.host_cmd_prefix = function (cmd) {
 		
 		const host_cmd_lock_timeout = 10;
 		
 		var expr = ``;
+		expr += `echo "$(date +%s%N)> ${cmd.key} WAIT" >> /tmp/host_exec_log.log\n`;
 		expr += `(\n`;
 		expr += `flock -o -x -w ${host_cmd_lock_timeout} 200\n`;
+		expr += `echo "$(date +%s%N)> ${cmd.key} EXEC" >> /tmp/host_exec_log.log\n`;
 		return expr;
 	};
 
-	this.host_cmd_suffix = function () {
+	this.host_cmd_suffix = function (cmd) {
 		
 		const host_cmd_lockfile = `/var/lock/host_cmd_lockfile`;
 		
 		var expr = ``;
 		expr += `)200>${host_cmd_lockfile}\n`;
+		expr += `echo "$(date +%s%N)> ${cmd.key} FINISH" >> /tmp/host_exec_log.log\n`;
 		expr += `exit\n`;
 		return expr;
 	};
@@ -249,11 +246,11 @@ module.exports = function (host_profile, gw_profiles) {
 		
 		const cmd = this.host_cmds_arr[0];
 		var output_processor = cmd.output_processor[cmd.key];
-		switch(event) {
+		switch (event) {
 		case `exec`:
 			var expr = cmd.expr_builder(cmd);
-			if(expr) {
-				expr = this.host_cmd_prefix() + expr + this.host_cmd_suffix();
+			if (expr) {
+				expr = this.host_cmd_prefix(cmd) + expr + this.host_cmd_suffix(cmd);
 				output_processor.expr.push(expr);
 				this.log.debug(`${cmd.key} EXEC: ${JSON.stringify(output_processor.expr[output_processor.expr.length - 1])}`);
 				output_processor.output.push({ stdout: ``, stderr: `` });
@@ -271,14 +268,16 @@ module.exports = function (host_profile, gw_profiles) {
 			const latency = (new Date().getTime() - output_processor.meta.latencies[output_processor.meta.latencies.length - 1]);
 			output_processor.meta.latencies[output_processor.meta.latencies.length - 1] = latency;
 			this.log.debug(`${cmd.key} CLOSE: ${JSON.stringify(output_processor.output[output_processor.output.length - 1])}`);
-			if(cmd.output_cb) {
+			if (output_processor.ret_cb !== undefined) {
+				output_processor.ret_cb(cmd);
+			}
+			if (cmd.output_cb) {
 				var that = this;
 				cmd.output_cb(cmd, function (cmd) {
 					
 					that.cmd_advance(cmd);
 				});
-			}
-			else {
+			} else {
 				this.cmd_advance(cmd);
 			}
 			return ``;
@@ -295,15 +294,13 @@ module.exports = function (host_profile, gw_profiles) {
 		
 		const delay = ((prev_cmd !== undefined) && (prev_cmd.delay !== undefined)) ? prev_cmd.delay : 0;
 		this.host_cmds_arr.shift();
-		if(this.host_cmds_arr.length > 0) {
-			if(delay > 0) {
+		if (this.host_cmds_arr.length > 0) {
+			if (delay > 0) {
 				setTimeout(host_do_exec, delay, this, this.host_exec_conn);
-			}
-			else {
+			} else {
 				setImmediate(host_do_exec, this, this.host_exec_conn);
 			}
-		}
-		else {
+		} else {
 			this.host_exec_end();
 		}
 	};
@@ -311,19 +308,19 @@ module.exports = function (host_profile, gw_profiles) {
 	this.host_exec_stream_init = function () {
 		
 		var that = this;
-		this.host_exec_stream.on('data', function(data) {
+		this.host_exec_stream.on('data', function (data) {
 			
 			that.host_exec_cmd_handler(`stdout`, { stdout: data });
 		});
-		this.host_exec_stream.stderr.on('data', function(data) {
+		this.host_exec_stream.stderr.on('data', function (data) {
 			
 			that.host_exec_cmd_handler(`stderr`, { stderr: data });
 		});
-		this.host_exec_stream.on('close', function() {
+		this.host_exec_stream.on('close', function () {
 			
 			that.host_exec_cmd_handler(`close`, {});
 		});
-		this.host_exec_stream.on('exit', function(code, signal) {
+		this.host_exec_stream.on('exit', function (code, signal) {
 			
 			const exit_obj = { code: code, signal: signal };
 			that.host_exec_cmd_handler(`exit`, exit_obj);
@@ -333,15 +330,15 @@ module.exports = function (host_profile, gw_profiles) {
 	this.host_exec_start = function () {
 		
 		var that = this;
-		if(this.host_exec_conn === undefined) {
-			if(this.host_exec_stream !== undefined) {
+		if (this.host_exec_conn === undefined) {
+			if (this.host_exec_stream !== undefined) {
 				this.log.debug(`Exec#${this.host_execs_count} STREAM RESET (host_exec_conn: ${this.host_exec_conn})`);
 				this.host_exec_stream.end();
 				this.host_exec_stream = undefined;
 				--this.host_execs_count;
 			}
 			var host_exec_conn = new SSH();
-			host_exec_conn.on('ready', function() {
+			host_exec_conn.on('ready', function () {
 				
 				that.log.info(`Exec#${that.host_execs_count} Connection: ready`);
 				host_do_exec(that, host_exec_conn);
@@ -351,8 +348,8 @@ module.exports = function (host_profile, gw_profiles) {
 
 	this.host_exec_end = function () {
 		
-		if(this.host_exec_conn !== undefined) {
-			if(this.host_exec_stream !== undefined) {
+		if (this.host_exec_conn !== undefined) {
+			if (this.host_exec_stream !== undefined) {
 				this.log.debug(`Exec#${this.host_execs_count} STREAM END (host_exec_conn: ${this.host_exec_conn})`);
 				this.host_exec_stream.end();
 				this.host_exec_stream = undefined;
@@ -361,9 +358,8 @@ module.exports = function (host_profile, gw_profiles) {
 			this.log.debug(`Exec#${this.host_execs_count} CONN END`);
 			this.host_exec_conn.end();
 			this.host_exec_conn = undefined;
-		}
-		else {
-			if(this.host_exec_stream !== undefined) {
+		} else {
+			if (this.host_exec_stream !== undefined) {
 				this.log.debug(`Exec#${this.host_execs_count} STREAM END (host_exec_conn: ${this.host_exec_conn})`);
 				this.host_exec_stream.end();
 				this.host_exec_stream = undefined;
@@ -379,14 +375,13 @@ module.exports = function (host_profile, gw_profiles) {
 	
 	this.host_exec_cmd = function (cmds_arr) {
 
-		if(cmds_arr !== undefined) {
+		if (cmds_arr !== undefined) {
 			this.host_cmds_append(cmds_arr);
 		}
 		this.log.debug(`Exec#${this.host_execs_count} host_exec_cmd() host_cmds_arr.length: ${this.host_cmds_arr.length}`);
-		if(this.host_cmds_arr.length > 0) {
+		if (this.host_cmds_arr.length > 0) {
 			this.host_exec_start();
-		}
-		else {
+		} else {
 			this.host_exec_end();
 		}
 	};

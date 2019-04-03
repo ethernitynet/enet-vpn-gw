@@ -4,7 +4,6 @@ var vpn_common = require('./vpn_common.js');
 var MEA_IPSEC_OUTBOUND = require('./mea_ipsec_outbound.js');
 var MEA_IPSEC_INBOUND = require('./mea_ipsec_inbound.js');
 
-
 /////////////////////////////////////////////////
 ///////////////////// init //////////////////////
 
@@ -61,7 +60,6 @@ var mea_ports_init_expr = function (cfg) {
 	return expr;
 };
 
-
 /////////////////////////////////////////////////
 ////////////////// stats_get ////////////////////
 
@@ -79,8 +77,8 @@ http_request({
 		if (error) {
 			++vpn_common.influxdb_error_count;
 			console.log(`====  ${JSON.stringify(error)}  ====`);
-			if(response !== undefined) {
-				console.log(`====  ${response.json({name : error})}  ====`);
+			if (response !== undefined) {
+				console.log(`====  ${response.json({ name: error })}  ====`);
 			}
 		} else {
 			++vpn_common.influxdb_success_count;
@@ -93,7 +91,7 @@ http_request({
 var mea_influxdb_update_rmon = function (db_ip, db_port, db_name, rmons_container, port) {
 	
 	const port_key = `rmon${port}`;
-	if(rmons_container[port_key] !== undefined) {
+	if (rmons_container[port_key] !== undefined) {
 		var rx_str = `${port_key},direction=rx PktsRX=${rmons_container[port_key].PktsRX},BytesRX=${rmons_container[port_key].BytesRX},CRCErrorPktsRX=${rmons_container[port_key].CRCErrorPktsRX},RxMacDropPktsRX=${rmons_container[port_key].RxMacDropPktsRX} ${rmons_container.timestamp + port}`;
 		var tx_str = `${port_key},direction=tx PktsTX=${rmons_container[port_key].PktsTX},BytesTX=${rmons_container[port_key].BytesTX},CRCErrorPktsTX=${rmons_container[port_key].CRCErrorPktsTX}`;
 		console.log(`${db_name}@${db_ip}:${db_port} <= ${rx_str}`);
@@ -106,23 +104,22 @@ var mea_influxdb_update_rmon = function (db_ip, db_port, db_name, rmons_containe
 var mea_rmons_db_update = function (stats_state, prev_output) {
 	
 	const rmon_arr = prev_output.split(/\r?\n/);
-	var rmons_container ={};
+	var rmons_container = {};
 	var rmons_container_str = `{`;
 	var ports_count = 0;
-	for(var line_idx = 2; line_idx < rmon_arr.length; line_idx += 5) {
+	for (var line_idx = 2; line_idx < rmon_arr.length; line_idx += 5) {
 		//console.log(`${rmon_arr.length} ${line_idx}`);
 		rmons_container_str += vpn_common.mea_rmon_parse_pkts(rmon_arr[line_idx]);
 		rmons_container_str += vpn_common.mea_rmon_parse_bytes(rmon_arr[line_idx + 1]);
 		rmons_container_str += vpn_common.mea_rmon_parse_crc_errors(rmon_arr[line_idx + 2]);
 		rmons_container_str += vpn_common.mea_rmon_parse_mac_drops(rmon_arr[line_idx + 3]);
 		++ports_count;
-		if(ports_count >= 5) {
+		if (ports_count >= 5) {
 			rmons_container_str += `,"timestamp":${rmon_arr[rmon_arr.length - 1]}`;
 			rmons_container_str += `}`;
 			rmons_container = JSON.parse(rmons_container_str);
 			break;
-		}
-		else {
+		} else {
 			rmons_container_str += `,`;
 		}
 	}
@@ -147,8 +144,6 @@ var mea_stats_collect_expr = function (cmd) {
 	expr += `date +%s%N\n`;
 	return expr;
 };
-
-
 
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
@@ -175,7 +170,6 @@ module.exports = function () {
 	
 		mea_rmons_db_update(cmd.state, cmd.output_processor[cmd.key].output[0]);
 	};
-
 	
 	/////////////////////////////////////////////////
 	////////////////////[vpn_test]///////////////////
@@ -195,15 +189,15 @@ module.exports = function () {
 	this.test_parse = function (cmd) {
 	
 		var output_processor = cmd.output_processor[cmd.key];
-		if(output_processor.output.length > 0) {
+		if (output_processor.output.length > 0) {
 			var prev_stdout = output_processor.output[output_processor.output.length - 1].stdout;
 			var test_regex = /(root)/;
-			prev_stdout.replace(test_regex, function(match, match0, match1) {
+			prev_stdout.replace(test_regex, function (match, match0, match1) {
 				
-				if(match0) {
+				if (match0) {
 					++output_processor.meta.matches_count;
 				}
-				if(match1) {
+				if (match1) {
 					++output_processor.meta.matches_count;
 				}
 			});
@@ -221,7 +215,6 @@ module.exports = function () {
 		expr += `echo $PPID\n`;
 		return expr;
 	};
-
 	
 	/////////////////////////////////////////////////
 	//////////////////[load_vpn_cfg]/////////////////

@@ -1,5 +1,5 @@
 
-(function(exports) {
+(function (exports) {
 
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
@@ -24,10 +24,6 @@ var to_unsigned = function (x) {
 	
 	return bitwise_shift_right(x, 0);
 };
-
-var influxdb_error_count = 0;
-var influxdb_success_count = 0;
-
 
 const mea_host_port_local = 127;
 const mea_cipher_port_local = 104;
@@ -99,10 +95,10 @@ var ip_to_dec = function (ip) {
 	}
 	if (dots.length === 4) {
 		// IPv4
-		return to_unsigned( ((((((+dots[0]) * 256) + (+dots[1])) * 256) + (+dots[2])) * 256) + (+dots[3]) );
+		return to_unsigned(((((((+dots[0]) * 256) + (+dots[1])) * 256) + (+dots[2])) * 256) + (+dots[3]));
 		} else if (dots.length === 6) {
 		// IPv6
-		return to_unsigned( ((((((((+dots[0]) * 256) + (+dots[1])) * 256) + (+dots[2])) * 256) + (+dots[3]) * 256) + (+dots[4]) * 256) + (+dots[5]) );
+		return to_unsigned(((((((((+dots[0]) * 256) + (+dots[1])) * 256) + (+dots[2])) * 256) + (+dots[3]) * 256) + (+dots[4]) * 256) + (+dots[5]));
 	}
 	return 0;
 };
@@ -124,7 +120,7 @@ var str_hash = function (str, mask_bits) {
 	var hash = 5381;
 	var i = str.length;
 
-	while(i) {
+	while (i) {
 		hash = bitwise_xor((hash * 33), str.charCodeAt(--i));
 	}
 	const hash_32 = to_unsigned(hash);
@@ -154,10 +150,9 @@ var vpn_conn_hash = function (cfg, conn_id) {
 
 var mea_cli_local = function (nic_id) {
 
-	if(nic_id > 0) {
+	if (nic_id > 0) {
 		return `meaCli -card ${nic_id} mea`;
-	}
-	else {
+	} else {
 		return `meaCli mea`;
 	}
 };
@@ -283,19 +278,16 @@ exports.mea_ipsec_profile_add = function (nic_id) {
 exports.mea_ipsec_add_parse = function (cmd, profiles_obj, profile_key, mea_output) {
 	
 	var ipsec_profile_regex = /Done\s+create\s+IPSecESP\s+with\s+Id\s+=\s+(\d+)/;
-	mea_output.replace(ipsec_profile_regex, function(match, profile_id) {
+	mea_output.replace(ipsec_profile_regex, function (match, profile_id) {
 		
-		var match_count = 0;
 		if (profile_id) {
 			profiles_obj[profile_key] = { id: parseInt(profile_id, 10) };
-			match_count = 1;
-		}
-		else {
+		} else {
 			profiles_obj.no_match = (profiles_obj.no_match) ? (profiles_obj.no_match + 1) : 1;
 		}
-		if(cmd.return_cb && cmd.return_cb.length > 0) {
+		if (cmd.return_cb && cmd.return_cb.length > 0) {
 			var return_cb = cmd.return_cb.pop();
-			if(return_cb) {
+			if (return_cb) {
 				return_cb(cmd);
 			}
 		}
@@ -305,22 +297,19 @@ exports.mea_ipsec_add_parse = function (cmd, profiles_obj, profile_key, mea_outp
 exports.mea_action_add_parse = function (cmd, actions_obj, action_key, mea_output) {
 	
 	var action_regex = /Done.\s+ActionId=(\d+)\s+\(PmId=([YESNO]+)\/([^,]+),tmId=[YESNO]+\/[^,]+,edId=[YESNO]+\/[^,]+\)/;
-	mea_output.replace(action_regex, function(match, action_id, pm_flag, pm_id) {
+	mea_output.replace(action_regex, function (match, action_id, pm_flag, pm_id) {
 		
-		var match_count = 0;
-		if(action_id) {
+		if (action_id) {
 			actions_obj[action_key] = { id: parseInt(action_id, 10) };
 			if (pm_flag && (pm_flag === `YES`) && pm_id) {
 				actions_obj[action_key].pm = parseInt(pm_id, 10);
 			}
-			match_count = 1;
-		}
-		else {
+		} else {
 			actions_obj.no_match = (actions_obj.no_match) ? (actions_obj.no_match + 1) : 1;
 		}
-		if(cmd.return_cb && cmd.return_cb.length > 0) {
+		if (cmd.return_cb && cmd.return_cb.length > 0) {
 			var return_cb = cmd.return_cb.pop();
-			if(return_cb) {
+			if (return_cb) {
 				return_cb(cmd);
 			}
 		}
@@ -334,16 +323,16 @@ exports.mea_actions_add_parse = function (cmd, actions_arr, mea_output) {
 	var formatted_output = mea_output.replace(action_regex, `{"action_id":$1,"add_pm":"$2","action_pm":$3}`);
 	formatted_output = formatted_output.replace(/}\s*{/, `},{`);
 	var actions_obj = JSON.parse(`[${formatted_output}]`);
-	for(var i = 0; i < actions_obj.length; ++i) {
-		if(actions_obj[i].add_pm === `NO`) {
+	for (var i = 0; i < actions_obj.length; ++i) {
+		if (actions_obj[i].add_pm === `NO`) {
 			delete actions_obj[i].action_pm;
 		}
 		delete actions_obj[i].add_pm;
 		actions_arr.push(actions_obj[i]);
 	}
-	if(cmd.return_cb && cmd.return_cb.length > 0) {
+	if (cmd.return_cb && cmd.return_cb.length > 0) {
 		var return_cb = cmd.return_cb.pop();
-		if(return_cb) {
+		if (return_cb) {
 			return_cb(cmd);
 		}
 	}
@@ -351,17 +340,14 @@ exports.mea_actions_add_parse = function (cmd, actions_arr, mea_output) {
 
 exports.mea_forwarder_add_parse = function (cmd, forwarders_obj, forwarder_key, forwarder_expr, mea_output) {
 	
-	var match_count = 0;
-	if(mea_output === ``) {
+	if (mea_output === ``) {
 		forwarders_obj[forwarder_key] = { expr: forwarder_expr };
-		match_count = 1;
-	}
-	else {
+	} else {
 		forwarders_obj.no_match = (forwarders_obj.no_match) ? (forwarders_obj.no_match + 1) : 1;
 	}
-	if(cmd.return_cb && cmd.return_cb.length > 0) {
+	if (cmd.return_cb && cmd.return_cb.length > 0) {
 		var return_cb = cmd.return_cb.pop();
-		if(return_cb) {
+		if (return_cb) {
 			return_cb(cmd);
 		}
 	}
@@ -370,44 +356,41 @@ exports.mea_forwarder_add_parse = function (cmd, forwarders_obj, forwarder_key, 
 exports.mea_service_add_parse = function (cmd, services_obj, service_key, mea_output) {
 	
 	var service_regex = /Done.\s+External\s+serviceId=(\d+)\s+Port=\d+\s+\(PmId=(\d+)\s+TmId=\d+\s+EdId=\d+\s+pol_prof_id=\d+\)/;
-	mea_output.replace(service_regex, function(match, service_id, pm_id) {
+	mea_output.replace(service_regex, function (match, service_id, pm_id) {
 		
-		var match_count = 0;
-		if(service_id) {
+		if (service_id) {
 			services_obj[service_key] = { id: parseInt(service_id, 10) };
 			if (pm_id) {
 				services_obj[service_key].pm = parseInt(pm_id, 10);
 			}
-			match_count = 1;
-		}
-		else {
+		} else {
 			services_obj.no_match = (services_obj.no_match) ? (services_obj.no_match + 1) : 1;
 		}
-		if(cmd.return_cb && cmd.return_cb.length > 0) {
+		if (cmd.return_cb && cmd.return_cb.length > 0) {
 			var return_cb = cmd.return_cb.pop();
-			if(return_cb) {
+			if (return_cb) {
 				return_cb(cmd);
 			}
 		}
 	});
 };
 
-exports.mea_rmon_parse_pkts = function(rmon_line) {
+exports.mea_rmon_parse_pkts = function (rmon_line) {
 	
 	return rmon_line.replace(/\s*(\d+)\s+Total\s+Pkts\s+(\d+)\s+(\d+)/, `"rmon$1":{"PktsRX":$2,"PktsTX":$3,`);
 };
 
-exports.mea_rmon_parse_bytes = function(rmon_line) {
+exports.mea_rmon_parse_bytes = function (rmon_line) {
 	
 	return rmon_line.replace(/\s*Total\s+Bytes\s+(\d+)\s+(\d+)/, `"BytesRX":$1,"BytesTX":$2,`);
 };
 
-exports.mea_rmon_parse_crc_errors = function(rmon_line) {
+exports.mea_rmon_parse_crc_errors = function (rmon_line) {
 	
 	return rmon_line.replace(/\s*CRC\s+Error\s+Pkts\s+(\d+)\s+(\d+)/, `"CRCErrorPktsRX":$1,"CRCErrorPktsTX":$2,`);
 };
 
-exports.mea_rmon_parse_mac_drops = function(rmon_line) {
+exports.mea_rmon_parse_mac_drops = function (rmon_line) {
 	
 	return rmon_line.replace(/\s*Rx\s+Mac\s+Drop\s+Pkts\s+(\d+)/, `"RxMacDropPktsRX":$1}`);
 };
@@ -430,13 +413,10 @@ exports.mea_cli = function (nic_id) {
 
 exports.mea_cli_prefix = function (nic_id) {
 	
-	const lock_timeout = 10;
-	
 	var expr = ``;
-	if(nic_id > 0) {
+	if (nic_id > 0) {
 		expr += `meaCli -card ${nic_id} top\n`;
-	}
-	else {
+	} else {
 		expr += `meaCli top\n`;
 	}
 	return expr;

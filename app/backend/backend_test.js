@@ -4,7 +4,6 @@ process.title = `backend_test`;
 /////////////////////////////
 
 var vpn_common = require('./vpn_common.js');
-var VPN_BACKEND_SERVICE = require('./vpn_backend_service.js');
 const request = require('request');
 var fs = require('fs');
 
@@ -24,10 +23,9 @@ var enet_load_vpn_cfg = function (nic_id, backend_ip, backend_port) {
 
 	request.post(`http://${backend_ip}:${backend_port}`, { json: post_content }, (error, res, body) => {
 		
-		if(error) {
+		if (error) {
 			console.error(error);
-		}
-		else {
+		} else {
 			console.log(`enet_load_vpn_cfg(${nic_id}, ${backend_ip}, ${backend_port}) statusCode: ${res.statusCode}`);
 			console.log(body);
 		}
@@ -39,11 +37,11 @@ var nic0_outbound_tunnel_add = function (backend_ip, backend_port, id) {
 	const post_content = {
 		op: `add_outbound_tunnel`,
 		tunnel_spec: {
-			"local_subnet": `${10 + id}.0.1.0/24`,
-			"remote_subnet": `${10 + id}.0.2.0/24`,
-			"lan_port": `${vpn_common.mea_lan_ports[0]}`,
-			"tunnel_port": `${vpn_common.mea_tunnel_port}`,
-			"remote_tunnel_mac": vpn_common.vpn_conn_mac_base(1, id, vpn_common.mea_tunnel_port)
+			local_subnet: `${10 + id}.0.1.0/24`,
+			remote_subnet: `${10 + id}.0.2.0/24`,
+			lan_port: `${vpn_common.mea_lan_ports[0]}`,
+			tunnel_port: `${vpn_common.mea_tunnel_port}`,
+			remote_tunnel_mac: vpn_common.vpn_conn_mac_base(1, id, vpn_common.mea_tunnel_port)
 		},
 		ipsec_cfg: {
 			spi: (1000 + id),
@@ -56,10 +54,9 @@ var nic0_outbound_tunnel_add = function (backend_ip, backend_port, id) {
 
 	request.post(`http://${backend_ip}:${backend_port}`, { json: post_content }, (error, res, body) => {
 		
-		if(error) {
+		if (error) {
 			console.error(error);
-		}
-		else {
+		} else {
 			console.log(`nic0_outbound_tunnel_add(${backend_ip}, ${backend_port}, ${id}) statusCode: ${res.statusCode}`);
 			console.log(body);
 		}
@@ -71,11 +68,11 @@ var nic1_outbound_tunnel_add = function (backend_ip, backend_port, id) {
 	const post_content = {
 		op: `add_outbound_tunnel`,
 		tunnel_spec: {
-			"remote_subnet": `${10 + id}.0.1.0/24`,
-			"local_subnet": `${10 + id}.0.2.0/24`,
-			"lan_port": `${vpn_common.mea_lan_ports[1]}`,
-			"tunnel_port": `${vpn_common.mea_tunnel_port}`,
-			"remote_tunnel_mac": vpn_common.vpn_conn_mac_base(0, id, vpn_common.mea_tunnel_port)
+			remote_subnet: `${10 + id}.0.1.0/24`,
+			local_subnet: `${10 + id}.0.2.0/24`,
+			lan_port: `${vpn_common.mea_lan_ports[1]}`,
+			tunnel_port: `${vpn_common.mea_tunnel_port}`,
+			remote_tunnel_mac: vpn_common.vpn_conn_mac_base(0, id, vpn_common.mea_tunnel_port)
 		},
 		ipsec_cfg: {
 			spi: (1100 + id),
@@ -88,10 +85,9 @@ var nic1_outbound_tunnel_add = function (backend_ip, backend_port, id) {
 
 	request.post(`http://${backend_ip}:${backend_port}`, { json: post_content }, (error, res, body) => {
 		
-		if(error) {
+		if (error) {
 			console.error(error);
-		}
-		else {
+		} else {
 			console.log(`nic1_outbound_tunnel_add(${backend_ip}, ${backend_port}, ${id}) statusCode: ${res.statusCode}`);
 			console.log(body);
 		}
@@ -103,11 +99,11 @@ var nic0_inbound_tunnel_add = function (backend_ip, backend_port, id) {
 	const post_content = {
 		op: `add_inbound_tunnel`,
 		tunnel_spec: {
-			"local_subnet": `${10 + id}.0.1.0/24`,
-			"remote_subnet": `${10 + id}.0.2.0/24`,
-			"lan_port": `${vpn_common.mea_lan_ports[0]}`,
-			"tunnel_port": `${vpn_common.mea_tunnel_port}`,
-			"remote_tunnel_mac": vpn_common.vpn_conn_mac_base(1, id, vpn_common.mea_tunnel_port)
+			local_subnet: `${10 + id}.0.1.0/24`,
+			remote_subnet: `${10 + id}.0.2.0/24`,
+			lan_port: `${vpn_common.mea_lan_ports[0]}`,
+			tunnel_port: `${vpn_common.mea_tunnel_port}`,
+			remote_tunnel_mac: vpn_common.vpn_conn_mac_base(1, id, vpn_common.mea_tunnel_port)
 		},
 		ipsec_cfg: {
 			spi: (1100 + id),
@@ -120,10 +116,9 @@ var nic0_inbound_tunnel_add = function (backend_ip, backend_port, id) {
 
 	request.post(`http://${backend_ip}:${backend_port}`, { json: post_content }, (error, res, body) => {
 		
-		if(error) {
+		if (error) {
 			console.error(error);
-		}
-		else {
+		} else {
 			console.log(`nic0_inbound_tunnel_add(${backend_ip}, ${backend_port}, ${id}) statusCode: ${res.statusCode}`);
 			console.log(body);
 		}
@@ -135,11 +130,11 @@ var nic1_inbound_tunnel_add = function (backend_ip, backend_port, id) {
 	const post_content = {
 		op: `add_inbound_tunnel`,
 		tunnel_spec: {
-			"remote_subnet": `${10 + id}.0.1.0/24`,
-			"local_subnet": `${10 + id}.0.2.0/24`,
-			"lan_port": `${vpn_common.mea_lan_ports[1]}`,
-			"tunnel_port": `${vpn_common.mea_tunnel_port}`,
-			"remote_tunnel_mac": vpn_common.vpn_conn_mac_base(0, id, vpn_common.mea_tunnel_port)
+			remote_subnet: `${10 + id}.0.1.0/24`,
+			local_subnet: `${10 + id}.0.2.0/24`,
+			lan_port: `${vpn_common.mea_lan_ports[1]}`,
+			tunnel_port: `${vpn_common.mea_tunnel_port}`,
+			remote_tunnel_mac: vpn_common.vpn_conn_mac_base(0, id, vpn_common.mea_tunnel_port)
 		},
 		ipsec_cfg: {
 			spi: (1000 + id),
@@ -152,10 +147,9 @@ var nic1_inbound_tunnel_add = function (backend_ip, backend_port, id) {
 
 	request.post(`http://${backend_ip}:${backend_port}`, { json: post_content }, (error, res, body) => {
 		
-		if(error) {
+		if (error) {
 			console.error(error);
-		}
-		else {
+		} else {
 			console.log(`nic1_inbound_tunnel_add(${backend_ip}, ${backend_port}, ${id}) statusCode: ${res.statusCode}`);
 			console.log(body);
 		}
@@ -167,11 +161,11 @@ var nic0_inbound_fwd_add = function (backend_ip, backend_port, id) {
 	const post_content = {
 		op: `add_inbound_fwd`,
 		tunnel_spec: {
-			"local_subnet": `${10 + id}.0.1.0/24`,
-			"remote_subnet": `${10 + id}.0.2.0/24`,
-			"lan_port": `${vpn_common.mea_lan_ports[0]}`,
-			"tunnel_port": `${vpn_common.mea_tunnel_port}`,
-			"remote_tunnel_mac": vpn_common.vpn_conn_mac_base(1, id, vpn_common.mea_tunnel_port)
+			local_subnet: `${10 + id}.0.1.0/24`,
+			remote_subnet: `${10 + id}.0.2.0/24`,
+			lan_port: `${vpn_common.mea_lan_ports[0]}`,
+			tunnel_port: `${vpn_common.mea_tunnel_port}`,
+			remote_tunnel_mac: vpn_common.vpn_conn_mac_base(1, id, vpn_common.mea_tunnel_port)
 		},
 		next_hops: [
 			{
@@ -187,10 +181,9 @@ var nic0_inbound_fwd_add = function (backend_ip, backend_port, id) {
 
 	request.post(`http://${backend_ip}:${backend_port}`, { json: post_content }, (error, res, body) => {
 		
-		if(error) {
+		if (error) {
 			console.error(error);
-		}
-		else {
+		} else {
 			console.log(`nic0_inbound_fwd_add(${backend_ip}, ${backend_port}, ${id}) statusCode: ${res.statusCode}`);
 			console.log(body);
 		}
@@ -202,11 +195,11 @@ var nic1_inbound_fwd_add = function (backend_ip, backend_port, id) {
 	const post_content = {
 		op: `add_inbound_fwd`,
 		tunnel_spec: {
-			"remote_subnet": `${10 + id}.0.1.0/24`,
-			"local_subnet": `${10 + id}.0.2.0/24`,
-			"lan_port": `${vpn_common.mea_lan_ports[1]}`,
-			"tunnel_port": `${vpn_common.mea_tunnel_port}`,
-			"remote_tunnel_mac": vpn_common.vpn_conn_mac_base(0, id, vpn_common.mea_tunnel_port)
+			remote_subnet: `${10 + id}.0.1.0/24`,
+			local_subnet: `${10 + id}.0.2.0/24`,
+			lan_port: `${vpn_common.mea_lan_ports[1]}`,
+			tunnel_port: `${vpn_common.mea_tunnel_port}`,
+			remote_tunnel_mac: vpn_common.vpn_conn_mac_base(0, id, vpn_common.mea_tunnel_port)
 		},
 		next_hops: [
 			{
@@ -226,10 +219,9 @@ var nic1_inbound_fwd_add = function (backend_ip, backend_port, id) {
 
 	request.post(`http://${backend_ip}:${backend_port}`, { json: post_content }, (error, res, body) => {
 		
-		if(error) {
+		if (error) {
 			console.error(error);
-		}
-		else {
+		} else {
 			console.log(`nic1_inbound_fwd_add(${backend_ip}, ${backend_port}, ${id}) statusCode: ${res.statusCode}`);
 			console.log(body);
 		}
@@ -257,10 +249,9 @@ var nic0_backend_start = function (host_profile) {
 		password: `root`
 	};
 
-	var vpn0_backend_service = new VPN_BACKEND_SERVICE(host_profile, nic0_gw0_profiles, `0.0.0.0`, 4400);
 	enet_load_vpn_cfg(0, `172.17.0.1`, 4400);
 
-	for(var id0 = 0; id0 < 0; ++id0) {
+	for (var id0 = 0; id0 < 0; ++id0) {
 		nic0_outbound_tunnel_add(`172.17.0.1`, 4400, id0);
 		nic0_inbound_tunnel_add(`172.17.0.1`, 4400, id0);
 		nic0_inbound_fwd_add(`172.17.0.1`, 4400, id0);
@@ -276,23 +267,21 @@ var nic1_backend_start = function (host_profile) {
 		password: `root`
 	};
 	
-	var vpn1_backend_service = new VPN_BACKEND_SERVICE(host_profile, nic1_gw0_profiles, `0.0.0.0`, 4401);
 	enet_load_vpn_cfg(1, `172.17.0.1`, 4401);
 
-	for(var id1 = 0; id1 < 0; ++id1) {
+	for (var id1 = 0; id1 < 0; ++id1) {
 		nic1_outbound_tunnel_add(`172.17.0.1`, 4401, id1);
 		nic1_inbound_tunnel_add(`172.17.0.1`, 4401, id1);
 		nic1_inbound_fwd_add(`172.17.0.1`, 4401, id1);
 	}
 };
 
-
 var backend_test_start = function () {
 	
 	console.log(JSON.stringify(process.argv));
 	const nic_id = process.argv[argc_nic_id];
 	
-	switch(nic_id) {
+	switch (nic_id) {
 		
 		case `0`:
 		nic0_backend_start(nic0_host_profile);

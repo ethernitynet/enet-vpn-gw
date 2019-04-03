@@ -1,6 +1,7 @@
 
 var vpn_common = require('./vpn_common.js');
 var MEA_EXPR = require('./mea_expr.js');
+var OVS_EXPR = require('./ovs_expr.js');
 var DOCKER_EXPR = require('./docker_expr.js');
 var GW_CONFIG = require('./gw_config.js');
 
@@ -8,11 +9,11 @@ var GW_CONFIG = require('./gw_config.js');
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
 
-
 module.exports = function (host_profile, gw_profiles) {
 
 	this.gw_config = new GW_CONFIG(host_profile, gw_profiles);
 	this.mea_expr = new MEA_EXPR();
+	this.ovs_expr = new OVS_EXPR();
 	this.docker_expr = new DOCKER_EXPR();
 	this.cmd_log = [];
 	this.output_processor = {};
@@ -30,7 +31,7 @@ module.exports = function (host_profile, gw_profiles) {
 		
 		const cmd_count = Object.keys(this.output_processor).length;
 		console.log(`cmd_count: ${cmd_count}`);
-		if(cmd_count > 0) {
+		if (cmd_count > 0) {
 			
 			Object.keys(this.output_processor).forEach(cmd_key => {
 				
@@ -41,7 +42,55 @@ module.exports = function (host_profile, gw_profiles) {
 			});
 		}
 	};
+	
+	/////////////////////////////////////////////////
+	////////////////////[cmd_run]////////////////////
+		
+	this.cmd_run = function (cfg, target, cmd_expr, ret_cb) {
+		
+		const nic_id = cfg.ace_nic_config[0].nic_name;		
+		const exec_time = new Date().getTime();
+		const cmd_key = `cmd_run${nic_id}_${exec_time}`;
 
+		this.output_processor[cmd_key] = {
+			meta: { key: cmd_key, exec_time: exec_time, latencies: [], ret: [] },
+			expr: [],
+			output: [],
+			ret_cb: ret_cb
+		};
+
+		var test_expr_builder = function (cmd) {
+			
+			return cmd_expr;
+		};
+		
+		var that = this;
+		var finish_cb = function (cmd) {
+			
+			var output_processor = cmd.output_processor[cmd.key];
+			that.cmd_log.push(output_processor);
+			if (output_processor.ret_cb) {
+				var ret_cb = output_processor.ret_cb;
+				ret_cb(cmd, that.gw_config);
+				delete that.cmd_log[that.cmd_log.length - 1][`ret_cb`];
+			} else {
+				that.gw_config.cmd_advance(cmd);
+			}
+		};
+		
+		const host_cmds = [
+			{
+				key: cmd_key,
+				label: `cmd_run`,
+				target: target,
+				output_processor: this.output_processor,
+				expr_builder: test_expr_builder,
+				output_cb: finish_cb
+			}
+		];
+		this.gw_config.host_exec_cmd(host_cmds);
+		cfg.UPDATE = `${new Date()}`;
+	};
 	
 	/////////////////////////////////////////////////
 	///////////////////[vpn_test]////////////////////
@@ -58,16 +107,15 @@ module.exports = function (host_profile, gw_profiles) {
 		};
 		
 		var that = this;
-		var finish_cb = function(cmd) {
+		var finish_cb = function (cmd) {
 			
 			var output_processor = cmd.output_processor[cmd.key];
 			that.cmd_log.push(output_processor);
-			if(output_processor.ret_cb) {
+			if (output_processor.ret_cb) {
 				var ret_cb = output_processor.ret_cb;
 				ret_cb(cmd, that.gw_config);
 				delete that.cmd_log[that.cmd_log.length - 1][`ret_cb`];
-			}
-			else {
+			} else {
 				that.gw_config.cmd_advance(cmd);
 			}
 			return cmd;
@@ -89,7 +137,175 @@ module.exports = function (host_profile, gw_profiles) {
 		];
 		this.gw_config.host_exec_cmd(host_cmds);
 	};
+	
+	/////////////////////////////////////////////////
+	////////////////[update_vpn_cfg]/////////////////
+		
+	this.update_vpn_cfg = function (cfg, ret_cb) {
+		
+		const nic_id = cfg.ace_nic_config[0].nic_name;		
+		const exec_time = new Date().getTime();
+		const cmd_key = `update_vpn_cfg${nic_id}_${exec_time}`;
+		
+		this.gw_config.reset();
 
+		this.output_processor[cmd_key] = {
+			meta: { key: cmd_key, exec_time: exec_time, latencies: [], ret: [] },
+			libreswan_states: this.libreswan_states,
+			cfg: cfg,
+			expr: [],
+			output: [],
+			ret_cb: ret_cb
+		};
+		
+		var that = this;
+		var finish_cb = function (cmd) {
+			
+			var prefinish_cb = (cmd.prefinish_cb) ? cmd.prefinish_cb : function (cmd, return_cb) {
+
+				if (return_cb) {
+					return_cb(cmd)
+				}
+			};
+			prefinish_cb(cmd, function (cmd) {
+
+				var output_processor = cmd.output_processor[cmd.key];
+				that.cmd_log.push(output_processor);
+				if (output_processor.ret_cb) {
+					var ret_cb = output_processor.ret_cb;
+					ret_cb(cmd, that.gw_config);
+					delete that.cmd_log[that.cmd_log.length - 1][`ret_cb`];
+				} else {
+					that.gw_config.cmd_advance(cmd);
+				}
+			});
+		};
+		
+		const host_cmds = [
+			{
+				key: cmd_key,
+				label: `configure libreswan instances`,
+				target: `localhost`,
+				output_processor: this.output_processor,
+				expr_builder: this.docker_expr.init_vpn_dirs,
+				prefinish_cb: this.docker_expr.update_vpn_conf,
+				output_cb: finish_cb
+			}
+		];
+		this.gw_config.host_exec_cmd(host_cmds);
+		cfg.UPDATE = `${new Date()}`;
+	};
+	
+	/////////////////////////////////////////////////
+	///////////////////[boot_ovs]////////////////////
+		
+	this.boot_ovs = function (cfg, ret_cb) {
+		
+		const nic_id = cfg.ace_nic_config[0].nic_name;		
+		const exec_time = new Date().getTime();
+		const cmd_key = `boot_ovs${nic_id}_${exec_time}`;
+		
+		this.gw_config.reset();
+
+		this.output_processor[cmd_key] = {
+			meta: { key: cmd_key, exec_time: exec_time, latencies: [], ret: [] },
+			libreswan_states: this.libreswan_states,
+			cfg: cfg,
+			expr: [],
+			output: [],
+			ret_cb: ret_cb
+		};
+		
+		var that = this;
+		var finish_cb = function (cmd) {
+			
+			var prefinish_cb = (cmd.prefinish_cb) ? cmd.prefinish_cb : function (cmd, return_cb) {
+
+				if (return_cb) {
+					return_cb(cmd)
+				}
+			};
+			prefinish_cb(cmd, function (cmd) {
+
+				var output_processor = cmd.output_processor[cmd.key];
+				that.cmd_log.push(output_processor);
+				if (output_processor.ret_cb) {
+					var ret_cb = output_processor.ret_cb;
+					ret_cb(cmd, that.gw_config);
+					delete that.cmd_log[that.cmd_log.length - 1][`ret_cb`];
+				} else {
+					that.gw_config.cmd_advance(cmd);
+				}
+			});
+		};
+		
+		const host_cmds = [
+			{
+				key: cmd_key,
+				label: `boot ovs`,
+				target: `localhost`,
+				output_processor: this.output_processor,
+				expr_builder: this.ovs_expr.boot_ovs,
+				output_cb: finish_cb
+			}
+		];
+		this.gw_config.host_exec_cmd(host_cmds);
+		cfg.UPDATE = `${new Date()}`;
+	};
+	
+	/////////////////////////////////////////////////
+	////////////////[boot_libreswan]/////////////////
+		
+	this.boot_libreswan = function (cfg, ret_cb) {
+		
+		const nic_id = cfg.ace_nic_config[0].nic_name;		
+		const exec_time = new Date().getTime();
+		const cmd_key = `boot_libreswan${nic_id}_${exec_time}`;
+		
+		this.gw_config.reset();
+
+		this.output_processor[cmd_key] = {
+			meta: { key: cmd_key, exec_time: exec_time, latencies: [], ret: [] },
+			libreswan_states: this.libreswan_states,
+			cfg: cfg,
+			expr: [],
+			output: [],
+			ret_cb: ret_cb
+		};
+		
+		var that = this;
+		var finish_cb = function (cmd) {
+			
+			var output_processor = cmd.output_processor[cmd.key];
+			that.cmd_log.push(output_processor);
+			if (output_processor.ret_cb) {
+				var ret_cb = output_processor.ret_cb;
+				ret_cb(cmd, that.gw_config);
+				delete that.cmd_log[that.cmd_log.length - 1][`ret_cb`];
+			} else {
+				that.gw_config.cmd_advance(cmd);
+			}
+		};
+		
+		const host_cmds = [
+			{
+				key: cmd_key,
+				label: `boot libreswan instances`,
+				output_processor: this.output_processor,
+				expr_builder: this.docker_expr.boot_vpn,
+				output_cb: this.docker_expr.parse_libreswan_ips
+			},
+			{
+				key: cmd_key,
+				label: `connect libreswan instances`,
+				output_processor: this.output_processor,
+				expr_builder: this.ovs_expr.ovs_docker_add_ports,
+				output_cb: finish_cb
+			}
+		];
+		this.gw_config.host_exec_cmd(host_cmds);
+		cfg.UPDATE = `${new Date()}`;
+	};
 	
 	/////////////////////////////////////////////////
 	///////////////////[boot_vpn]////////////////////
@@ -101,7 +317,7 @@ module.exports = function (host_profile, gw_profiles) {
 		const cmd_key = `boot_vpn${nic_id}_${exec_time}`;
 		
 		this.gw_config.reset();
-		
+
 		this.output_processor[cmd_key] = {
 			meta: { key: cmd_key, exec_time: exec_time, latencies: [], ret: [] },
 			libreswan_states: this.libreswan_states,
@@ -112,16 +328,15 @@ module.exports = function (host_profile, gw_profiles) {
 		};
 		
 		var that = this;
-		var finish_cb = function(cmd) {
+		var finish_cb = function (cmd) {
 			
 			var output_processor = cmd.output_processor[cmd.key];
 			that.cmd_log.push(output_processor);
-			if(output_processor.ret_cb) {
+			if (output_processor.ret_cb) {
 				var ret_cb = output_processor.ret_cb;
 				ret_cb(cmd, that.gw_config);
 				delete that.cmd_log[that.cmd_log.length - 1][`ret_cb`];
-			}
-			else {
+			} else {
 				that.gw_config.cmd_advance(cmd);
 			}
 			return cmd;
@@ -130,6 +345,7 @@ module.exports = function (host_profile, gw_profiles) {
 		const host_cmds = [
 			{
 				key: cmd_key,
+				label: `configure libreswan instances`,
 				target: `localhost`,
 				output_processor: this.output_processor,
 				expr_builder: this.docker_expr.init_vpn_dirs,
@@ -137,12 +353,20 @@ module.exports = function (host_profile, gw_profiles) {
 			},
 			{
 				key: cmd_key,
+				label: `boot libreswan instances`,
 				output_processor: this.output_processor,
 				expr_builder: this.docker_expr.boot_vpn,
 				output_cb: this.docker_expr.parse_libreswan_ips
 			},
 			{
 				key: cmd_key,
+				label: `connect libreswan instances`,
+				output_processor: this.output_processor,
+				expr_builder: this.ovs_expr.ovs_docker_add_ports
+			},
+			{
+				key: cmd_key,
+				label: `initialize ENET vpn configuration`,
 				output_processor: this.output_processor,
 				expr_builder: this.mea_expr.load_vpn_cfg,
 				output_cb: finish_cb
@@ -151,7 +375,6 @@ module.exports = function (host_profile, gw_profiles) {
 		this.gw_config.host_exec_cmd(host_cmds);
 		cfg.UPDATE = `${new Date()}`;
 	};
-
 	
 	/////////////////////////////////////////////////
 	//////////////[outbound_tunnel_add]//////////////
@@ -184,19 +407,18 @@ module.exports = function (host_profile, gw_profiles) {
 		};
 		
 		var that = this;
-		var finish_cb = function(cmd) {
+		var finish_cb = function (cmd) {
 			
 			that.mea_expr.ipsec_outbound.outbound_forwarders_parse(cmd, function () {
 				
 				var output_processor = cmd.output_processor[cmd.key];
 				that.cmd_log.push(output_processor);
 				delete that.cmd_log[that.cmd_log.length - 1][`cfg`];
-				if(output_processor.ret_cb) {
+				if (output_processor.ret_cb) {
 					var ret_cb = output_processor.ret_cb;
 					ret_cb(cmd, that.gw_config);
 					delete that.cmd_log[that.cmd_log.length - 1][`ret_cb`];
-				}
-				else {
+				} else {
 					that.gw_config.cmd_advance(cmd);
 				}
 			});
@@ -225,7 +447,6 @@ module.exports = function (host_profile, gw_profiles) {
 		this.gw_config.host_exec_cmd(host_cmds);
 		this.tunnel_states.UPDATE = `${new Date()}`;
 	};
-	
 	
 	/////////////////////////////////////////////////
 	///////////////[inbound_tunnel_add]//////////////
@@ -259,19 +480,18 @@ module.exports = function (host_profile, gw_profiles) {
 		};
 		
 		var that = this;
-		var finish_cb = function(cmd) {
+		var finish_cb = function (cmd) {
 			
 			that.mea_expr.ipsec_inbound.inbound_service_parse(cmd, function () {
 				
 				var output_processor = cmd.output_processor[cmd.key];
 				that.cmd_log.push(output_processor);
 				delete that.cmd_log[that.cmd_log.length - 1][`cfg`];
-				if(output_processor.ret_cb) {
+				if (output_processor.ret_cb) {
 					var ret_cb = output_processor.ret_cb;
 					ret_cb(cmd, that.gw_config);
 					delete that.cmd_log[that.cmd_log.length - 1][`ret_cb`];
-				}
-				else {
+				} else {
 					that.gw_config.cmd_advance(cmd);
 				}
 			});
@@ -294,7 +514,6 @@ module.exports = function (host_profile, gw_profiles) {
 		this.gw_config.host_exec_cmd(host_cmds);
 		this.tunnel_states.UPDATE = `${new Date()}`;
 	};
-
 	
 	/////////////////////////////////////////////////
 	////////////////[inbound_fwd_add]////////////////
@@ -303,7 +522,6 @@ module.exports = function (host_profile, gw_profiles) {
 		
 		const nic_id = cfg.ace_nic_config[0].nic_name;		
 		const exec_time = new Date().getTime();
-		const conn_cfg = cfg.conns[conn_id];
 		const tunnel_key = `nic${nic_id}_conn${conn_id}_in`;
 		const cmd_key = `${tunnel_key}_fwd_${exec_time}`;
 				
@@ -317,31 +535,28 @@ module.exports = function (host_profile, gw_profiles) {
 			ret_cb: ret_cb
 		};
 
-		if(this.tunnel_states[tunnel_key] === undefined) {			
+		if (this.tunnel_states[tunnel_key] === undefined) {			
 			delete this.output_processor[cmd_key].ret_cb;
 			this.output_processor[cmd_key].meta.error = `Inbound tunnel ${tunnel_key} not found.`;
 			ret_cb({ key: cmd_key, output_processor: this.output_processor });
-		}
-		else if(this.tunnel_states[tunnel_key].port_out !== lan_port) {
+		} else if (this.tunnel_states[tunnel_key].port_out !== lan_port) {
 			delete this.output_processor[cmd_key].ret_cb;
 			this.output_processor[cmd_key].meta.error = `Tunnel ${tunnel_key} LAN port ${this.tunnel_states[tunnel_key].port_out} != ${lan_port}.`;
 			ret_cb({ key: cmd_key, output_processor: this.output_processor });
-		}
-		else {			
+		} else {			
 			var that = this;
-			var finish_cb = function(cmd) {
+			var finish_cb = function (cmd) {
 				
 				that.mea_expr.ipsec_inbound.inbound_fwd_forwarder_parse(cmd, function () {
 					
 					var output_processor = cmd.output_processor[cmd.key];
 					that.cmd_log.push(output_processor);
 					delete that.cmd_log[that.cmd_log.length - 1][`cfg`];
-					if(output_processor.ret_cb) {
+					if (output_processor.ret_cb) {
 						var ret_cb = output_processor.ret_cb;
 						ret_cb(cmd, that.gw_config);
 						delete that.cmd_log[that.cmd_log.length - 1][`ret_cb`];
-					}
-					else {
+					} else {
 						that.gw_config.cmd_advance(cmd);
 					}
 				});
@@ -365,7 +580,6 @@ module.exports = function (host_profile, gw_profiles) {
 			this.tunnel_states.UPDATE = `${new Date()}`;
 		}		
 	};
-
 	
 	/////////////////////////////////////////////////
 	////////////////[dump_cmd_log]///////////////////
@@ -382,7 +596,6 @@ module.exports = function (host_profile, gw_profiles) {
 		
 		ret_cb({ key: cmd_key, output_processor: output_processor });
 	};
-
 	
 	/////////////////////////////////////////////////
 	///////////////////[get_stats]///////////////////
@@ -412,18 +625,16 @@ module.exports = function (host_profile, gw_profiles) {
 	this.inbound_tunnel_del = function (cfg, conn_id) {
 		
 		const nic_id = cfg.ace_nic_config[0].nic_name;		
-		const conn_cfg = cfg.conns[conn_id];
 		const tunnel_key = `nic${nic_id}_conn${conn_id}_in`;
-		console.log(`inbound_tunnel_del(${nic_id}, ${conn_id}) => this.tunnel_states[${tunnel_key}]: ${(this.tunnel_states[tunnel_key] === undefined) ? "undefined" : "EXISTS"}`);
+		console.log(`inbound_tunnel_del(${nic_id}, ${conn_id}) => this.tunnel_states[${tunnel_key}]: ${(this.tunnel_states[tunnel_key] === undefined) ? 'undefined' : 'EXISTS'}`);
 		this.tunnel_states.UPDATE = `${new Date()}`;
 	};
 	
 	this.outbound_tunnel_del = function (cfg, conn_id) {
 		
 		const nic_id = cfg.ace_nic_config[0].nic_name;		
-		const conn_cfg = cfg.conns[conn_id];
 		const tunnel_key = `nic${nic_id}_conn${conn_id}_out`;
-		console.log(`outbound_tunnel_del(${nic_id}, ${conn_id}) => this.tunnel_states[${tunnel_key}]: ${(this.tunnel_states[tunnel_key] === undefined) ? "undefined" : "EXISTS"}`);
+		console.log(`outbound_tunnel_del(${nic_id}, ${conn_id}) => this.tunnel_states[${tunnel_key}]: ${(this.tunnel_states[tunnel_key] === undefined) ? 'undefined' : 'EXISTS'}`);
 		this.tunnel_states.UPDATE = `${new Date()}`;
 	};
 	

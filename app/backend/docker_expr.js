@@ -47,7 +47,6 @@ module.exports = function () {
 	
 		var output_processor = cmd.output_processor[cmd.key];
 		const nic_id = output_processor.cfg.ace_nic_config[0].nic_name;
-		const vpn_shared_dir = `/shared/enet${nic_id}-vpn`;
 		
 		var expr = ``;
 		expr += libreswan_expr.init_libreswan_dir(cmd, `enet${nic_id}_libreswan104`);
@@ -69,7 +68,7 @@ module.exports = function () {
 			libreswan_expr.update_libreswan_conf(cmd, vpn_shared_dir, `enet${nic_id}_libreswan105`);
 			libreswan_expr.update_libreswan_conf(cmd, vpn_shared_dir, `enet${nic_id}_libreswan106`);
 			libreswan_expr.update_libreswan_conf(cmd, vpn_shared_dir, `enet${nic_id}_libreswan107`);
-			if(return_cb) {
+			if (return_cb) {
 				return_cb(cmd);
 			}
 		});
@@ -103,17 +102,17 @@ module.exports = function () {
 		const nic_id = output_processor.cfg.ace_nic_config[0].nic_name;
 		var libreswan_states = output_processor.libreswan_states;
 		
-		if(output_processor.output.length > 0) {
+		if (output_processor.output.length > 0) {
 			const prev_stdout = output_processor.output[output_processor.output.length - 1].stdout;
 			const ipv4_regex = /(\d+\.\d+\.\d+\.\d+)/g;
 			
 			const ips_arr = prev_stdout.match(ipv4_regex);
-			if((ips_arr !== undefined) && (ips_arr !== null)) {
-				for(var i = 0; i < ips_arr.length; ++i) {
+			if ((ips_arr !== undefined) && (ips_arr !== null)) {
+				for (var i = 0; i < ips_arr.length; ++i) {
 					libreswan_states[`enet${nic_id}_libreswan${104 + i}`] = { ip: ips_arr[i] };
 				}
 			}
-			if(return_cb) {
+			if (return_cb) {
 				return_cb(cmd);
 			}
 		}

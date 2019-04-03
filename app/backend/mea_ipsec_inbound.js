@@ -23,7 +23,6 @@ module.exports = function () {
 		tunnel_keys_str += `-Confident_IV ${tunnel_keys.confidentiality_iv}`;
 		const nic_id = tunnel_state.nic_id;
 		const ipsec_add = vpn_common.mea_ipsec_profile_add(nic_id);
-		const action_add = vpn_common.mea_action_add(nic_id);
 		const service_add = vpn_common.mea_service_add(nic_id);
 		const conn_tag_hex = vpn_common.vpn_conn_tag_hex(output_processor.cfg, tunnel_state);
 		const conn_tag = vpn_common.vpn_conn_tag(output_processor.cfg, tunnel_state);
@@ -42,7 +41,7 @@ module.exports = function () {
 		var output_processor = cmd.output_processor[cmd.key];
 		var tunnel_state = output_processor.tunnel_state;
 		
-		if(output_processor.output.length === 1) {
+		if (output_processor.output.length === 1) {
 			const prev_stdout = output_processor.output[0].stdout;
 			cmd.return_cb = [ return_cb ];
 			cmd.return_cb.push(function (cmd) {
@@ -76,13 +75,12 @@ module.exports = function () {
 		var output_processor = cmd.output_processor[cmd.key];
 		var tunnel_state = output_processor.tunnel_state;
 		
-		if(output_processor.output.length === 2) {
+		if (output_processor.output.length === 2) {
 			const prev_stdout = output_processor.output[1].stdout;
 			cmd.return_cb = [ return_cb ];
 			vpn_common.mea_service_add_parse(cmd, tunnel_state, `decrypt_service`, prev_stdout);
 		}
 	};
-
 	
 	/////////////////////////////////////////////////
 	////////////////[inbound_fwd_add]////////////////
@@ -97,7 +95,7 @@ module.exports = function () {
 		
 		var expr = ``;
 		expr += `${vpn_common.mea_cli_prefix(nic_id)}\n`;
-		for(var next_hop_idx = 0; next_hop_idx < next_hops.length; ++next_hop_idx) {
+		for (var next_hop_idx = 0; next_hop_idx < next_hops.length; ++next_hop_idx) {
 			expr += `${action_add} -pm 1 0 -ed 1 0 -h 0 0 0 0 -lmid 1 0 1 0 -r ${next_hops[next_hop_idx].mac} ${tunnel_state.local_tunnel_mac} 0000 -hType 3\n`;
 		}
 		expr += `${vpn_common.mea_cli_suffix()}\n`;
@@ -110,19 +108,19 @@ module.exports = function () {
 		var tunnel_state = output_processor.tunnel_state;
 		const next_hops = output_processor.next_hops;
 		
-		if(output_processor.output.length === 1) {
+		if (output_processor.output.length === 1) {
 			const prev_stdout = output_processor.output[0].stdout;
 			cmd.return_cb = [ return_cb ];
 			cmd.return_cb.push(function (cmd) {
 				
 				const prev_next_hops_count = (tunnel_state.fwd.length - next_hops.length);
-				for(var next_hop_idx = 0; next_hop_idx < next_hops.length; ++next_hop_idx) {
+				for (var next_hop_idx = 0; next_hop_idx < next_hops.length; ++next_hop_idx) {
 					tunnel_state.fwd[prev_next_hops_count + next_hop_idx].ip = next_hops[next_hop_idx].ip;
 					tunnel_state.fwd[prev_next_hops_count + next_hop_idx].mac = next_hops[next_hop_idx].mac;
-					if((next_hop_idx + 1) === next_hops.length) {
-						if(cmd.return_cb && cmd.return_cb.length > 0) {
+					if ((next_hop_idx + 1) === next_hops.length) {
+						if (cmd.return_cb && cmd.return_cb.length > 0) {
 							var return_cb = cmd.return_cb.pop();
-							if(return_cb) {
+							if (return_cb) {
 								return_cb(cmd);
 							}
 						}
@@ -146,7 +144,7 @@ module.exports = function () {
 		var expr = ``;
 		expr += `${vpn_common.mea_cli_prefix(nic_id)}\n`;
 		const prev_next_hops_count = (tunnel_state.fwd.length - next_hops.length);
-		for(var next_hop_idx = 0; next_hop_idx < next_hops.length; ++next_hop_idx) {
+		for (var next_hop_idx = 0; next_hop_idx < next_hops.length; ++next_hop_idx) {
 			const fwd = tunnel_state.fwd[prev_next_hops_count + next_hop_idx];
 			expr += `${forwarder_add} 6 ${fwd.ip} 0 0x1${conn_tag_hex} 3 1 0 1 ${conn_cfg.lan_port} -action 1 ${fwd.action_id}\n`;
 		}
@@ -161,16 +159,15 @@ module.exports = function () {
 		const next_hops = output_processor.next_hops;
 		const conn_tag_hex = vpn_common.vpn_conn_tag_hex(output_processor.cfg, tunnel_state);
 		
-		if(output_processor.output.length === 2) {
+		if (output_processor.output.length === 2) {
 			const prev_stdout = output_processor.output[1].stdout;
 			const prev_next_hops_count = (tunnel_state.fwd.length - next_hops.length);
-			for(var next_hop_idx = 0; next_hop_idx < next_hops.length; ++next_hop_idx) {
+			for (var next_hop_idx = 0; next_hop_idx < next_hops.length; ++next_hop_idx) {
 				var fwd = tunnel_state.fwd[prev_next_hops_count + next_hop_idx];
-				if((next_hop_idx + 1) === next_hops.length) {
+				if ((next_hop_idx + 1) === next_hops.length) {
 					cmd.return_cb = [ return_cb ];
 					vpn_common.mea_forwarder_add_parse(cmd, fwd, `forwarder`, `6 ${fwd.ip} 0 0x1${conn_tag_hex}`, prev_stdout);
-				}
-				else {
+				} else {
 					delete cmd.return_cb;
 					vpn_common.mea_forwarder_add_parse(cmd, fwd, `forwarder`, `6 ${fwd.ip} 0 0x1${conn_tag_hex}`, prev_stdout);
 				}

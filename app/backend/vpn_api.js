@@ -1,11 +1,11 @@
 
-
+/*
 var post_via_request = function (label, ip, port, post_content) {
 
 	request.post(`http://${ip}:${port}`, { json: post_content }, (error, res, body) => {
 		
 		console.log(`${label}> request.post(${ip}, ${port}, ${JSON.stringify(post_content, null, 2)}) statusCode: ${res.statusCode} error: ${error}`);
-		if(error) {
+		if (error) {
 			console.error(error);
 		}
 		else {
@@ -13,12 +13,14 @@ var post_via_request = function (label, ip, port, post_content) {
 		}
 	});	
 };
+*/
 
+/*
 var post_via_xhr = function (label, ip, port, post_content) {
 
 	var xhr = new XMLHttpRequest();
-	xhr.open("POST", `http://${ip}:${port}/`, true);
-	xhr.setRequestHeader("Content-type", "application/json;charset=UTF-8");
+	xhr.open(`POST`, `http://${ip}:${port}/`, true);
+	xhr.setRequestHeader(`Content-type`, `application/json;charset=UTF-8`);
 	xhr.onreadystatechange = function () {
 
 		console.log(`${label}> xhr post(${ip}, ${port}, ${JSON.stringify(post_content, null, 2)}) xhr.status: ${xhr.status} xhr.readyState: ${xhr.readyState}`);
@@ -29,26 +31,27 @@ var post_via_xhr = function (label, ip, port, post_content) {
 	const post_content_str = JSON.stringify({ data: post_content });
 	xhr.send(post_content_str);
 };
+*/
 
 var post_via_ajax = function (label, ip, port, post_content, finish_cb) {
 
 	const url = `http://${ip}:${port}/`;
 	const post_content_str = JSON.stringify(post_content);
 	$.ajax({
-		type: "POST",
+		type: `POST`,
 		url: url,
 		// The key needs to match your method's input parameter (case-sensitive).
 		data: post_content_str,
-		contentType: "text/plain",
-		dataType: "json",
-		success: function(data) {
+		contentType: `text/plain`,
+		dataType: `json`,
+		success: function (data) {
 			
 			console.log(JSON.stringify(data));
-			if(finish_cb !== undefined) {
+			if (finish_cb !== undefined) {
 				finish_cb();
 			}
 		},
-		failure: function(errMsg) {
+		failure: function (errMsg) {
 			
 			console.log(`ERROR ${label}> ajax post(${ip}, ${port}, ${JSON.stringify(post_content, null, 2)}) error: ${errMsg}`);
 		},
@@ -60,7 +63,10 @@ var post_via_ajax = function (label, ip, port, post_content, finish_cb) {
 				console.log(`${label}> ajax post(${ip}, ${port}, ${JSON.stringify(post_content, null, 2)}) code: 405`);
 			},
 			200: function (data) {
-				//console.log(`${label}> ajax post(${ip}, ${port}, ${JSON.stringify(post_content, null, 2)}) code: 200`);
+				const response_str = `[${data.responseText.replace(/}{/g, '},{')}]`;
+				const response = JSON.parse(response_str);
+				console.log(`${label}@${ip}:${port} <= 200`);
+				console.log(JSON.stringify(response, null, 2));
 			}
 		}
 	});

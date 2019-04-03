@@ -7,6 +7,13 @@ var http = require('http');
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
 
+const res_headers = {
+	'Access-Control-Allow-Origin': '*',
+	'Access-Control-Allow-Methods': 'OPTIONS, POST, GET',
+	'Access-Control-Max-Age': 2592000, // 30 days
+	'Content-Type': `application/json`
+	/** add other headers as per requirement */
+};
 
 module.exports = function (host_profile, gw_profiles, service_ip, service_port) {
 
@@ -33,7 +40,7 @@ module.exports = function (host_profile, gw_profiles, service_ip, service_port) 
 
 	this.find_remote_tunnel_mac = function (tunnel_spec) {
 		
-		if(tunnel_spec.remote_tunnel_mac === undefined) {
+		if (tunnel_spec.remote_tunnel_mac === undefined) {
 			return `${vpn_common.enet_mac_pfx}0:00:00`;
 		}
 		return tunnel_spec.remote_tunnel_mac;
@@ -54,6 +61,31 @@ module.exports = function (host_profile, gw_profiles, service_ip, service_port) 
 		return this.vpn_backend.get_stats(this.vpn_cfg.VPN);
 	};
 
+	this.cmd_run = function (target, expr_arr, res) {
+		
+		var cmd_expr = ``;
+		for (var i = 0; i < expr_arr.length; ++i) {
+			cmd_expr += `${expr_arr[i]}\n`;
+		}
+		this.vpn_backend.cmd_run(this.vpn_cfg.VPN, target, cmd_expr, function (cmd, gw_config) {
+
+			if (gw_config === undefined) {
+				const cmd_log = {
+					time: new Date().getTime(),
+					key: cmd.key,
+					label: cmd.label
+				};
+				res.write(JSON.stringify(cmd_log));
+				//res.writeHead(200, res_headers);
+			} else {
+				const output_processor = cmd.output_processor[cmd.key];
+				const output_str = JSON.stringify(output_processor.meta);
+				res.end(output_str);
+				gw_config.cmd_advance(cmd);
+			}
+		});
+	};
+
 	this.vpn_test = function (res) {
 		
 		this.vpn_backend.vpn_test(function (cmd, gw_config) {
@@ -65,15 +97,89 @@ module.exports = function (host_profile, gw_profiles, service_ip, service_port) 
 		});
 	};
 
+	this.update_vpn_cfg = function (vpn_cfg, res) {
+		
+		this.vpn_cfg.VPN = vpn_cfg.VPN;
+		this.vpn_backend.update_vpn_cfg(this.vpn_cfg.VPN, function (cmd, gw_config) {
+
+			if (gw_config === undefined) {
+				const cmd_log = {
+					time: new Date().getTime(),
+					key: cmd.key,
+					label: cmd.label
+				};
+				res.write(JSON.stringify(cmd_log));
+				//res.writeHead(200, res_headers);
+			} else {
+				const output_processor = cmd.output_processor[cmd.key];
+				const output_str = JSON.stringify(output_processor.meta);
+				res.end(output_str);
+				gw_config.cmd_advance(cmd);
+			}
+		});
+	};
+
+	this.boot_ovs = function (res) {
+		
+		this.vpn_backend.boot_ovs(this.vpn_cfg.VPN, function (cmd, gw_config) {
+
+			if (gw_config === undefined) {
+				const cmd_log = {
+					time: new Date().getTime(),
+					key: cmd.key,
+					label: cmd.label
+				};
+				res.write(JSON.stringify(cmd_log));
+				//res.writeHead(200, res_headers);
+			} else {
+				const output_processor = cmd.output_processor[cmd.key];
+				const output_str = JSON.stringify(output_processor.meta);
+				res.end(output_str);
+				gw_config.cmd_advance(cmd);
+			}
+		});
+	};
+
+	this.boot_libreswan = function (res) {
+		
+		this.vpn_backend.boot_libreswan(this.vpn_cfg.VPN, function (cmd, gw_config) {
+
+			if (gw_config === undefined) {
+				const cmd_log = {
+					time: new Date().getTime(),
+					key: cmd.key,
+					label: cmd.label
+				};
+				res.write(JSON.stringify(cmd_log));
+				//res.writeHead(200, res_headers);
+			} else {
+				const output_processor = cmd.output_processor[cmd.key];
+				const output_str = JSON.stringify(output_processor.meta);
+				res.end(output_str);
+				gw_config.cmd_advance(cmd);
+			}
+		});
+	};
+
 	this.boot_vpn = function (vpn_cfg, res) {
 		
 		this.vpn_cfg.VPN = vpn_cfg.VPN;
 		this.vpn_backend.boot_vpn(this.vpn_cfg.VPN, function (cmd, gw_config) {
 
-			const output_processor = cmd.output_processor[cmd.key];
-			const output_str = JSON.stringify(output_processor.meta);
-			res.end(output_str);
-			gw_config.cmd_advance(cmd);
+			if (gw_config === undefined) {
+				const cmd_log = {
+					time: new Date().getTime(),
+					key: cmd.key,
+					label: cmd.label
+				};
+				res.write(JSON.stringify(cmd_log));
+				//res.writeHead(200, res_headers);
+			} else {
+				const output_processor = cmd.output_processor[cmd.key];
+				const output_str = JSON.stringify(output_processor.meta);
+				res.end(output_str);
+				gw_config.cmd_advance(cmd);
+			}
 		});
 	};
 	
@@ -154,20 +260,13 @@ module.exports = function (host_profile, gw_profiles, service_ip, service_port) 
 	
 	this.backend_server = http.createServer((req, res) => {
 		
-		const headers = {
-			'Access-Control-Allow-Origin': '*',
-			'Access-Control-Allow-Methods': 'OPTIONS, POST, GET',
-			'Access-Control-Max-Age': 2592000, // 30 days
-			/** add other headers as per requirement */
-		};
-
 		if (req.method === 'OPTIONS') {
-			res.writeHead(204, headers);
+			res.writeHead(204, res_headers);
 			res.end();
 			return;
 		}
 		
-		if(req.method === `POST`) {
+		if (req.method === `POST`) {
 			let chunk_no = 0;
 			let body = ``;
 			
@@ -180,16 +279,15 @@ module.exports = function (host_profile, gw_profiles, service_ip, service_port) 
 				req.on('end', () => {
 					
 					if (['GET', 'POST'].indexOf(req.method) > -1) {
-						res.writeHead(200, headers);
+						res.writeHead(200, res_headers);
 					}
 					//console.log(`end: ${chunk_no} chunks`);
 					//console.log(`body: ${body}`);
 					var content = {};
 					try {
 						content = JSON.parse(body);
-					}
-					catch(error) {
-						res.writeHead(405, headers);
+					} catch (error) {
+						res.writeHead(405, res_headers);
 						const response = {
 							chunks_count: chunk_no,
 							err: `JSON parse error: ${error}`,
@@ -200,7 +298,7 @@ module.exports = function (host_profile, gw_profiles, service_ip, service_port) 
 						return;
 					}
 					try {
-						switch(content.op) {
+						switch (content.op) {
 							case `get_stats`:
 								res.end(this.get_stats());
 							break;
@@ -210,8 +308,20 @@ module.exports = function (host_profile, gw_profiles, service_ip, service_port) 
 							case `dump_tunnel_states`:
 								this.dump_tunnel_states(res);
 							break;
+							case `cmd_run`:
+								this.cmd_run(content.target, content.expr_arr, res);
+							break;
 							case `vpn_test`:
 								this.vpn_test(res);
+							break;
+							case `update_vpn_cfg`:
+								this.update_vpn_cfg(content.vpn_cfg, res);
+							break;
+							case `boot_ovs`:
+								this.boot_ovs(res);
+							break;
+							case `boot_libreswan`:
+								this.boot_libreswan(res);
 							break;
 							case `boot_vpn`:
 								this.boot_vpn(content.vpn_cfg, res);
@@ -235,7 +345,7 @@ module.exports = function (host_profile, gw_profiles, service_ip, service_port) 
 								res.end(this.del_inbound_tunnel(content.tunnel_spec, content.ipsec_cfg));
 							break;
 							default:
-								res.writeHead(405, headers);
+								res.writeHead(405, res_headers);
 								const response = {
 									err: `Unknown op: ${content.op}`,
 									body: body,
@@ -244,23 +354,21 @@ module.exports = function (host_profile, gw_profiles, service_ip, service_port) 
 								res.end(JSON.stringify(response));
 							break;
 						}
-					}
-					catch(error) {
-						res.writeHead(405, headers);
+					} catch (error) {
+						res.writeHead(405, res_headers);
 						const response = {
 							chunks_count: chunk_no,
 							err: `Internal error: ${error}`,
 							body: body,
 							UPDATE: `${new Date()}`
 						};
-						res.end(JSON.stringify(response));
-						return;
+						res.end(JSON.stringify(response));						
 					}
 				});
 			return;
 		}
 		
-		res.writeHead(405, headers);
+		res.writeHead(405, res_headers);
 		const response = {
 			err: `Method not allowed: ${req.method}`,
 			UPDATE: `${new Date()}`
@@ -269,4 +377,3 @@ module.exports = function (host_profile, gw_profiles, service_ip, service_port) 
 		
 	}).listen(this.service_port, this.service_ip);
 };
-

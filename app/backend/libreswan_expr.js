@@ -1,5 +1,5 @@
 
-var ASYNC = require("async");
+var ASYNC = require(`async`);
 var FS = require('fs');
 
 /////////////////////////////////////////////////////
@@ -16,7 +16,7 @@ var append_ipsec_conf = function (cmd, conn_id) {
 	ipsec_conf += `conn ${conn_cfg.name}\n`;
 	var libreswan_specific_config = conn_cfg.libreswan_specific;
 	var libreswan_specific_config_arr = libreswan_specific_config.split(`\n`);
-	libreswan_specific_config_arr.forEach(function(param) {
+	libreswan_specific_config_arr.forEach(function (param) {
 		ipsec_conf += `  ${param}\n`;
 	});
 	ipsec_conf += `  left=${vpn_cfg.vpn_gw_ip}\n`;
@@ -45,7 +45,6 @@ var append_ipsec_secret = function (cmd, conn_id) {
 /////////////////////////////////////////////////////
 
 module.exports = function () {
-
 	
 	/////////////////////////////////////////////////
 	//////////////[build_libreswan_conf]/////////////
@@ -83,23 +82,22 @@ module.exports = function () {
 		const conns = output_processor.cfg.conns;
 		
 		libreswan_states.libreswan_conf = {};
-		for(var conn_id = 0; conn_id < conns.length; ++conn_id) {
+		for (var conn_id = 0; conn_id < conns.length; ++conn_id) {
 			const conn_cfg = conns[conn_id];
 			var libreswan_conf = libreswan_states.libreswan_conf[`enet${nic_id}_libreswan${conn_cfg.tunnel_port}`];
-			if(libreswan_conf === undefined) {
+			if (libreswan_conf === undefined) {
 				libreswan_states.libreswan_conf[`enet${nic_id}_libreswan${conn_cfg.tunnel_port}`] = { ipsec_conf: ``, ipsec_secrets: {} };
 				libreswan_conf = libreswan_states.libreswan_conf[`enet${nic_id}_libreswan${conn_cfg.tunnel_port}`];
 			}
 			libreswan_conf.ipsec_conf += append_ipsec_conf(cmd, conn_id);
 			libreswan_conf.ipsec_secrets[`${vpn_cfg.vpn_gw_ip} ${conn_cfg.remote_tunnel_endpoint_ip}`] = append_ipsec_secret(cmd, conn_id);
-			if((conn_id + 1) === conns.length) {
-				if(finish_cb) {
+			if ((conn_id + 1) === conns.length) {
+				if (finish_cb) {
 					finish_cb(this);
 				}
 			}
 		}
 	};
-
 	
 	/////////////////////////////////////////////////
 	/////////////[update_libreswan_conf]/////////////
@@ -123,7 +121,7 @@ module.exports = function () {
 		var output_processor = cmd.output_processor[cmd.key];
 		const libreswan_conf = output_processor.libreswan_states.libreswan_conf[libreswan_inst];
 		
-		if(libreswan_conf !== undefined) {
+		if (libreswan_conf !== undefined) {
 			var ipsec_conf_str = this.init_ipsec_conf(cmd, libreswan_inst);
 			var ipsec_secrets_str = this.init_ipsec_secrets(cmd, libreswan_inst);
 			ipsec_conf_str += libreswan_conf.ipsec_conf;
@@ -134,15 +132,14 @@ module.exports = function () {
 				finish_cb();
 			}, err => {
 				
-				if(err) {
+				if (err) {
 					var errors_arr = output_processor.meta.errors_arr;
-					if(errors_arr === undefined) {
+					if (errors_arr === undefined) {
 						output_processor.meta.errors_arr = [];
 						errors_arr = output_processor.meta.errors_arr;
 					}
 					errors_arr.push(err);
-				}
-				else {
+				} else {
 					FS.writeFileSync(`${vpn_shared_dir}/${libreswan_inst}/ipsec.secrets`, ipsec_secrets_str);
 				}
 			});
