@@ -65,6 +65,7 @@ var ovs_dpdk_boot = function (cmd) {
     const ovs_etc_dir = `/usr/local/etc/openvswitch`;
     const ovs_share_dir = `/usr/local/share/openvswitch`;
     const ovs_runtime_dir = `/usr/local/var/run/openvswitch/${vpn_inst}`;
+    var ovs_host_pid = (nic_id === `0`) ? 127 : 227;
 
     var expr = ``;
     expr += `mkdir -p /mnt/huge\n`;
@@ -85,6 +86,7 @@ var ovs_dpdk_boot = function (cmd) {
     expr += `ovs-ctl status\n`;
     expr += `${ovs_cmd(cmd, `add-br ${enet_br} -- set bridge ${enet_br} datapath_type=netdev`)}\n`;
     expr += `${ovs_cmd(cmd, `add-port ${enet_br} ${enet_port} -- set Interface ${enet_port} type=dpdk options:dpdk-devargs=${enet_pci}`)}\n`;
+    expr += `${ovs_cmd(cmd, `set interface ${enet_port} ofport_request=${ovs_host_pid}`)}\n`;
     return expr;
 };
 
@@ -98,6 +100,7 @@ var ovs_kernel_boot = function (cmd) {
     const ovs_etc_dir = `/usr/local/etc/openvswitch`;
     const ovs_share_dir = `/usr/local/share/openvswitch`;
     const ovs_runtime_dir = `/usr/local/var/run/openvswitch/${vpn_inst}`;
+    var ovs_host_pid = (nic_id === `0`) ? 127 : 227;
 
     var expr = ``;
     expr += `rm -f ${ovs_etc_dir}/conf.db\n`;
@@ -110,6 +113,7 @@ var ovs_kernel_boot = function (cmd) {
     expr += `ovs-ctl status\n`;
     expr += `${ovs_cmd(cmd, `add-br ${enet_br}`)}\n`;
     expr += `${ovs_cmd(cmd, `add-port ${enet_br} ${enet_port}`)}\n`;
+    expr += `${ovs_cmd(cmd, `set interface ${enet_port} ofport_request=${ovs_host_pid}`)}\n`;
     return expr;
 };
 
@@ -132,23 +136,24 @@ var ovs_docker = function (cmd, params) {
     return expr;
 };
 
-var ovs_docker_add_port = function (cmd, tunnel_port) {
+var ovs_docker_add_port = function (cmd, enet_phy_pid) {
 
     var output_processor = cmd.output_processor[cmd.key];
     const nic_id = output_processor.cfg.ace_nic_config[0].nic_name;
-    const libreswan_inst = `enet${nic_id}_libreswan${tunnel_port}`;
+    const libreswan_inst = `enet${nic_id}_libreswan${enet_phy_pid}`;
     const vpn_cfg = output_processor.cfg.vpn_gw_config[0];
-    const libreswan_dev = `e${nic_id}ls${tunnel_port}`;
+    const libreswan_dev = `e${nic_id}ls${enet_phy_pid}`;
     const port_macs = vpn_common.mea_port_macs(nic_id);
     const enet_br = `enetbr${nic_id}`;
+    const ovs_phy_pid = (nic_id === `0`) ? enet_phy_pid : (enet_phy_pid + 100);
 
     var expr = ``;
-    expr += ovs_docker(cmd, `add-port ${enet_br} ${libreswan_dev} ${libreswan_inst} --ipaddress=${vpn_cfg.vpn_gw_ip}/24 --macaddress=${port_macs[tunnel_port]}`);
+    expr += ovs_docker(cmd, `add-port ${enet_br} ${libreswan_dev} ${libreswan_inst} --ipaddress=${vpn_cfg.vpn_gw_ip}/24 --macaddress=${port_macs[enet_phy_pid]}`);
     expr += `LS_DEV_IFIDX=$(docker exec ${libreswan_inst} cat /sys/class/net/${libreswan_dev}/iflink)\n`;
     expr += `HOST_DEV_IFIDX=$((LS_DEV_IFIDX - 1))\n`;
     expr += `LS_PEER_IFLINK=$(grep $HOST_DEV_IFIDX /sys/class/net/*/iflink)\n`;
     expr += `LS_PEER_DEV=$(sed "s~/sys/class/net/\\(.*\\)/iflink\\:[0-9]*$~\\1~" <<< $LS_PEER_IFLINK)\n`;
-    expr += ovs_cmd(cmd, `set interface $LS_PEER_DEV ofport_request=${tunnel_port}`);
+    expr += `${ovs_cmd(cmd, `set interface $LS_PEER_DEV ofport_request=${ovs_phy_pid}`)}\n`;
     return expr;
 };
 

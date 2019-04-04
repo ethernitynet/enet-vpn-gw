@@ -227,10 +227,10 @@ exports.mea_port_macs = function (nic_id) {
 	const port_macs = {
 		24: `${enet_mac_pfx_local}0:00:${hexc[10 + nic_id]}4`,
 		27: `${enet_mac_pfx_local}0:00:${hexc[10 + nic_id]}7`,
-		104: `${enet_mac_pfx_local}0:00:04`,
-		105: `${enet_mac_pfx_local}0:00:05`,
-		106: `${enet_mac_pfx_local}0:00:06`,
-		107: `${enet_mac_pfx_local}0:00:07`
+		104: `${enet_mac_pfx_local}0:00:${hexc[nic_id]}4`,
+		105: `${enet_mac_pfx_local}0:00:${hexc[nic_id]}5`,
+		106: `${enet_mac_pfx_local}0:00:${hexc[nic_id]}6`,
+		107: `${enet_mac_pfx_local}0:00:${hexc[nic_id]}7`
 	};
 	return port_macs;
 };
