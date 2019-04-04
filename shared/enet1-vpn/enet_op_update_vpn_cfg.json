@@ -47,7 +47,7 @@
 			}],
 			"dpdk_config": [{
 				"dpdk_ver": "v17.11-rc4",
-				"no_2mb_hugepages": 2048,
+				"no_2mb_hugepages": 1024,
 				"no_1g_hugepages": 2,
 				"installed_pmds": [
 					"igb_uio"
