@@ -61,11 +61,17 @@ var ovs_dpdk_boot = function (cmd) {
     const enet_br = `enetbr${nic_id}`;
     const enet_port = (nic_id === `0`) ? `ACENIC1_127` : `ACENIC2_127`;
     const enet_pci = output_processor.cfg.ace_nic_config[0].nic_pci;
+    const dpdk_2mb_hugepages = output_processor.cfg.dpdk_config[0].no_2mb_hugepages;
     const ovs_etc_dir = `/usr/local/etc/openvswitch`;
     const ovs_share_dir = `/usr/local/share/openvswitch`;
     const ovs_runtime_dir = `/usr/local/var/run/openvswitch/${vpn_inst}`;
 
     var expr = ``;
+    expr += `mkdir -p /mnt/huge\n`;
+    expr += `umount /mnt/huge\n`;
+    expr += `mount -t hugetlbfs nodev /mnt/huge\n`;
+    expr += `echo ${dpdk_2mb_hugepages} > /sys/devices/system/node/node0/hugepages/hugepages-2048kB/nr_hugepages\n`;
+    expr += `grep HugePages_ /proc/meminfo\n`;
     expr += `rm -f ${ovs_etc_dir}/conf.db\n`;
     expr += `ovsdb-tool create ${ovs_etc_dir}/conf.db ${ovs_share_dir}/vswitch.ovsschema\n`;
     expr += `${ovs_cmd(cmd, `--no-wait init`)}\n`;
