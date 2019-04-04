@@ -4,7 +4,7 @@ set -x
 
 ACENIC_ID=${1:-0}
 ACENIC_LABEL=${2:-ACENIC1_127}
-ACENIC_710_SLOT=${3:-3d:00.0}
+ACENIC_710_SLOT=${3:-88:00.0}
 IMG_DOMAIN=${4:-local}
 OVS_VERSION=${5:-v2.10.1}
 LIBRESWAN_VERSION=${6:-v3.27}
@@ -41,11 +41,14 @@ VPN_SHARED_DIR=/shared/$DOCKER_INST
 HOST_SHARED_DIR=$(pwd)${VPN_SHARED_DIR}
 mkdir -p $HOST_SHARED_DIR
 
-ENET_VPN_CONFIG=$(cat $HOST_SHARED_DIR/enet_vpn_config.json)
+ENET_VPN_CONFIG=$(cat $HOST_SHARED_DIR/enet_vpn_config_base.json)
+
 ACENIC_LABEL=$( printf 'ACENIC%u_127' $(( ${ACENIC_ID} + 1 )) )
 ACENIC_710_SLOT=$(jq -r .VPN.ace_nic_config[0].nic_pci <<< "${ENET_VPN_CONFIG}")
 ENET_INSTALL_DIR=$(jq -r .VPN.ace_nic_config[0].install_dir <<< "${ENET_VPN_CONFIG}")
 DATAPLANE_TYPE=$(jq -r .VPN.ace_nic_config[0].dataplane <<< "${ENET_VPN_CONFIG}")
+HOST_SHARED_DIR="${ENET_INSTALL_DIR}${VPN_SHARED_DIR}"
+mkdir -p $HOST_SHARED_DIR
 
 #####################################################
 #####################################################
