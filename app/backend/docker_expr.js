@@ -27,7 +27,7 @@ var boot_libreswan_inst = function (cmd, libreswan_inst, libreswan_img) {
 	const nic_id = output_processor.cfg.ace_nic_config[0].nic_name;
 	const vpn_shared_dir = `/shared/enet${nic_id}-vpn`;	
 	const host_dir = output_processor.cfg.ace_nic_config[0].install_dir;
-	const libreswan_shared_dir = `${host_dir}/enet-vpn-gw/${vpn_shared_dir}/${libreswan_inst}`;
+	const libreswan_shared_dir = `${host_dir}${vpn_shared_dir}/${libreswan_inst}`;
 	
 	var expr = ``;
 	expr += `docker run -t -d --rm --ipc=host --privileged`;

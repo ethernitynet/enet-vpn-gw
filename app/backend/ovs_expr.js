@@ -65,7 +65,7 @@ var ovs_kernel_boot = function (cmd) {
     const nic_id = output_processor.cfg.ace_nic_config[0].nic_name;
     const vpn_inst = `enet${nic_id}-vpn`;
     const enet_br = `enetbr${nic_id}`;
-    const enet_port = `ACENIC${nic_id}_127`;
+    const enet_port = (nic_id === `0`) ? `ACENIC1_127` : `ACENIC2_127`;
     const ovs_etc_dir = `/usr/local/etc/openvswitch`;
     const ovs_share_dir = `/usr/local/share/openvswitch`;
     const ovs_runtime_dir = `/usr/local/var/run/openvswitch/${vpn_inst}`;
