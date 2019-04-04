@@ -355,6 +355,53 @@ module.exports = function (host_profile, gw_profiles) {
 	};
 	
 	/////////////////////////////////////////////////
+	//////////////////[reset_nic]////////////////////
+		
+	this.reset_nic = function (cfg, ret_cb) {
+		
+		const nic_id = cfg.ace_nic_config[0].nic_name;		
+		const exec_time = new Date().getTime();
+		const cmd_key = `reset_nic${nic_id}_${exec_time}`;
+		
+		this.gw_config.reset();
+
+		this.output_processor[cmd_key] = {
+			meta: { key: cmd_key, exec_time: exec_time, latencies: [], ret: [] },
+			cfg: cfg,
+			expr: [],
+			output: [],
+			ret_cb: ret_cb
+		};
+		
+		var that = this;
+		var finish_cb = function (cmd) {
+			
+			var output_processor = cmd.output_processor[cmd.key];
+			that.cmd_log.push(output_processor);
+			if (output_processor.ret_cb) {
+				var ret_cb = output_processor.ret_cb;
+				ret_cb(cmd, that.gw_config);
+				delete that.cmd_log[that.cmd_log.length - 1][`ret_cb`];
+			} else {
+				that.gw_config.cmd_advance(cmd);
+			}
+			return cmd;
+		};
+		
+		const host_cmds = [
+			{
+				key: cmd_key,
+				label: `reset SmartNIC vpn configuration`,
+				output_processor: this.output_processor,
+				expr_builder: this.mea_expr.load_vpn_cfg,
+				output_cb: finish_cb
+			}
+		];
+		this.gw_config.host_exec_cmd(host_cmds);
+		cfg.UPDATE = `${new Date()}`;
+	};
+	
+	/////////////////////////////////////////////////
 	///////////////////[boot_vpn]////////////////////
 		
 	this.boot_vpn = function (cfg, ret_cb) {

@@ -182,6 +182,27 @@ module.exports = function (host_profile, gw_profiles, service_ip, service_port) 
 		});
 	};
 
+	this.reset_nic = function (res) {
+		
+		this.vpn_backend.reset_nic(this.vpn_cfg.VPN, function (cmd, gw_config) {
+
+			if (gw_config === undefined) {
+				const cmd_log = {
+					time: new Date().getTime(),
+					key: cmd.key,
+					label: cmd.label
+				};
+				res.write(JSON.stringify(cmd_log));
+				//res.writeHead(200, res_headers);
+			} else {
+				const output_processor = cmd.output_processor[cmd.key];
+				const output_str = JSON.stringify(output_processor.meta);
+				res.end(output_str);
+				gw_config.cmd_advance(cmd);
+			}
+		});
+	};
+
 	this.boot_vpn = function (vpn_cfg, res) {
 		
 		this.vpn_cfg.VPN = vpn_cfg.VPN;
@@ -346,6 +367,9 @@ module.exports = function (host_profile, gw_profiles, service_ip, service_port) 
 							break;
 							case `restart_libreswan`:
 								this.restart_libreswan(res);
+							break;
+							case `reset_nic`:
+								this.reset_nic(res);
 							break;
 							case `boot_vpn`:
 								this.boot_vpn(content.vpn_cfg, res);
