@@ -1,0 +1,10 @@
+{
+	"op": "cmd_run",
+	"target": "remote",
+	"expr_arr": [
+		"cd /home/trx/v2.51",
+		"./dpdk_nic_bind.py -b igb_uio 0000:3d:00.0",
+		"cd -"
+	]
+}
+

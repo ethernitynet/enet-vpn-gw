@@ -55,7 +55,30 @@ var ovs_wipeout = function (cmd) {
 
 var ovs_dpdk_boot = function (cmd) {
 
+    var output_processor = cmd.output_processor[cmd.key];
+    const nic_id = output_processor.cfg.ace_nic_config[0].nic_name;
+    const vpn_inst = `enet${nic_id}-vpn`;
+    const enet_br = `enetbr${nic_id}`;
+    const enet_port = (nic_id === `0`) ? `ACENIC1_127` : `ACENIC2_127`;
+    const enet_pci = output_processor.cfg.ace_nic_config[0].nic_pci;
+    const ovs_etc_dir = `/usr/local/etc/openvswitch`;
+    const ovs_share_dir = `/usr/local/share/openvswitch`;
+    const ovs_runtime_dir = `/usr/local/var/run/openvswitch/${vpn_inst}`;
+
     var expr = ``;
+    expr += `rm -f ${ovs_etc_dir}/conf.db\n`;
+    expr += `ovsdb-tool create ${ovs_etc_dir}/conf.db ${ovs_share_dir}/vswitch.ovsschema\n`;
+    expr += `${ovs_cmd(cmd, `--no-wait init`)}\n`;
+    expr += `ovsdb-server --log-file -v --remote=punix:${ovs_runtime_dir}/db.sock --remote=db:Open_vSwitch,Open_vSwitch,manager_options --pidfile=${ovs_runtime_dir}/ovsdb-server.pid --detach\n`;
+    expr += `${ovs_cmd(cmd, `--no-wait set Open_vSwitch . external_ids:hostname=${vpn_inst}.inst`)}\n`;
+    expr += `${ovs_cmd(cmd, `--no-wait set Open_vSwitch . other_config:dpdk-init=true`)}\n`;
+    expr += `ovs-ctl --no-ovsdb-server --db-sock="${ovs_runtime_dir}/db.sock" restart\n`;
+    expr += `${ovs_cmd(cmd, `get Open_vSwitch . dpdk_initialized`)}\n`;
+    expr += `ovs-vswitchd --pidfile=${ovs_runtime_dir}/ovs-vswitchd.pid --log-file -v --version\n`;
+    expr += `${ovs_cmd(cmd, `get Open_vSwitch . dpdk_version`)}\n`;
+    expr += `ovs-ctl status\n`;
+    expr += `${ovs_cmd(cmd, `add-br ${enet_br} -- set bridge ${enet_br} datapath_type=netdev`)}\n`;
+    expr += `${ovs_cmd(cmd, `add-port ${enet_br} ${enet_port} -- set Interface ${enet_port} type=dpdk options:dpdk-devargs=${enet_pci}`)}\n`;
     return expr;
 };
 
