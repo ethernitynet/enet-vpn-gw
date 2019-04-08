@@ -8,6 +8,7 @@ ACENIC_710_SLOT=${3:-88:00.0}
 IMG_DOMAIN=${4:-local}
 OVS_VERSION=${5:-v2.10.1}
 LIBRESWAN_VERSION=${6:-v3.27}
+ENET_VPN_VERSION=${7:-v3.27}
 
 docker volume rm $(docker volume ls -qf dangling=true)
 #docker network rm $(docker network ls | grep "bridge" | awk '/ / { print $1 }')
@@ -19,11 +20,11 @@ DOCKER_INST="enet${ACENIC_ID}-vpn"
 
 case ${IMG_DOMAIN} in
 	"hub")
-	IMG_TAG=ethernity/enet-vpn-gw:$LIBRESWAN_VERSION
+	IMG_TAG=ethernity/enet-vpn-gw:$ENET_VPN_VERSION
 	docker pull $IMG_TAG
 	;;
 	*)
-	IMG_TAG=local/enet-vpn-gw:$LIBRESWAN_VERSION
+	IMG_TAG=local/enet-vpn-gw:$ENET_VPN_VERSION
 	IMG_BASE=local/enet-ovs-dpdk:$OVS_VERSION
 	IMG_LIBRESWAN_TAG=local/libreswan:$LIBRESWAN_VERSION
 	docker build \

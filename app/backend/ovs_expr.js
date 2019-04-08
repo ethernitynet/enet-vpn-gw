@@ -148,7 +148,7 @@ var ovs_docker_add_port = function (cmd, enet_phy_pid) {
     const ovs_phy_pid = (nic_id === `0`) ? enet_phy_pid : (enet_phy_pid + 100);
 
     var expr = ``;
-    expr += ovs_docker(cmd, `add-port ${enet_br} ${libreswan_dev} ${libreswan_inst} --ipaddress=${vpn_cfg.vpn_gw_ip}/24 --macaddress=${port_macs[enet_phy_pid]}`);
+    expr += ovs_docker(cmd, `add-port ${enet_br} ${libreswan_dev} ${libreswan_inst} --ipaddress=${vpn_cfg.vpn_gw_ip}/8 --macaddress=${port_macs[enet_phy_pid]}`);
     expr += `LS_DEV_IFIDX=$(docker exec ${libreswan_inst} cat /sys/class/net/${libreswan_dev}/iflink)\n`;
     expr += `HOST_DEV_IFIDX=$((LS_DEV_IFIDX - 1))\n`;
     expr += `LS_PEER_IFLINK=$(grep $HOST_DEV_IFIDX /sys/class/net/*/iflink)\n`;
