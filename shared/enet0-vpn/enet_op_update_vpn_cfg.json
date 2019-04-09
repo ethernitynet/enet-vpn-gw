@@ -13,13 +13,13 @@
 					"outbound_accel": "full",
 					"pre_shared_secret": "ENET-LibreSwan",
 					"encryption_type": "aes_gcm128-null",
-					"remote_tunnel_endpoint_ip": "192.168.22.1",
+					"remote_tunnel_endpoint_ip": "10.168.22.1",
 					"local_subnet": "100.0.1.0/24",
 					"remote_subnet": "100.0.2.0/24",
 					"lan_port": "105",
 					"tunnel_port": "107",
 					"inbound_routes": "100.0.1.1",
-					"libreswan_specific": "type=tunnel\nauthby=secret\nike=aes-sha1;modp2048\nikev2=insist\nnarrowing=yes"
+					"libreswan_specific": "authby=secret\nike=aes-sha1;modp2048\nikev2=insist\nnarrowing=yes"
 				},
 				{
 					"name": "tun140_no_hw",
@@ -27,13 +27,13 @@
 					"outbound_accel": "none",
 					"pre_shared_secret": "ENET-LibreSwan",
 					"encryption_type": "aes_gcm128-null",
-					"remote_tunnel_endpoint_ip": "192.168.22.1",
+					"remote_tunnel_endpoint_ip": "10.168.22.1",
 					"local_subnet": "140.0.1.0/24",
 					"remote_subnet": "140.0.2.0/24",
 					"inbound_routes": "140.0.1.1",
 					"lan_port": "105",
 					"tunnel_port": "107",
-					"libreswan_specific": "type=tunnel\nauthby=secret\nike=aes-sha1;modp2048\nikev2=insist\nnarrowing=yes"
+					"libreswan_specific": "authby=secret\nike=aes-sha1;modp2048\nikev2=insist\nnarrowing=yes"
 				}
 			],
 			"ace_nic_config": [{

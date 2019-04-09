@@ -85,7 +85,7 @@ module.exports = function () {
 	
 		var output_processor = cmd.output_processor[cmd.key];
 		const nic_id = output_processor.cfg.ace_nic_config[0].nic_name;
-		const libreswan_img = `ethernity/libreswan:v3.27`;
+		const libreswan_img = `testing/libreswan:dev3.27`;
 		
 		var expr = ``;
 		expr += shutdown_libreswan_inst(cmd, `enet${nic_id}_libreswan104`);

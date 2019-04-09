@@ -23,6 +23,16 @@ case ${IMG_DOMAIN} in
 	IMG_TAG=ethernity/enet-vpn-gw:$ENET_VPN_VERSION
 	docker pull $IMG_TAG
 	;;
+	"testing")
+	IMG_TAG=local/enet-vpn-gw:$ENET_VPN_VERSION
+	IMG_BASE=local/enet-ovs-dpdk:$OVS_VERSION
+	IMG_LIBRESWAN_TAG=testing/libreswan:$LIBRESWAN_VERSION
+	docker build \
+		-t $IMG_TAG \
+		--build-arg IMG_BASE=$IMG_BASE \
+		--build-arg IMG_LIBRESWAN_TAG=$IMG_LIBRESWAN_TAG \
+		./
+	;;
 	*)
 	IMG_TAG=local/enet-vpn-gw:$ENET_VPN_VERSION
 	IMG_BASE=local/enet-ovs-dpdk:$OVS_VERSION
