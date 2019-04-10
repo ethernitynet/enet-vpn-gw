@@ -224,6 +224,93 @@ module.exports = function (host_profile, gw_profiles, service_ip, service_port) 
 			}
 		});
 	};
+
+	this.boot_vpn_all = function (vpn_cfg, res) {
+
+		this.vpn_cfg.VPN = vpn_cfg.VPN;
+		var that = this;
+		this.vpn_backend.update_vpn_cfg(this.vpn_cfg.VPN, function (cmd, gw_config) {
+
+			if (gw_config === undefined) {
+				const cmd_log = {
+					time: new Date().getTime(),
+					key: cmd.key,
+					label: cmd.label
+				};
+				res.write(JSON.stringify(cmd_log));
+			} else {
+				const output_processor = cmd.output_processor[cmd.key];
+				const output_str = JSON.stringify(output_processor.meta);
+				res.write(output_str);
+				gw_config.cmd_advance(cmd);
+				that.vpn_backend.boot_ovs(that.vpn_cfg.VPN, function (cmd, gw_config) {
+
+					if (gw_config === undefined) {
+						const cmd_log = {
+							time: new Date().getTime(),
+							key: cmd.key,
+							label: cmd.label
+						};
+						res.write(JSON.stringify(cmd_log));
+					} else {
+						const output_processor = cmd.output_processor[cmd.key];
+						const output_str = JSON.stringify(output_processor.meta);
+						res.write(output_str);
+						gw_config.cmd_advance(cmd);
+						that.vpn_backend.boot_libreswan(that.vpn_cfg.VPN, function (cmd, gw_config) {
+
+							if (gw_config === undefined) {
+								const cmd_log = {
+									time: new Date().getTime(),
+									key: cmd.key,
+									label: cmd.label
+								};
+								res.write(JSON.stringify(cmd_log));
+							} else {
+								const output_processor = cmd.output_processor[cmd.key];
+								const output_str = JSON.stringify(output_processor.meta);
+								res.write(output_str);
+								gw_config.cmd_advance(cmd);
+								that.vpn_backend.reset_nic(that.vpn_cfg.VPN, function (cmd, gw_config) {
+
+									if (gw_config === undefined) {
+										const cmd_log = {
+											time: new Date().getTime(),
+											key: cmd.key,
+											label: cmd.label
+										};
+										res.write(JSON.stringify(cmd_log));
+									} else {
+										const output_processor = cmd.output_processor[cmd.key];
+										const output_str = JSON.stringify(output_processor.meta);
+										res.write(output_str);
+										gw_config.cmd_advance(cmd);
+										that.vpn_backend.restart_libreswan(that.vpn_cfg.VPN, function (cmd, gw_config) {
+
+											if (gw_config === undefined) {
+												const cmd_log = {
+													time: new Date().getTime(),
+													key: cmd.key,
+													label: cmd.label
+												};
+												res.write(JSON.stringify(cmd_log));
+												//res.writeHead(200, res_headers);
+											} else {
+												const output_processor = cmd.output_processor[cmd.key];
+												const output_str = JSON.stringify(output_processor.meta);
+												res.end(output_str);
+												gw_config.cmd_advance(cmd);
+											}
+										});																		
+									}
+								});														
+							}
+						});										
+					}
+				});						
+			}
+		});
+	};
 	
 	this.outbound_tunnel_add = function (tunnel_spec, ipsec_cfg, res) {
 		
@@ -372,7 +459,7 @@ module.exports = function (host_profile, gw_profiles, service_ip, service_port) 
 								this.reset_nic(res);
 							break;
 							case `boot_vpn`:
-								this.boot_vpn(content.vpn_cfg, res);
+								this.boot_vpn_all(content.vpn_cfg, res);
 							break;
 							case `outbound_tunnel_add`:
 								this.outbound_tunnel_add(content.tunnel_spec, content.ipsec_cfg, res);

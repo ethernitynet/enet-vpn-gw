@@ -299,7 +299,14 @@ module.exports = function (host_profile, gw_profiles) {
 				key: cmd_key,
 				label: `connect libreswan instances`,
 				output_processor: this.output_processor,
-				expr_builder: this.ovs_expr.ovs_docker_add_ports,
+				expr_builder: this.ovs_expr.ovs_docker_add_ports
+			},
+			{
+				key: cmd_key,
+				label: `add ctl passthrough flows`,
+				target: `localhost`,
+				output_processor: this.output_processor,
+				expr_builder: this.ovs_expr.add_of_ctl_passthrough,
 				output_cb: finish_cb
 			}
 		];

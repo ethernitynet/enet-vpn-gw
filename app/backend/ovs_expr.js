@@ -157,6 +157,20 @@ var ovs_docker_add_port = function (cmd, enet_phy_pid) {
     return expr;
 };
 
+var port_add_of_ctl_passthrough = function (cmd, enet_phy_pid) {
+
+    var output_processor = cmd.output_processor[cmd.key];
+    const nic_id = output_processor.cfg.ace_nic_config[0].nic_name;
+    const enet_br = `enetbr${nic_id}`;
+    var ovs_host_pid = (nic_id === `0`) ? 127 : 227;
+    const ovs_phy_pid = (nic_id === `0`) ? enet_phy_pid : (enet_phy_pid + 100);
+
+    var expr = ``;
+    expr += `ovs-ofctl -O OpenFlow13 add-flow ${enet_br} "in_port=${ovs_phy_pid},actions=push_vlan:0x8100,mod_vlan_vid=${ovs_phy_pid},output:${ovs_host_pid}"\n`;
+    expr += `ovs-ofctl -O OpenFlow13 add-flow ${enet_br} "in_port=${ovs_host_pid},dl_vlan=${ovs_phy_pid},actions=strip_vlan,output:${ovs_phy_pid}"\n`;
+    return expr;
+};
+
 /////////////////////////////////////////////////////
 /////////////////////////////////////////////////////
 /////////////////////////////////////////////////////
@@ -194,6 +208,16 @@ module.exports = function () {
         expr += `mkdir -p ${ovs_share_dir}\n`;
         expr += `mkdir -p ${ovs_runtime_dir}\n`;
         expr += (dataplane_type === `dpdk`) ? ovs_dpdk_boot(cmd) : ovs_kernel_boot(cmd);
+        return expr;
+    };
+	
+    this.add_of_ctl_passthrough = function (cmd) {
+
+        var expr = ``;
+        expr += port_add_of_ctl_passthrough(cmd, 104);
+        expr += port_add_of_ctl_passthrough(cmd, 105);
+        expr += port_add_of_ctl_passthrough(cmd, 106);
+        expr += port_add_of_ctl_passthrough(cmd, 107);
         return expr;
     };
 
