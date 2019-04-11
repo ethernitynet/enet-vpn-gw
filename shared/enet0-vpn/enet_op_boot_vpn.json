@@ -1,0 +1,63 @@
+{
+	"op": "boot_vpn",
+	"vpn_cfg": {
+		"VPN": {
+			"advanced": false,
+			"vpn_gw_config": [{
+				"vpn_gw_ip": "10.11.11.1",
+				"libreswan_ver": "v3.27"
+			}],
+			"conns": [{
+					"name": "tun100_full_hw",
+					"inbound_accel": "full",
+					"outbound_accel": "full",
+					"pre_shared_secret": "ENET-LibreSwan",
+					"encryption_type": "aes_gcm128-null",
+					"remote_tunnel_endpoint_ip": "10.168.22.1",
+					"local_subnet": "100.0.1.0/24",
+					"remote_subnet": "100.0.2.0/24",
+					"lan_port": "105",
+					"tunnel_port": "107",
+					"inbound_routes": "100.0.1.1",
+					"libreswan_specific": "authby=secret\nike=aes-sha1;modp2048\nikev2=insist\nnarrowing=yes"
+				},
+				{
+					"name": "tun140_no_hw",
+					"inbound_accel": "none",
+					"outbound_accel": "none",
+					"pre_shared_secret": "ENET-LibreSwan",
+					"encryption_type": "aes_gcm128-null",
+					"remote_tunnel_endpoint_ip": "10.168.22.1",
+					"local_subnet": "140.0.1.0/24",
+					"remote_subnet": "140.0.2.0/24",
+					"inbound_routes": "140.0.1.1",
+					"lan_port": "105",
+					"tunnel_port": "107",
+					"libreswan_specific": "authby=secret\nike=aes-sha1;modp2048\nikev2=insist\nnarrowing=yes"
+				}
+			],
+			"ace_nic_config": [{
+				"nic_name": "0",
+				"dataplane": "kernel",
+				"sw_ver": "450.08.130 (Feb 07 2019 20:00:01)",
+				"hw_ver": "1302.1.11.6   (Date 14/02/19: hour 15:00 )",
+				"log_file": "/tmp/enet_vpn.log",
+				"install_dir": "/home/devops/workspace/SDK_1Core",
+				"nic_pci": "0000:88:00.0"
+			}],
+			"dpdk_config": [{
+				"dpdk_ver": "v17.11-rc4",
+				"no_2mb_hugepages": 2048,
+				"no_1g_hugepages": 2,
+				"installed_pmds": [
+					"igb_uio"
+				]
+			}],
+			"ovs_config": [{
+				"ovs_ver": "v2.10.1",
+				"mgmt_threads": "0x00c0",
+				"pmd_threads": "0x003c"
+			}]
+		}
+	}
+}
