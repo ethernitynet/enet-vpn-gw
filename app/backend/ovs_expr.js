@@ -5,14 +5,17 @@ var vpn_common = require('./vpn_common.js');
 /////////////////////////////////////////////////////
 /////////////////////////////////////////////////////
 
+const specialized_env = false;
+
 var ovs_cmd = function (cmd, params) {
 
     var output_processor = cmd.output_processor[cmd.key];
     const nic_id = output_processor.cfg.ace_nic_config[0].nic_name;
     const vpn_inst = `enet${nic_id}-vpn`;
+    const db_sock = specialized_env ? `--db=unix:/usr/local/var/run/openvswitch/${vpn_inst}/db.sock` : ``;
 
     var expr = ``;
-    expr += `/usr/local/bin/ovs-vsctl --db=unix:/usr/local/var/run/openvswitch/${vpn_inst}/db.sock ${params}`;
+    expr += `/usr/local/bin/ovs-vsctl ${db_sock} ${params}`;
     return expr;
 };
 
@@ -21,9 +24,10 @@ var host_ovs_cmd = function (cmd) {
     var output_processor = cmd.output_processor[cmd.key];
     const nic_id = output_processor.cfg.ace_nic_config[0].nic_name;
     const vpn_inst = `enet${nic_id}-vpn`;
+    const db_sock = specialized_env ? `--db=unix:/usr/local/var/run/openvswitch/${vpn_inst}/db.sock` : ``;
 
     var expr = ``;
-    expr += `EXECLN="/usr/local/bin/ovs-vsctl --db=unix:/usr/local/var/run/openvswitch/${vpn_inst}/db.sock `;
+    expr += `EXECLN="/usr/local/bin/ovs-vsctl ${db_sock} `;
     expr += ' ${@}";';
     expr += `docker exec ${vpn_inst} /bin/bash -c `;
     expr += ' "${EXECLN}"';
@@ -62,27 +66,39 @@ var ovs_dpdk_boot = function (cmd) {
     const enet_port = (nic_id === `0`) ? `ACENIC1_127` : `ACENIC2_127`;
     const enet_pci = output_processor.cfg.ace_nic_config[0].nic_pci;
     const dpdk_2mb_hugepages = parseInt(output_processor.cfg.dpdk_config[0].no_2mb_hugepages);
-    const ovs_etc_dir = `/usr/local/etc/openvswitch`;
+    const dpdk_1g_hugepages = parseInt(output_processor.cfg.dpdk_config[0].no_1g_hugepages);
+    const vpn_inst_specialized = specialized_env ? `/${vpn_inst}` : ``;
+    const ovs_etc_dir = `/usr/local/etc/openvswitch${vpn_inst_specialized}`;
     const ovs_share_dir = `/usr/local/share/openvswitch`;
-    const ovs_runtime_dir = `/usr/local/var/run/openvswitch/${vpn_inst}`;
+    const ovs_runtime_dir = `/usr/local/var/run/openvswitch${vpn_inst_specialized}`;
+    const db_sock = specialized_env ? `--db-sock="${ovs_runtime_dir}/db.sock"` : ``;
+    const ovsdb_pid = specialized_env ? `--pidfile=${ovs_runtime_dir}/ovsdb-server.pid` : ``;
+    const vswitchd_pid = specialized_env ? `--pidfile=${ovs_runtime_dir}/ovs-vswitchd.pid` : ``;
     var ovs_host_pid = (nic_id === `0`) ? 127 : 227;
 
     var expr = ``;
+    expr += `pkill ovsdb-server\n`;
+    expr += `ovs-ctl stop\n`;
+    expr += `rm -rf ${ovs_runtime_dir}/*\n`;
+    expr += `rm -f ${ovs_etc_dir}/conf.db\n`;
+    expr += `ovsdb-tool create ${ovs_etc_dir}/conf.db ${ovs_share_dir}/vswitch.ovsschema\n`;
+    expr += `ovsdb-server --log-file -v --remote=punix:${ovs_runtime_dir}/db.sock --remote=db:Open_vSwitch,Open_vSwitch,manager_options ${ovsdb_pid} --detach\n`;
+    expr += `sleep 2\n`;
+    expr += `${ovs_cmd(cmd, `--no-wait init`)}\n`;
+    expr += `${ovs_cmd(cmd, `--no-wait set Open_vSwitch . external_ids:hostname=${vpn_inst}.inst`)}\n`;
+    expr += `${ovs_cmd(cmd, `--no-wait set Open_vSwitch . other_config:dpdk-init=true`)}\n`;
     expr += `mkdir -p /mnt/huge\n`;
     expr += `umount /mnt/huge\n`;
     expr += `mount -t hugetlbfs nodev /mnt/huge\n`;
     expr += `echo ${dpdk_2mb_hugepages} > /sys/devices/system/node/node0/hugepages/hugepages-2048kB/nr_hugepages\n`;
-    expr += `grep HugePages_ /proc/meminfo\n`;
-    expr += `rm -f ${ovs_etc_dir}/conf.db\n`;
-    expr += `ovsdb-tool create ${ovs_etc_dir}/conf.db ${ovs_share_dir}/vswitch.ovsschema\n`;
-    expr += `ovsdb-server --log-file -v --remote=punix:${ovs_runtime_dir}/db.sock --remote=db:Open_vSwitch,Open_vSwitch,manager_options --pidfile=${ovs_runtime_dir}/ovsdb-server.pid --detach\n`;
-    expr += `${ovs_cmd(cmd, `--no-wait init`)}\n`;
-    expr += `${ovs_cmd(cmd, `--no-wait set Open_vSwitch . external_ids:hostname=${vpn_inst}.inst`)}\n`;
-    expr += `${ovs_cmd(cmd, `--no-wait set Open_vSwitch . other_config:dpdk-init=true`)}\n`;
-    expr += `ovs-ctl --no-ovsdb-server --db-sock="${ovs_runtime_dir}/db.sock" restart\n`;
+    expr += `echo ${dpdk_1g_hugepages} > /sys/devices/system/node/node0/hugepages/hugepages-1048576kB/nr_hugepages\n`;
     expr += `${ovs_cmd(cmd, `--no-wait set Open_vSwitch . other_config:dpdk-socket-mem="${dpdk_2mb_hugepages / 2},${dpdk_2mb_hugepages / 2}"`)}\n`;
+    expr += `grep HugePages_ /proc/meminfo\n`;
+    expr += `ovs-ctl --no-ovsdb-server ${db_sock} restart\n`;
+    expr += `grep HugePages_ /proc/meminfo\n`;
+    expr += `echo 'DPDK Initialized:'\n`;
     expr += `${ovs_cmd(cmd, `get Open_vSwitch . dpdk_initialized`)}\n`;
-    expr += `ovs-vswitchd --pidfile=${ovs_runtime_dir}/ovs-vswitchd.pid --log-file -v --version\n`;
+    expr += `ovs-vswitchd ${vswitchd_pid} --log-file -v --version\n`;
     expr += `${ovs_cmd(cmd, `get Open_vSwitch . dpdk_version`)}\n`;
     expr += `ovs-ctl status\n`;
     expr += `${ovs_cmd(cmd, `add-br ${enet_br} -- set bridge ${enet_br} datapath_type=netdev`)}\n`;
@@ -98,19 +114,27 @@ var ovs_kernel_boot = function (cmd) {
     const vpn_inst = `enet${nic_id}-vpn`;
     const enet_br = `enetbr${nic_id}`;
     const enet_port = (nic_id === `0`) ? `ACENIC1_127` : `ACENIC2_127`;
-    const ovs_etc_dir = `/usr/local/etc/openvswitch`;
+    const vpn_inst_specialized = specialized_env ? `/${vpn_inst}` : ``;
+    const ovs_etc_dir = `/usr/local/etc/openvswitch${vpn_inst_specialized}`;
     const ovs_share_dir = `/usr/local/share/openvswitch`;
-    const ovs_runtime_dir = `/usr/local/var/run/openvswitch/${vpn_inst}`;
+    const ovs_runtime_dir = `/usr/local/var/run/openvswitch${vpn_inst_specialized}`;
+    const db_sock = specialized_env ? `--db-sock="${ovs_runtime_dir}/db.sock"` : ``;
+    const ovsdb_pid = specialized_env ? `--pidfile=${ovs_runtime_dir}/ovsdb-server.pid` : ``;
+    const vswitchd_pid = specialized_env ? `--pidfile=${ovs_runtime_dir}/ovs-vswitchd.pid` : ``;
     var ovs_host_pid = (nic_id === `0`) ? 127 : 227;
 
     var expr = ``;
+    expr += `pkill ovsdb-server\n`;
+    expr += `ovs-ctl stop\n`;
+    expr += `rm -rf ${ovs_runtime_dir}/*\n`;
     expr += `rm -f ${ovs_etc_dir}/conf.db\n`;
     expr += `ovsdb-tool create ${ovs_etc_dir}/conf.db ${ovs_share_dir}/vswitch.ovsschema\n`;
-    expr += `ovsdb-server --log-file -v --remote=punix:${ovs_runtime_dir}/db.sock --remote=db:Open_vSwitch,Open_vSwitch,manager_options --pidfile=${ovs_runtime_dir}/ovsdb-server.pid --detach\n`;
+    expr += `ovsdb-server --log-file -v --remote=punix:${ovs_runtime_dir}/db.sock --remote=db:Open_vSwitch,Open_vSwitch,manager_options ${ovsdb_pid} --detach\n`;
+    expr += `sleep 2\n`;
     expr += `${ovs_cmd(cmd, `--no-wait init`)}\n`;
     expr += `${ovs_cmd(cmd, `--no-wait set Open_vSwitch . external_ids:hostname=${vpn_inst}.inst`)}\n`;
-    expr += `ovs-ctl --no-ovsdb-server --db-sock="${ovs_runtime_dir}/db.sock" restart\n`;
-    expr += `ovs-vswitchd --pidfile=${ovs_runtime_dir}/ovs-vswitchd.pid --log-file -v --version\n`;
+    expr += `ovs-ctl --no-ovsdb-server ${db_sock} restart\n`;
+    expr += `ovs-vswitchd ${vswitchd_pid} --log-file -v --version\n`;
     expr += `ovs-ctl status\n`;
     expr += `${ovs_cmd(cmd, `add-br ${enet_br}`)}\n`;
     expr += `${ovs_cmd(cmd, `add-port ${enet_br} ${enet_port}`)}\n`;
