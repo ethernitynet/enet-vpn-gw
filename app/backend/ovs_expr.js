@@ -61,7 +61,7 @@ var ovs_dpdk_boot = function (cmd) {
     const enet_br = `enetbr${nic_id}`;
     const enet_port = (nic_id === `0`) ? `ACENIC1_127` : `ACENIC2_127`;
     const enet_pci = output_processor.cfg.ace_nic_config[0].nic_pci;
-    const dpdk_2mb_hugepages = output_processor.cfg.dpdk_config[0].no_2mb_hugepages;
+    const dpdk_2mb_hugepages = parseInt(output_processor.cfg.dpdk_config[0].no_2mb_hugepages);
     const ovs_etc_dir = `/usr/local/etc/openvswitch`;
     const ovs_share_dir = `/usr/local/share/openvswitch`;
     const ovs_runtime_dir = `/usr/local/var/run/openvswitch/${vpn_inst}`;
@@ -80,6 +80,7 @@ var ovs_dpdk_boot = function (cmd) {
     expr += `${ovs_cmd(cmd, `--no-wait set Open_vSwitch . external_ids:hostname=${vpn_inst}.inst`)}\n`;
     expr += `${ovs_cmd(cmd, `--no-wait set Open_vSwitch . other_config:dpdk-init=true`)}\n`;
     expr += `ovs-ctl --no-ovsdb-server --db-sock="${ovs_runtime_dir}/db.sock" restart\n`;
+    expr += `${ovs_cmd(cmd, `--no-wait set Open_vSwitch . other_config:dpdk-socket-mem="${dpdk_2mb_hugepages / 2},${dpdk_2mb_hugepages / 2}"`)}\n`;
     expr += `${ovs_cmd(cmd, `get Open_vSwitch . dpdk_initialized`)}\n`;
     expr += `ovs-vswitchd --pidfile=${ovs_runtime_dir}/ovs-vswitchd.pid --log-file -v --version\n`;
     expr += `${ovs_cmd(cmd, `get Open_vSwitch . dpdk_version`)}\n`;
