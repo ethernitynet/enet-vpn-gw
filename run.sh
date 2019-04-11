@@ -52,7 +52,7 @@ VPN_SHARED_DIR=/shared/$DOCKER_INST
 HOST_SHARED_DIR=$(pwd)${VPN_SHARED_DIR}
 mkdir -p $HOST_SHARED_DIR
 
-ENET_VPN_CONFIG=$(cat $HOST_SHARED_DIR/enet_op_update_vpn_cfg.json | jq -r .vpn_cfg)
+ENET_VPN_CONFIG=$(cat $HOST_SHARED_DIR/enet_op_boot_vpn.json | jq -r .vpn_cfg)
 
 ACENIC_LABEL=$( printf 'ACENIC%u_127' $(( ${ACENIC_ID} + 1 )) )
 ACENIC_710_SLOT=$(jq -r .VPN.ace_nic_config[0].nic_pci <<< "${ENET_VPN_CONFIG}")

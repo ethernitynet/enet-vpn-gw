@@ -75,8 +75,8 @@ var ovs_dpdk_boot = function (cmd) {
     expr += `grep HugePages_ /proc/meminfo\n`;
     expr += `rm -f ${ovs_etc_dir}/conf.db\n`;
     expr += `ovsdb-tool create ${ovs_etc_dir}/conf.db ${ovs_share_dir}/vswitch.ovsschema\n`;
-    expr += `${ovs_cmd(cmd, `--no-wait init`)}\n`;
     expr += `ovsdb-server --log-file -v --remote=punix:${ovs_runtime_dir}/db.sock --remote=db:Open_vSwitch,Open_vSwitch,manager_options --pidfile=${ovs_runtime_dir}/ovsdb-server.pid --detach\n`;
+    expr += `${ovs_cmd(cmd, `--no-wait init`)}\n`;
     expr += `${ovs_cmd(cmd, `--no-wait set Open_vSwitch . external_ids:hostname=${vpn_inst}.inst`)}\n`;
     expr += `${ovs_cmd(cmd, `--no-wait set Open_vSwitch . other_config:dpdk-init=true`)}\n`;
     expr += `ovs-ctl --no-ovsdb-server --db-sock="${ovs_runtime_dir}/db.sock" restart\n`;
@@ -106,8 +106,8 @@ var ovs_kernel_boot = function (cmd) {
     var expr = ``;
     expr += `rm -f ${ovs_etc_dir}/conf.db\n`;
     expr += `ovsdb-tool create ${ovs_etc_dir}/conf.db ${ovs_share_dir}/vswitch.ovsschema\n`;
-    expr += `${ovs_cmd(cmd, `--no-wait init`)}\n`;
     expr += `ovsdb-server --log-file -v --remote=punix:${ovs_runtime_dir}/db.sock --remote=db:Open_vSwitch,Open_vSwitch,manager_options --pidfile=${ovs_runtime_dir}/ovsdb-server.pid --detach\n`;
+    expr += `${ovs_cmd(cmd, `--no-wait init`)}\n`;
     expr += `${ovs_cmd(cmd, `--no-wait set Open_vSwitch . external_ids:hostname=${vpn_inst}.inst`)}\n`;
     expr += `ovs-ctl --no-ovsdb-server --db-sock="${ovs_runtime_dir}/db.sock" restart\n`;
     expr += `ovs-vswitchd --pidfile=${ovs_runtime_dir}/ovs-vswitchd.pid --log-file -v --version\n`;
