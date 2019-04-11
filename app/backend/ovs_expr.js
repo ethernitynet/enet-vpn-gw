@@ -12,7 +12,7 @@ var ovs_cmd = function (cmd, params) {
     var output_processor = cmd.output_processor[cmd.key];
     const nic_id = output_processor.cfg.ace_nic_config[0].nic_name;
     const vpn_inst = `enet${nic_id}-vpn`;
-    const db_sock = specialized_env ? `--db=unix:/usr/local/var/run/openvswitch/${vpn_inst}/db.sock` : ``;
+    const db_sock = (specialized_env === true) ? `--db=unix:/usr/local/var/run/openvswitch/${vpn_inst}/db.sock` : ``;
 
     var expr = ``;
     expr += `/usr/local/bin/ovs-vsctl ${db_sock} ${params}`;
@@ -24,7 +24,7 @@ var host_ovs_cmd = function (cmd) {
     var output_processor = cmd.output_processor[cmd.key];
     const nic_id = output_processor.cfg.ace_nic_config[0].nic_name;
     const vpn_inst = `enet${nic_id}-vpn`;
-    const db_sock = specialized_env ? `--db=unix:/usr/local/var/run/openvswitch/${vpn_inst}/db.sock` : ``;
+    const db_sock = (specialized_env === true) ? `--db=unix:/usr/local/var/run/openvswitch/${vpn_inst}/db.sock` : ``;
 
     var expr = ``;
     expr += `EXECLN="/usr/local/bin/ovs-vsctl ${db_sock} `;
@@ -67,13 +67,12 @@ var ovs_dpdk_boot = function (cmd) {
     const enet_pci = output_processor.cfg.ace_nic_config[0].nic_pci;
     const dpdk_2mb_hugepages = parseInt(output_processor.cfg.dpdk_config[0].no_2mb_hugepages);
     const dpdk_1g_hugepages = parseInt(output_processor.cfg.dpdk_config[0].no_1g_hugepages);
-    const vpn_inst_specialized = specialized_env ? `/${vpn_inst}` : ``;
-    const ovs_etc_dir = `/usr/local/etc/openvswitch${vpn_inst_specialized}`;
+    const ovs_etc_dir = (specialized_env === true) ? `/usr/local/etc/openvswitch/${vpn_inst}` : `/usr/local/etc/openvswitch`;
     const ovs_share_dir = `/usr/local/share/openvswitch`;
-    const ovs_runtime_dir = `/usr/local/var/run/openvswitch${vpn_inst_specialized}`;
-    const db_sock = specialized_env ? `--db-sock="${ovs_runtime_dir}/db.sock"` : ``;
-    const ovsdb_pid = specialized_env ? `--pidfile=${ovs_runtime_dir}/ovsdb-server.pid` : ``;
-    const vswitchd_pid = specialized_env ? `--pidfile=${ovs_runtime_dir}/ovs-vswitchd.pid` : ``;
+    const ovs_runtime_dir = (specialized_env === true) ? `/usr/local/var/run/openvswitch/${vpn_inst}` : `/usr/local/var/run/openvswitch`;
+    const db_sock = (specialized_env === true) ? `--db-sock="${ovs_runtime_dir}/db.sock"` : ``;
+    const ovsdb_pid = (specialized_env === true) ? `--pidfile=${ovs_runtime_dir}/ovsdb-server.pid` : ``;
+    const vswitchd_pid = (specialized_env === true) ? `--pidfile=${ovs_runtime_dir}/ovs-vswitchd.pid` : ``;
     var ovs_host_pid = (nic_id === `0`) ? 127 : 227;
 
     var expr = ``;
@@ -114,13 +113,12 @@ var ovs_kernel_boot = function (cmd) {
     const vpn_inst = `enet${nic_id}-vpn`;
     const enet_br = `enetbr${nic_id}`;
     const enet_port = (nic_id === `0`) ? `ACENIC1_127` : `ACENIC2_127`;
-    const vpn_inst_specialized = specialized_env ? `/${vpn_inst}` : ``;
-    const ovs_etc_dir = `/usr/local/etc/openvswitch${vpn_inst_specialized}`;
+    const ovs_etc_dir = (specialized_env === true) ? `/usr/local/etc/openvswitch/${vpn_inst}` : `/usr/local/etc/openvswitch`;
     const ovs_share_dir = `/usr/local/share/openvswitch`;
-    const ovs_runtime_dir = `/usr/local/var/run/openvswitch${vpn_inst_specialized}`;
-    const db_sock = specialized_env ? `--db-sock="${ovs_runtime_dir}/db.sock"` : ``;
-    const ovsdb_pid = specialized_env ? `--pidfile=${ovs_runtime_dir}/ovsdb-server.pid` : ``;
-    const vswitchd_pid = specialized_env ? `--pidfile=${ovs_runtime_dir}/ovs-vswitchd.pid` : ``;
+    const ovs_runtime_dir = (specialized_env === true) ? `/usr/local/var/run/openvswitch/${vpn_inst}` : `/usr/local/var/run/openvswitch`;
+    const db_sock = (specialized_env === true) ? `--db-sock="${ovs_runtime_dir}/db.sock"` : ``;
+    const ovsdb_pid = (specialized_env === true) ? `--pidfile=${ovs_runtime_dir}/ovsdb-server.pid` : ``;
+    const vswitchd_pid = (specialized_env === true) ? `--pidfile=${ovs_runtime_dir}/ovs-vswitchd.pid` : ``;
     var ovs_host_pid = (nic_id === `0`) ? 127 : 227;
 
     var expr = ``;
@@ -221,10 +219,11 @@ module.exports = function () {
         const nic_id = output_processor.cfg.ace_nic_config[0].nic_name;
         const vpn_inst = `enet${nic_id}-vpn`;
         const dataplane_type = output_processor.cfg.ace_nic_config[0].dataplane;
-        const ovs_etc_dir = `/usr/local/etc/openvswitch`;
-        const ovs_log_dir = `/usr/local/var/log/openvswitch`;
+
+        const ovs_etc_dir = (specialized_env === true) ? `/usr/local/etc/openvswitch/${vpn_inst}` : `/usr/local/etc/openvswitch`;
+        const ovs_log_dir = (specialized_env === true) ? `/usr/local/var/log/openvswitch/${vpn_inst}` : `/usr/local/var/log/openvswitch`;
         const ovs_share_dir = `/usr/local/share/openvswitch`;
-        const ovs_runtime_dir = `/usr/local/var/run/openvswitch/${vpn_inst}`;
+        const ovs_runtime_dir = (specialized_env === true) ? `/usr/local/var/run/openvswitch/${vpn_inst}` : `/usr/local/var/run/openvswitch`;
             
         var expr = ``;
         expr += ovs_wipeout(cmd);
