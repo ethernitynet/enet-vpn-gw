@@ -163,7 +163,10 @@ var host_do_exec = function (gw_config_inst, host_exec_conn) {
 	if (exec_cmd) {
 		if (cmd.target === `localhost`) {
 			exec_cmd = `/bin/bash -c '${exec_cmd}'`;
-			gw_config_inst.host_exec_conn = host_exec_conn;	
+			gw_config_inst.host_exec_conn = host_exec_conn;
+			//////////////////////
+			console.log(exec_cmd);
+			//////////////////////
 			shell.exec(exec_cmd, function (code, stdout, stderr) {
 				
 				gw_config_inst.host_exec_cmd_handler(`exit`, { code: code });
@@ -267,6 +270,7 @@ module.exports = function (host_profile, gw_profiles) {
 		case `close`:
 			const latency = (new Date().getTime() - output_processor.meta.latencies[output_processor.meta.latencies.length - 1]);
 			output_processor.meta.latencies[output_processor.meta.latencies.length - 1] = latency;
+			output_processor.meta.ret[output_processor.meta.ret.length - 1].stdout = output_processor.output[output_processor.output.length - 1].stdout;
 			this.log.debug(`${cmd.key} CLOSE: ${JSON.stringify(output_processor.output[output_processor.output.length - 1])}`);
 			if (output_processor.ret_cb !== undefined) {
 				output_processor.ret_cb(cmd);
