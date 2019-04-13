@@ -34,6 +34,25 @@ var host_ovs_cmd = function (cmd) {
     return expr;
 };
 
+var ovs_docker = function (cmd, params) {
+
+    var output_processor = cmd.output_processor[cmd.key];
+    const nic_id = output_processor.cfg.ace_nic_config[0].nic_name;
+    const vpn_inst = `enet${nic_id}-vpn`;
+    const ovs_vsctl_inst = `/tmp/${vpn_inst}/ovs-vsctl.${cmd.key.replace(/_\d+/, ``)}`;
+    const ovs_docker_inst = `/tmp/${vpn_inst}/ovs-docker`;
+
+    var expr = `\n`;
+    expr += `mkdir -p /tmp/${vpn_inst}\n`;
+    expr += `echo '${host_ovs_cmd(cmd)}' > ${ovs_vsctl_inst}\n`;
+    expr += `docker cp ${vpn_inst}:/usr/local/bin/ovs-docker ${ovs_docker_inst}\n`;
+    expr += `chmod +x ${ovs_vsctl_inst}\n`;
+    expr += `chmod +x ${ovs_docker_inst}\n`;
+    expr += `cp -f ${ovs_vsctl_inst} /usr/local/bin/ovs-vsctl\n`;
+    expr += `${ovs_docker_inst} ${params}\n`;
+    return expr;
+};
+
 var ovs_wipeout = function (cmd) {
 
     var expr = ``;
@@ -137,25 +156,6 @@ var ovs_kernel_boot = function (cmd) {
     expr += `${ovs_cmd(cmd, `add-br ${enet_br}`)}\n`;
     expr += `${ovs_cmd(cmd, `add-port ${enet_br} ${enet_port}`)}\n`;
     expr += `${ovs_cmd(cmd, `set interface ${enet_port} ofport_request=${ovs_host_pid}`)}\n`;
-    return expr;
-};
-
-var ovs_docker = function (cmd, params) {
-
-    var output_processor = cmd.output_processor[cmd.key];
-    const nic_id = output_processor.cfg.ace_nic_config[0].nic_name;
-    const vpn_inst = `enet${nic_id}-vpn`;
-    const ovs_vsctl_inst = `/tmp/${vpn_inst}/ovs-vsctl.${cmd.key.replace(/_\d+/, ``)}`;
-    const ovs_docker_inst = `/tmp/${vpn_inst}/ovs-docker`;
-
-    var expr = `\n`;
-    expr += `mkdir -p /tmp/${vpn_inst}\n`;
-    expr += `echo '${host_ovs_cmd(cmd)}' > ${ovs_vsctl_inst}\n`;
-    expr += `docker cp ${vpn_inst}:/usr/local/bin/ovs-docker ${ovs_docker_inst}\n`;
-    expr += `chmod +x ${ovs_vsctl_inst}\n`;
-    expr += `chmod +x ${ovs_docker_inst}\n`;
-    expr += `cp -f ${ovs_vsctl_inst} /usr/local/bin/ovs-vsctl\n`;
-    expr += `${ovs_docker_inst} ${params}\n`;
     return expr;
 };
 
