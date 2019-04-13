@@ -71,6 +71,12 @@ var mea_ports_init_expr = function (cfg) {
 	expr += mea_ctl_passthrough_add(nic_id, 105, (nic_id === `0`) ? `69` : `CD`);
 	expr += mea_ctl_passthrough_add(nic_id, 106, (nic_id === `0`) ? `6A` : `CE`);
 	expr += mea_ctl_passthrough_add(nic_id, 107, (nic_id === `0`) ? `6B` : `CF`);
+	////
+	expr += mea_ctl_passthrough_add(nic_id, 104, (nic_id === `1`) ? `68` : `CC`);
+	expr += mea_ctl_passthrough_add(nic_id, 105, (nic_id === `1`) ? `69` : `CD`);
+	expr += mea_ctl_passthrough_add(nic_id, 106, (nic_id === `1`) ? `6A` : `CE`);
+	expr += mea_ctl_passthrough_add(nic_id, 107, (nic_id === `1`) ? `6B` : `CF`);
+	////
 	return expr;
 };
 
