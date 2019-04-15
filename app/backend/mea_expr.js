@@ -7,12 +7,16 @@ var MEA_IPSEC_INBOUND = require('./mea_ipsec_inbound.js');
 /////////////////////////////////////////////////
 ///////////////////// init //////////////////////
 
-var mea_ctl_passthrough_add = function (nic_id, port, port_hex) {
+var mea_ctl_passthrough_add = function (nic_id, port, port_hex, opposite_port_hex) {
 	
 	const service_add = vpn_common.mea_service_add(nic_id);
 	
 	var expr = ``;
+    // Downstream:
 	expr += `${service_add} ${vpn_common.mea_host_port} FF0${port_hex} FF0${port_hex} D.C 0 1 0 1000000000 0 64000 0 0 1 ${port} -ra 0 -l2Type 1 -h 0 0 0 0 -hType 3\n`;
+    // Downstream - opposite:
+	expr += `${service_add} ${vpn_common.mea_host_port} FF0${opposite_port_hex} FF0${opposite_port_hex} D.C 0 1 0 1000000000 0 64000 0 0 1 ${port} -ra 0 -l2Type 1 -h 0 0 0 0 -hType 3\n`;
+    // Upstream:
 	expr += `${service_add} ${port} FF000 FF000 D.C 0 1 0 1000000000 0 64000 0 0 1 ${vpn_common.mea_host_port} -ra 0 -Ed 0 -l2Type 0 -h 810000${port_hex} 0 0 1 -hType 1\n`;
 	return expr;
 };
@@ -67,16 +71,10 @@ var mea_ports_init_expr = function (cfg) {
 	expr += mea_shaper_add(nic_id, 105, `69`);
 	expr += mea_shaper_add(nic_id, 106, `6A`);
 	expr += mea_shaper_add(nic_id, 107, `6B`);
-	expr += mea_ctl_passthrough_add(nic_id, 104, (nic_id === `0`) ? `68` : `CC`);
-	expr += mea_ctl_passthrough_add(nic_id, 105, (nic_id === `0`) ? `69` : `CD`);
-	expr += mea_ctl_passthrough_add(nic_id, 106, (nic_id === `0`) ? `6A` : `CE`);
-	expr += mea_ctl_passthrough_add(nic_id, 107, (nic_id === `0`) ? `6B` : `CF`);
-	////
-	expr += mea_ctl_passthrough_add(nic_id, 104, (nic_id === `1`) ? `68` : `CC`);
-	expr += mea_ctl_passthrough_add(nic_id, 105, (nic_id === `1`) ? `69` : `CD`);
-	expr += mea_ctl_passthrough_add(nic_id, 106, (nic_id === `1`) ? `6A` : `CE`);
-	expr += mea_ctl_passthrough_add(nic_id, 107, (nic_id === `1`) ? `6B` : `CF`);
-	////
+	expr += mea_ctl_passthrough_add(nic_id, 104, `68`, `CC`);
+	expr += mea_ctl_passthrough_add(nic_id, 105, `69`, `CD`);
+	expr += mea_ctl_passthrough_add(nic_id, 106, `6A`, `CE`);
+	expr += mea_ctl_passthrough_add(nic_id, 107, `6B`, `CF`);
 	return expr;
 };
 
