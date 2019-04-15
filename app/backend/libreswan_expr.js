@@ -11,6 +11,7 @@ var append_ipsec_conf = function (cmd, conn_id) {
 	var output_processor = cmd.output_processor[cmd.key];
 	const conn_cfg = output_processor.cfg.conns[conn_id];
 	const vpn_cfg = output_processor.cfg.vpn_gw_config[0];
+	const vpn_gw_ip = (conn_cfg.remote_tunnel_endpoint_ip === undefined) ? vpn_cfg.vpn_gw_ip : conn_cfg.local_tunnel_endpoint_ip;
 	
 	var ipsec_conf = `\n`;
 	ipsec_conf += `conn ${conn_cfg.name}\n`;
@@ -19,11 +20,13 @@ var append_ipsec_conf = function (cmd, conn_id) {
 	libreswan_specific_config_arr.forEach(function (param) {
 		ipsec_conf += `  ${param}\n`;
 	});
-	ipsec_conf += `  left=${vpn_cfg.vpn_gw_ip}\n`;
+	ipsec_conf += `  type=tunnel\n`;
+	ipsec_conf += `  left=${vpn_gw_ip}\n`;
 	ipsec_conf += `  right=${conn_cfg.remote_tunnel_endpoint_ip}\n`;
 	ipsec_conf += `  leftsubnet=${conn_cfg.local_subnet}\n`;
 	ipsec_conf += `  rightsubnet=${conn_cfg.remote_subnet}\n`;
 	ipsec_conf += `  esp=${conn_cfg.encryption_type}\n`;
+	ipsec_conf += `  auto=add\n`;
 	ipsec_conf += `# inbound_accel=${conn_cfg.inbound_accel}\n`;
 	ipsec_conf += `# outbound_accel=${conn_cfg.outbound_accel}\n`;
 	ipsec_conf += `#\n`;
@@ -84,13 +87,14 @@ module.exports = function () {
 		libreswan_states.libreswan_conf = {};
 		for (var conn_id = 0; conn_id < conns.length; ++conn_id) {
 			const conn_cfg = conns[conn_id];
+			const vpn_gw_ip = (conn_cfg.remote_tunnel_endpoint_ip === undefined) ? vpn_cfg.vpn_gw_ip : conn_cfg.local_tunnel_endpoint_ip;
 			var libreswan_conf = libreswan_states.libreswan_conf[`enet${nic_id}_libreswan${conn_cfg.tunnel_port}`];
 			if (libreswan_conf === undefined) {
 				libreswan_states.libreswan_conf[`enet${nic_id}_libreswan${conn_cfg.tunnel_port}`] = { ipsec_conf: ``, ipsec_secrets: {} };
 				libreswan_conf = libreswan_states.libreswan_conf[`enet${nic_id}_libreswan${conn_cfg.tunnel_port}`];
 			}
 			libreswan_conf.ipsec_conf += append_ipsec_conf(cmd, conn_id);
-			libreswan_conf.ipsec_secrets[`${vpn_cfg.vpn_gw_ip} ${conn_cfg.remote_tunnel_endpoint_ip}`] = append_ipsec_secret(cmd, conn_id);
+			libreswan_conf.ipsec_secrets[`${vpn_gw_ip} ${conn_cfg.remote_tunnel_endpoint_ip}`] = append_ipsec_secret(cmd, conn_id);
 			if ((conn_id + 1) === conns.length) {
 				if (finish_cb) {
 					finish_cb(this);
@@ -144,6 +148,26 @@ module.exports = function () {
 				}
 			});
 		}
+	};
+	
+	this.libreswan_conn_add = function (cmd) {
+		
+		var output_processor = cmd.output_processor[cmd.key];
+		const conn_cfg = output_processor.cfg.conns[output_processor.conn_id];
+		
+		var expr = ``;
+		expr += `ipsec auto --add ${conn_cfg.name}; ipsec status`;
+		return expr;
+	};
+	
+	this.libreswan_conn_up = function (cmd) {
+		
+		var output_processor = cmd.output_processor[cmd.key];
+		const conn_cfg = output_processor.cfg.conns[output_processor.conn_id];
+		
+		var expr = ``;
+		expr += `ipsec auto --add ${conn_cfg.name}; ipsec auto --up ${conn_cfg.name}; ipsec status`;
+		return expr;
 	};
 	
 	/////////////////////////////////////////////////

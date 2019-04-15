@@ -100,7 +100,7 @@ enet_vpn_reboot_libreswan_inst() {
 
 enet_vpn_connect_libreswan_inst() {
 
-	set -x
+	#set -x
 	local nic_id=$1
 	local nic_port=$2
 	local libreswan_inst="${ENET_NIC_BR}_libreswan${nic_port}"
@@ -114,7 +114,7 @@ enet_vpn_connect_libreswan_inst() {
 		--macaddress=${libreswan_inst_mac}
 	sleep 2
 	ovs_dpdk set-docker-port-id ${libreswan_inst} ${dev_name} ${nic_port}
-	set +x
+	#set +x
 }
 
 enet_vpn_disconnect_libreswan_inst() {

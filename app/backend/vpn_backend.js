@@ -478,9 +478,101 @@ module.exports = function (host_profile, gw_profiles) {
 	};
 	
 	/////////////////////////////////////////////////
-	//////////////[outbound_tunnel_add]//////////////
+	////////////////////[conn_add]///////////////////
 	
-	this.outbound_tunnel_add = function (cfg, conn_id, remote_tunnel_mac, ipsec_cfg, ret_cb) {
+	this.conn_add = function (cfg, conn_id, ret_cb) {
+		
+		const nic_id = cfg.ace_nic_config[0].nic_name;		
+		const exec_time = new Date().getTime();
+		const conn_key = `nic${nic_id}_conn${conn_id}_add`;
+		const cmd_key = `${conn_key}_${exec_time}`;
+		
+		this.output_processor[cmd_key] = {
+			meta: { key: cmd_key, exec_time: exec_time, latencies: [], ret: [] },
+			cfg: cfg,
+			conn_id: conn_id,
+			expr: [],
+			output: [],
+			ret_cb: ret_cb
+		};
+		
+		var that = this;
+		var finish_cb = function (cmd) {
+			
+			var output_processor = cmd.output_processor[cmd.key];
+			that.cmd_log.push(output_processor);
+			if (output_processor.ret_cb) {
+				var ret_cb = output_processor.ret_cb;
+				ret_cb(cmd, that.gw_config);
+				delete that.cmd_log[that.cmd_log.length - 1][`ret_cb`];
+			} else {
+				that.gw_config.cmd_advance(cmd);
+			}
+			return cmd;
+		};
+		
+		const host_cmds = [
+			{
+				key: cmd_key,
+				output_processor: this.output_processor,
+				expr_builder: this.docker_expr.conn_add,
+				output_cb: finish_cb
+			}
+		];
+		this.gw_config.host_exec_cmd(host_cmds);
+		this.tunnel_states.UPDATE = `${new Date()}`;
+	};
+	
+	/////////////////////////////////////////////////
+	/////////////////////[conn_up]///////////////////
+	
+	this.conn_up = function (cfg, conn_id, ret_cb) {
+		
+		const nic_id = cfg.ace_nic_config[0].nic_name;		
+		const exec_time = new Date().getTime();
+		const conn_key = `nic${nic_id}_conn${conn_id}_up`;
+		const cmd_key = `${conn_key}_${exec_time}`;
+		
+		this.output_processor[cmd_key] = {
+			meta: { key: cmd_key, exec_time: exec_time, latencies: [], ret: [] },
+			cfg: cfg,
+			conn_id: conn_id,
+			expr: [],
+			output: [],
+			ret_cb: ret_cb
+		};
+		
+		var that = this;
+		var finish_cb = function (cmd) {
+			
+			var output_processor = cmd.output_processor[cmd.key];
+			that.cmd_log.push(output_processor);
+			if (output_processor.ret_cb) {
+				var ret_cb = output_processor.ret_cb;
+				ret_cb(cmd, that.gw_config);
+				delete that.cmd_log[that.cmd_log.length - 1][`ret_cb`];
+			} else {
+				that.gw_config.cmd_advance(cmd);
+			}
+			return cmd;
+		};
+		
+		const host_cmds = [
+			{
+				key: cmd_key,
+				output_processor: this.output_processor,
+				expr_builder: this.docker_expr.conn_up,
+				output_cb: finish_cb
+			}
+		];
+		this.gw_config.host_exec_cmd(host_cmds);
+		this.tunnel_states.UPDATE = `${new Date()}`;
+	};
+	
+	/////////////////////////////////////////////////
+	///////[add_outbound_tunnel_full_offload]////////
+	
+	this.add_outbound_tunnel_full_offload = function (cfg, conn_id, remote_tunnel_mac, ipsec_cfg, ret_cb) {
 		
 		const nic_id = cfg.ace_nic_config[0].nic_name;		
 		const exec_time = new Date().getTime();
@@ -547,6 +639,105 @@ module.exports = function (host_profile, gw_profiles) {
 		];
 		this.gw_config.host_exec_cmd(host_cmds);
 		this.tunnel_states.UPDATE = `${new Date()}`;
+	};
+	
+	/////////////////////////////////////////////////
+	////////[add_outbound_tunnel_no_offload]/////////
+	
+	this.add_outbound_tunnel_no_offload = function (cfg, conn_id, remote_tunnel_mac, ipsec_cfg, ret_cb) {
+		
+		const nic_id = cfg.ace_nic_config[0].nic_name;		
+		const exec_time = new Date().getTime();
+		const conn_cfg = cfg.conns[conn_id];
+		const tunnel_key = `nic${nic_id}_conn${conn_id}_out`;
+		const cmd_key = `${tunnel_key}_${exec_time}`;
+		
+		this.tunnel_states[tunnel_key] = {
+			nic_id: nic_id,
+			conn_id: conn_id,
+			port_in: parseInt(conn_cfg.lan_port),
+			port_out: parseInt(conn_cfg.tunnel_port),
+			gw_in: `250.${nic_id}.${nic_id}.250`,
+			gw_out: conn_cfg.remote_tunnel_endpoint_ip,
+			subnet_in: conn_cfg.local_subnet,
+			subnet_out: conn_cfg.remote_subnet,
+			remote_tunnel_mac: remote_tunnel_mac,
+			local_tunnel_mac: vpn_common.vpn_conn_mac_base(nic_id, conn_id, conn_cfg.tunnel_port),
+			ipsec_cfg: ipsec_cfg
+		};
+		
+		this.output_processor[cmd_key] = {
+			meta: { key: cmd_key, exec_time: exec_time, latencies: [], ret: [] },
+			tunnel_state: this.tunnel_states[tunnel_key],
+			cfg: cfg,
+			expr: [],
+			output: [],
+			ret_cb: ret_cb
+		};
+		
+		var that = this;
+		var finish_cb = function (cmd) {
+			
+			var output_processor = cmd.output_processor[cmd.key];
+			that.cmd_log.push(output_processor);
+			if (output_processor.ret_cb) {
+				var ret_cb = output_processor.ret_cb;
+				ret_cb(cmd, that.gw_config);
+				delete that.cmd_log[that.cmd_log.length - 1][`ret_cb`];
+			} else {
+				that.gw_config.cmd_advance(cmd);
+			}
+			return cmd;
+		};
+		
+		const host_cmds = [
+			{
+				key: cmd_key,
+				label: `add outbound tunnel flows`,
+				target: `localhost`,
+				output_processor: this.output_processor,
+				expr_builder: this.ovs_expr.add_outbound_tunnel_no_offload,
+				output_cb: finish_cb
+			}
+		];
+		this.gw_config.host_exec_cmd(host_cmds);
+		this.tunnel_states.UPDATE = `${new Date()}`;
+	};
+	
+	/////////////////////////////////////////////////
+	//////////////[outbound_tunnel_add]//////////////
+	
+	this.outbound_tunnel_add = function (cfg, conn_id, remote_tunnel_mac, ipsec_cfg, ret_cb) {
+		
+		const nic_id = cfg.ace_nic_config[0].nic_name;		
+		const exec_time = new Date().getTime();
+		const conn_cfg = cfg.conns[conn_id];
+		const tunnel_key = `nic${nic_id}_conn${conn_id}_out`;
+		const cmd_key = `${tunnel_key}_${exec_time}`;
+		
+		this.output_processor[cmd_key] = {
+			meta: { key: cmd_key, exec_time: exec_time, latencies: [], ret: [] },
+			cfg: cfg,
+			expr: [],
+			output: []
+		};
+		
+		switch (conn_cfg.outbound_accel) {
+
+			case `full`:
+			this.add_outbound_tunnel_full_offload(cfg, conn_id, remote_tunnel_mac, ipsec_cfg, ret_cb);
+			break;
+
+			case `none`:
+			this.add_outbound_tunnel_no_offload(cfg, conn_id, remote_tunnel_mac, ipsec_cfg, ret_cb);
+			break;
+
+			default:
+			delete this.output_processor[cmd_key].ret_cb;
+			this.output_processor[cmd_key].meta.error = `Outbound tunnel ${tunnel_key} acceleration unsupported: ${conn_cfg.outbound_accel}.`;
+			ret_cb({ key: cmd_key, output_processor: this.output_processor });
+			break;
+		}
 	};
 	
 	/////////////////////////////////////////////////

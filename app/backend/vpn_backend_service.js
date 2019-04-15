@@ -322,6 +322,48 @@ module.exports = function (host_profile, gw_profiles, service_ip, service_port) 
 			}
 		});
 	};
+
+	this.conn_add = function (conn_id, res) {
+		
+		this.vpn_backend.conn_add(this.vpn_cfg.VPN, conn_id, function (cmd, gw_config) {
+
+			if (gw_config === undefined) {
+				const cmd_log = {
+					time: new Date().getTime(),
+					key: cmd.key,
+					label: cmd.label
+				};
+				res.write(JSON.stringify(cmd_log));
+				//res.writeHead(200, res_headers);
+			} else {
+				const output_processor = cmd.output_processor[cmd.key];
+				const output_str = JSON.stringify(output_processor.meta);
+				res.end(output_str);
+				gw_config.cmd_advance(cmd);
+			}
+		});
+	};
+
+	this.conn_up = function (conn_id, res) {
+		
+		this.vpn_backend.conn_up(this.vpn_cfg.VPN, conn_id, function (cmd, gw_config) {
+
+			if (gw_config === undefined) {
+				const cmd_log = {
+					time: new Date().getTime(),
+					key: cmd.key,
+					label: cmd.label
+				};
+				res.write(JSON.stringify(cmd_log));
+				//res.writeHead(200, res_headers);
+			} else {
+				const output_processor = cmd.output_processor[cmd.key];
+				const output_str = JSON.stringify(output_processor.meta);
+				res.end(output_str);
+				gw_config.cmd_advance(cmd);
+			}
+		});
+	};
 	
 	this.outbound_tunnel_add = function (tunnel_spec, ipsec_cfg, res) {
 		
@@ -501,6 +543,12 @@ module.exports = function (host_profile, gw_profiles, service_ip, service_port) 
 							break;
 							case `boot_vpn`:
 								this.boot_vpn_all(content.vpn_cfg, res);
+							break;
+							case `conn_add`:
+								this.conn_add(content.conn_id, res);
+							break;
+							case `conn_up`:
+								this.conn_up(content.conn_id, res);
 							break;
 							case `outbound_tunnel_add`:
 								this.outbound_tunnel_add(content.tunnel_spec, content.ipsec_cfg, res);

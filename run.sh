@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -x
+#set -x
 
 ACENIC_ID=${1:-0}
 ACENIC_LABEL=${2:-ACENIC1_127}
@@ -185,4 +185,4 @@ docker run \
 	$IMG_TAG \
 	/bin/bash
 
-set +x
+#set +x

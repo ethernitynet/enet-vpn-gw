@@ -29,7 +29,8 @@ var boot_libreswan_inst = function (cmd, vpn_port, libreswan_img) {
 	const libreswan_inst = `enet${nic_id}_libreswan${vpn_port}`;	
 	const host_dir = output_processor.cfg.ace_nic_config[0].install_dir;
 	const libreswan_shared_dir = `${host_dir}${vpn_shared_dir}/${libreswan_inst}`;
-    const libreswan_ip = `10.${nic_id}.${nic_id}.${vpn_port}`;
+    const libreswan_ip = `200.${nic_id}.${nic_id}.${vpn_port}`;
+    const libreswan_lo_ip = `250.${nic_id}.${nic_id}.250`;
     const enet_br = `enetbr${nic_id}`;
 	
 	var expr = ``;
@@ -46,6 +47,9 @@ var boot_libreswan_inst = function (cmd, vpn_port, libreswan_img) {
 	expr += `	-v ${libreswan_shared_dir}/ipsec.conf:/etc/ipsec.conf`;
 	expr += `	-v ${libreswan_shared_dir}/ipsec.secrets:/etc/ipsec.secrets`;
 	expr += `	${libreswan_img}\n`;
+	expr += `docker exec ${libreswan_inst} /bin/bash -c 'ip link set dev lo up'\n`;
+	expr += `docker exec ${libreswan_inst} /bin/bash -c 'ip addr replace ${libreswan_lo_ip}/32 dev lo'\n`;
+	expr += `docker exec ${libreswan_inst} /bin/bash -c 'ip route replace 250.0.0.0/8 dev eth0 proto kernel scope link src ${libreswan_lo_ip}'\n`;
 	return expr;
 };
 
@@ -143,6 +147,30 @@ module.exports = function () {
 		expr += restart_libreswan_service(cmd, `enet${nic_id}_libreswan105`);
 		expr += restart_libreswan_service(cmd, `enet${nic_id}_libreswan106`);
 		expr += restart_libreswan_service(cmd, `enet${nic_id}_libreswan107`);
+		return expr;
+	};
+	
+	this.conn_add = function (cmd) {
+	
+		var output_processor = cmd.output_processor[cmd.key];
+		const nic_id = output_processor.cfg.ace_nic_config[0].nic_name;
+		const conn_cfg = output_processor.cfg.conns[output_processor.conn_id];
+		const libreswan_inst = `enet${nic_id}_libreswan${conn_cfg.tunnel_port}`;	
+		
+		var expr = ``;
+		expr += `docker exec ${libreswan_inst} /bin/bash -c '${libreswan_expr.libreswan_conn_add(cmd)}'\n`;
+		return expr;
+	};
+	
+	this.conn_up = function (cmd) {
+	
+		var output_processor = cmd.output_processor[cmd.key];
+		const nic_id = output_processor.cfg.ace_nic_config[0].nic_name;
+		const conn_cfg = output_processor.cfg.conns[output_processor.conn_id];
+		const libreswan_inst = `enet${nic_id}_libreswan${conn_cfg.tunnel_port}`;	
+		
+		var expr = ``;
+		expr += `docker exec ${libreswan_inst} /bin/bash -c '${libreswan_expr.libreswan_conn_up(cmd)}'\n`;
 		return expr;
 	};
 		

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -x
+#set -x
 
 pktlen=800
 conn_id=0
@@ -72,5 +72,5 @@ ip netns exec nssouth pkill ping
 
 ns_cleanup
 
-set +x
+#set +x
 

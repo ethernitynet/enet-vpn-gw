@@ -204,6 +204,8 @@ var ovs_docker_add_port = function (cmd, enet_phy_pid) {
     const libreswan_inst = `enet${nic_id}_libreswan${enet_phy_pid}`;
     const vpn_cfg = output_processor.cfg.vpn_gw_config[0];
     const libreswan_dev = `e${nic_id}ls${enet_phy_pid}`;
+    const libreswan_host_dev = `h${libreswan_dev}`;
+    const libreswan_host_eth_dev = `he${nic_id}eth${enet_phy_pid}`;
     const port_macs = vpn_common.mea_port_macs(nic_id);
     const enet_br = `enetbr${nic_id}`;
     const ovs_phy_pid = (nic_id === `0`) ? enet_phy_pid : (enet_phy_pid + 100);
@@ -214,7 +216,45 @@ var ovs_docker_add_port = function (cmd, enet_phy_pid) {
     expr += `HOST_DEV_IFIDX=$((LS_DEV_IFIDX - 1))\n`;
     expr += `LS_PEER_IFLINK=$(grep $HOST_DEV_IFIDX /sys/class/net/*/iflink)\n`;
     expr += `LS_PEER_DEV=$(sed "s~/sys/class/net/\\(.*\\)/iflink\\:[0-9]*$~\\1~" <<< $LS_PEER_IFLINK)\n`;
-    expr += `${ovs_vsctl(cmd)} set interface $LS_PEER_DEV ofport_request=${ovs_phy_pid}\n`;
+    expr += `${ovs_vsctl(cmd)} del-port $LS_PEER_DEV\n`;
+    expr += `ip link set dev $LS_PEER_DEV down\n`;
+    expr += `ip link set dev $LS_PEER_DEV name ${libreswan_host_dev}\n`;
+    expr += `ip link set dev ${libreswan_host_dev} up\n`;
+    expr += `${ovs_vsctl(cmd)} add-port ${enet_br} ${libreswan_host_dev}\n`;
+    expr += `${ovs_vsctl(cmd)} set interface ${libreswan_host_dev} ofport_request=${ovs_phy_pid}\n`;
+    expr += `ETH0_DEV_IFIDX=$(docker exec ${libreswan_inst} cat /sys/class/net/eth0/iflink)\n`;
+    expr += `ETH0_HOST_DEV_IFIDX=$((ETH0_DEV_IFIDX - 1))\n`;
+    expr += `ETH0_PEER_IFLINK=$(grep $ETH0_HOST_DEV_IFIDX /sys/class/net/*/iflink)\n`;
+    expr += `ETH0_PEER_DEV=$(sed "s~/sys/class/net/\\(.*\\)/iflink\\:[0-9]*$~\\1~" <<< $ETH0_PEER_IFLINK)\n`;
+    expr += `ip link set dev $ETH0_PEER_DEV down\n`;
+    expr += `ip link set dev $ETH0_PEER_DEV name ${libreswan_host_eth_dev}\n`;
+    expr += `ip link set dev ${libreswan_host_eth_dev} up\n`;
+    return expr;
+};
+
+var tunnel_add_outbound_no_offload = function (cmd) {
+
+    var output_processor = cmd.output_processor[cmd.key];
+    const nic_id = output_processor.cfg.ace_nic_config[0].nic_name;
+    const tunnel_state = output_processor.tunnel_state;
+    var ovs_host_pid = (nic_id === `0`) ? 127 : 227;
+    const ovs_phy_vlan = (nic_id === `0`) ? tunnel_state.port_in : (tunnel_state.port_in + 100);
+    const ovs_out_pid = (nic_id === `0`) ? tunnel_state.port_out : (tunnel_state.port_out + 100);
+    const port_macs = vpn_common.mea_port_macs(nic_id);
+    // Opposite:
+    const opposite_nic_id = (nic_id === `0`) ? `1` : `0`;
+    const opposite_port_macs = vpn_common.mea_port_macs(opposite_nic_id);
+    const opposite_ovs_phy_vlan = (opposite_nic_id === `0`) ? tunnel_state.port_out : (tunnel_state.port_out + 100);
+
+    var expr = ``;
+    // Upstream:
+    expr += `${ovs_ofctl(cmd, `add-flow`)} "in_port=${ovs_host_pid},dl_vlan=${ovs_phy_vlan},ip,nw_src=${tunnel_state.subnet_in},nw_dst=${tunnel_state.subnet_out},actions=strip_vlan,mod_dl_dst=${port_macs[tunnel_state.port_out]},output:${ovs_out_pid}"\n`;
+    expr += `${ovs_ofctl(cmd, `add-flow`)} "in_port=${ovs_host_pid},dl_dst=${port_macs[tunnel_state.port_in]},ip,nw_src=${tunnel_state.subnet_in},nw_dst=${tunnel_state.subnet_out},actions=mod_dl_dst=${port_macs[tunnel_state.port_out]},output:${ovs_out_pid}"\n`;
+    // Upstream - opposite:
+    expr += `${ovs_ofctl(cmd, `add-flow`)} "in_port=${ovs_host_pid},dl_vlan=${opposite_ovs_phy_vlan},ip,nw_src=${tunnel_state.subnet_in},nw_dst=${tunnel_state.subnet_out},actions=strip_vlan,mod_dl_dst=${port_macs[tunnel_state.port_out]},output:${ovs_out_pid}"\n`;
+    expr += `${ovs_ofctl(cmd, `add-flow`)} "in_port=${ovs_host_pid},dl_dst=${opposite_port_macs[tunnel_state.port_in]},ip,nw_src=${tunnel_state.subnet_in},nw_dst=${tunnel_state.subnet_out},actions=mod_dl_dst=${port_macs[tunnel_state.port_out]},output:${ovs_out_pid}"\n`;
+    // Downstream:
+    expr += `${ovs_ofctl(cmd, `add-flow`)} "in_port=${ovs_out_pid},ip,nw_src=${tunnel_state.gw_in},nw_dst=${tunnel_state.gw_out},nw_proto=50,actions=push_vlan:0x8100,mod_vlan_vid=${ovs_out_pid},output:${ovs_host_pid}"\n`;
     return expr;
 };
 
@@ -225,24 +265,21 @@ var port_add_of_ctl_passthrough = function (cmd, enet_phy_pid) {
     var ovs_host_pid = (nic_id === `0`) ? 127 : 227;
     const ovs_phy_pid = (nic_id === `0`) ? enet_phy_pid : (enet_phy_pid + 100);
     const ovs_phy_vlan = (nic_id === `0`) ? enet_phy_pid : (enet_phy_pid + 100);
+    const port_macs = vpn_common.mea_port_macs(nic_id);
+    // Opposite:
+    const opposite_nic_id = (nic_id === `0`) ? `1` : `0`;
+    const opposite_port_macs = vpn_common.mea_port_macs(opposite_nic_id);
+    const opposite_ovs_phy_vlan = (opposite_nic_id === `0`) ? enet_phy_pid : (enet_phy_pid + 100);
 
     var expr = ``;
+    // Upstream:
+    expr += `${ovs_ofctl(cmd, `add-flow`)} "in_port=${ovs_host_pid},dl_vlan=${ovs_phy_vlan},actions=strip_vlan,mod_dl_dst=${port_macs[enet_phy_pid]},output:${ovs_phy_pid}"\n`;
+    expr += `${ovs_ofctl(cmd, `add-flow`)} "in_port=${ovs_host_pid},dl_dst=${port_macs[enet_phy_pid]},actions=output:${ovs_phy_pid}"\n`;
+    // Upstream - opposite:
+    expr += `${ovs_ofctl(cmd, `add-flow`)} "in_port=${ovs_host_pid},dl_vlan=${opposite_ovs_phy_vlan},actions=strip_vlan,mod_dl_dst=${port_macs[enet_phy_pid]},output:${ovs_phy_pid}"\n`;
+    expr += `${ovs_ofctl(cmd, `add-flow`)} "in_port=${ovs_host_pid},dl_dst=${opposite_port_macs[enet_phy_pid]},actions=mod_dl_dst=${port_macs[enet_phy_pid]},output:${ovs_phy_pid}"\n`;
+    // Downstream:
     expr += `${ovs_ofctl(cmd, `add-flow`)} "in_port=${ovs_phy_pid},actions=push_vlan:0x8100,mod_vlan_vid=${ovs_phy_vlan},output:${ovs_host_pid}"\n`;
-    expr += `${ovs_ofctl(cmd, `add-flow`)} "in_port=${ovs_host_pid},dl_vlan=${ovs_phy_vlan},actions=strip_vlan,output:${ovs_phy_pid}"\n`;
-    return expr;
-};
-
-var port_add_of_ctl_passthrough_opposite = function (cmd, enet_phy_pid) {
-
-    var output_processor = cmd.output_processor[cmd.key];
-    const nic_id = output_processor.cfg.ace_nic_config[0].nic_name;
-    var ovs_host_pid = (nic_id === `0`) ? 127 : 227;
-    const ovs_phy_pid = (nic_id === `0`) ? enet_phy_pid : (enet_phy_pid + 100);
-    const ovs_phy_vlan = (nic_id === `1`) ? enet_phy_pid : (enet_phy_pid + 100);
-
-    var expr = ``;
-    expr += `${ovs_ofctl(cmd, `add-flow`)} "in_port=${ovs_phy_pid},actions=push_vlan:0x8100,mod_vlan_vid=${ovs_phy_vlan},output:${ovs_host_pid}"\n`;
-    expr += `${ovs_ofctl(cmd, `add-flow`)} "in_port=${ovs_host_pid},dl_vlan=${ovs_phy_vlan},actions=strip_vlan,output:${ovs_phy_pid}"\n`;
     return expr;
 };
 
@@ -258,12 +295,12 @@ module.exports = function () {
     this.ovs_docker_add_ports = function (cmd) {
 
         var expr = ``;
-        expr += `set -x\n`;
+        //expr += `set -x\n`;
         expr += ovs_docker_add_port(cmd, 104);
         expr += ovs_docker_add_port(cmd, 105);
         expr += ovs_docker_add_port(cmd, 106);
         expr += ovs_docker_add_port(cmd, 107);
-        expr += `set +x\n`;
+        //expr += `set +x\n`;
         return expr;
     };
 	
@@ -273,32 +310,35 @@ module.exports = function () {
         const dataplane_type = output_processor.cfg.ace_nic_config[0].dataplane;
             
         var expr = ``;
-        expr += `set -x\n`;
+        //expr += `set -x\n`;
         expr += ovs_wipeout(cmd);
         expr += `mkdir -p ${ovs_etc_dir}\n`;
         expr += `mkdir -p ${ovs_log_dir}\n`;
         expr += `mkdir -p ${ovs_share_dir}\n`;
         expr += `mkdir -p ${ovs_runtime_dir}\n`;
         expr += (dataplane_type === `dpdk`) ? ovs_dpdk_boot(cmd) : ovs_kernel_boot(cmd);
-        expr += `set +x\n`;
+        //expr += `set +x\n`;
         return expr;
     };
 	
     this.add_of_ctl_passthrough = function (cmd) {
 
         var expr = ``;
-        expr += `set -x\n`;
+        //expr += `set -x\n`;
         expr += port_add_of_ctl_passthrough(cmd, 104);
         expr += port_add_of_ctl_passthrough(cmd, 105);
         expr += port_add_of_ctl_passthrough(cmd, 106);
         expr += port_add_of_ctl_passthrough(cmd, 107);
-        ////
-        expr += port_add_of_ctl_passthrough_opposite(cmd, 104);
-        expr += port_add_of_ctl_passthrough_opposite(cmd, 105);
-        expr += port_add_of_ctl_passthrough_opposite(cmd, 106);
-        expr += port_add_of_ctl_passthrough_opposite(cmd, 107);
-        ////
-        expr += `set +x\n`;
+        //expr += `set +x\n`;
+        return expr;
+    };
+	
+    this.add_outbound_tunnel_no_offload = function (cmd) {
+            
+        var expr = ``;
+        //expr += `set -x\n`;
+        expr += tunnel_add_outbound_no_offload(cmd);
+        //expr += `set +x\n`;
         return expr;
     };
 
