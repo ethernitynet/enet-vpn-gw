@@ -32,7 +32,7 @@
 					"local_subnet": "140.0.1.0/24",
 					"remote_subnet": "140.0.2.0/24",
 					"inbound_routes": "140.0.1.1",
-					"lan_port": "105",
+					"lan_port": "106",
 					"tunnel_port": "107",
 					"libreswan_specific": "authby=secret\nike=aes-sha1;modp2048\nikev2=insist\nnarrowing=yes"
 				}

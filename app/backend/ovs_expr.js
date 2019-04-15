@@ -5,6 +5,9 @@ var vpn_common = require('./vpn_common.js');
 /////////////////////////////////////////////////////
 /////////////////////////////////////////////////////
 
+const of_priority_base = 100;
+const of_priority_no_offload = 1000;
+
 const ovs_runtime_dir = `/usr/local/var/run/openvswitch`;
 const ovs_share_dir = `/usr/local/share/openvswitch`;
 const ovs_etc_dir = `/usr/local/etc/openvswitch`;
@@ -158,9 +161,12 @@ var ovs_dpdk_boot = function (cmd) {
     ///////////////////////
     expr += `sleep 1\n`;
     expr += `(>&2 ${ovs_ctl} status)\n`;
-    expr += `${ovs_vsctl(cmd)} add-br ${enet_br} -- set-controller ${enet_br} ${of_sock_tcp(cmd, `ptcp`)} -- set bridge ${enet_br} datapath_type=netdev\n`;
-    expr += `${ovs_vsctl(cmd)} add-port ${enet_br} ${enet_port} -- set Interface ${enet_port} type=dpdk options:dpdk-devargs=${enet_pci}\n`;
-    expr += `${ovs_vsctl(cmd)} set interface ${enet_port} ofport_request=${ovs_host_pid}\n`;
+    expr += `${ovs_vsctl(cmd)} add-br ${enet_br}`;
+    expr += ` -- set-controller ${enet_br} ${of_sock_tcp(cmd, `ptcp`)}`;
+    expr += ` -- set bridge ${enet_br} datapath_type=netdev`;
+    expr += ` -- add-port ${enet_br} ${enet_port}`;
+    expr += ` -- set Interface ${enet_port} type=dpdk options:dpdk-devargs=${enet_pci}`;
+    expr += ` -- set interface ${enet_port} ofport_request=${ovs_host_pid}\n`;
     return expr;
 };
 
@@ -191,9 +197,10 @@ var ovs_kernel_boot = function (cmd) {
     ///////////////////////
     expr += `sleep 1\n`;
     expr += `(>&2 ${ovs_ctl} status)\n`;
-    expr += `${ovs_vsctl(cmd)} add-br ${enet_br} -- set-controller ${enet_br} ${of_sock_tcp(cmd, `ptcp`)}\n`;
-    expr += `${ovs_vsctl(cmd)} add-port ${enet_br} ${enet_port}\n`;
-    expr += `${ovs_vsctl(cmd)} set interface ${enet_port} ofport_request=${ovs_host_pid}\n`;
+    expr += `${ovs_vsctl(cmd)} add-br ${enet_br}`;
+    expr += ` -- set-controller ${enet_br} ${of_sock_tcp(cmd, `ptcp`)}`;
+    expr += ` -- add-port ${enet_br} ${enet_port}`;
+    expr += ` -- set interface ${enet_port} ofport_request=${ovs_host_pid}\n`;
     return expr;
 };
 
@@ -220,8 +227,8 @@ var ovs_docker_add_port = function (cmd, enet_phy_pid) {
     expr += `ip link set dev $LS_PEER_DEV down\n`;
     expr += `ip link set dev $LS_PEER_DEV name ${libreswan_host_dev}\n`;
     expr += `ip link set dev ${libreswan_host_dev} up\n`;
-    expr += `${ovs_vsctl(cmd)} add-port ${enet_br} ${libreswan_host_dev}\n`;
-    expr += `${ovs_vsctl(cmd)} set interface ${libreswan_host_dev} ofport_request=${ovs_phy_pid}\n`;
+    expr += `${ovs_vsctl(cmd)} add-port ${enet_br} ${libreswan_host_dev}`;
+    expr += ` -- set interface ${libreswan_host_dev} ofport_request=${ovs_phy_pid}\n`;
     expr += `ETH0_DEV_IFIDX=$(docker exec ${libreswan_inst} cat /sys/class/net/eth0/iflink)\n`;
     expr += `ETH0_HOST_DEV_IFIDX=$((ETH0_DEV_IFIDX - 1))\n`;
     expr += `ETH0_PEER_IFLINK=$(grep $ETH0_HOST_DEV_IFIDX /sys/class/net/*/iflink)\n`;
@@ -248,13 +255,13 @@ var tunnel_add_outbound_no_offload = function (cmd) {
 
     var expr = ``;
     // Upstream:
-    expr += `${ovs_ofctl(cmd, `add-flow`)} "in_port=${ovs_host_pid},dl_vlan=${ovs_phy_vlan},ip,nw_src=${tunnel_state.subnet_in},nw_dst=${tunnel_state.subnet_out},actions=strip_vlan,mod_dl_dst=${port_macs[tunnel_state.port_out]},output:${ovs_out_pid}"\n`;
-    expr += `${ovs_ofctl(cmd, `add-flow`)} "in_port=${ovs_host_pid},dl_dst=${port_macs[tunnel_state.port_in]},ip,nw_src=${tunnel_state.subnet_in},nw_dst=${tunnel_state.subnet_out},actions=mod_dl_dst=${port_macs[tunnel_state.port_out]},output:${ovs_out_pid}"\n`;
+    expr += `${ovs_ofctl(cmd, `add-flow`)} "priority=${of_priority_no_offload},in_port=${ovs_host_pid},dl_vlan=${ovs_phy_vlan},ip,nw_src=${tunnel_state.subnet_in},nw_dst=${tunnel_state.subnet_out},actions=strip_vlan,mod_dl_dst=${port_macs[tunnel_state.port_out]},output:${ovs_out_pid}"\n`;
+    expr += `${ovs_ofctl(cmd, `add-flow`)} "priority=${of_priority_no_offload},in_port=${ovs_host_pid},dl_dst=${port_macs[tunnel_state.port_in]},ip,nw_src=${tunnel_state.subnet_in},nw_dst=${tunnel_state.subnet_out},actions=mod_dl_dst=${port_macs[tunnel_state.port_out]},output:${ovs_out_pid}"\n`;
     // Upstream - opposite:
-    expr += `${ovs_ofctl(cmd, `add-flow`)} "in_port=${ovs_host_pid},dl_vlan=${opposite_ovs_phy_vlan},ip,nw_src=${tunnel_state.subnet_in},nw_dst=${tunnel_state.subnet_out},actions=strip_vlan,mod_dl_dst=${port_macs[tunnel_state.port_out]},output:${ovs_out_pid}"\n`;
-    expr += `${ovs_ofctl(cmd, `add-flow`)} "in_port=${ovs_host_pid},dl_dst=${opposite_port_macs[tunnel_state.port_in]},ip,nw_src=${tunnel_state.subnet_in},nw_dst=${tunnel_state.subnet_out},actions=mod_dl_dst=${port_macs[tunnel_state.port_out]},output:${ovs_out_pid}"\n`;
+    expr += `${ovs_ofctl(cmd, `add-flow`)} "priority=${of_priority_no_offload},in_port=${ovs_host_pid},dl_vlan=${opposite_ovs_phy_vlan},ip,nw_src=${tunnel_state.subnet_in},nw_dst=${tunnel_state.subnet_out},actions=strip_vlan,mod_dl_dst=${port_macs[tunnel_state.port_out]},output:${ovs_out_pid}"\n`;
+    expr += `${ovs_ofctl(cmd, `add-flow`)} "priority=${of_priority_no_offload},in_port=${ovs_host_pid},dl_dst=${opposite_port_macs[tunnel_state.port_in]},ip,nw_src=${tunnel_state.subnet_in},nw_dst=${tunnel_state.subnet_out},actions=mod_dl_dst=${port_macs[tunnel_state.port_out]},output:${ovs_out_pid}"\n`;
     // Downstream:
-    expr += `${ovs_ofctl(cmd, `add-flow`)} "in_port=${ovs_out_pid},ip,nw_src=${tunnel_state.gw_in},nw_dst=${tunnel_state.gw_out},nw_proto=50,actions=push_vlan:0x8100,mod_vlan_vid=${ovs_out_pid},output:${ovs_host_pid}"\n`;
+    expr += `${ovs_ofctl(cmd, `add-flow`)} "priority=${of_priority_no_offload},in_port=${ovs_out_pid},ip,nw_src=${tunnel_state.gw_in},nw_dst=${tunnel_state.gw_out},nw_proto=50,actions=push_vlan:0x8100,mod_vlan_vid=${ovs_out_pid},output:${ovs_host_pid}"\n`;
     return expr;
 };
 
@@ -273,13 +280,13 @@ var port_add_of_ctl_passthrough = function (cmd, enet_phy_pid) {
 
     var expr = ``;
     // Upstream:
-    expr += `${ovs_ofctl(cmd, `add-flow`)} "in_port=${ovs_host_pid},dl_vlan=${ovs_phy_vlan},actions=strip_vlan,mod_dl_dst=${port_macs[enet_phy_pid]},output:${ovs_phy_pid}"\n`;
-    expr += `${ovs_ofctl(cmd, `add-flow`)} "in_port=${ovs_host_pid},dl_dst=${port_macs[enet_phy_pid]},actions=output:${ovs_phy_pid}"\n`;
+    expr += `${ovs_ofctl(cmd, `add-flow`)} "priority=${of_priority_base},in_port=${ovs_host_pid},dl_vlan=${ovs_phy_vlan},actions=strip_vlan,mod_dl_dst=${port_macs[enet_phy_pid]},output:${ovs_phy_pid}"\n`;
+    expr += `${ovs_ofctl(cmd, `add-flow`)} "priority=${of_priority_base},in_port=${ovs_host_pid},dl_dst=${port_macs[enet_phy_pid]},actions=output:${ovs_phy_pid}"\n`;
     // Upstream - opposite:
-    expr += `${ovs_ofctl(cmd, `add-flow`)} "in_port=${ovs_host_pid},dl_vlan=${opposite_ovs_phy_vlan},actions=strip_vlan,mod_dl_dst=${port_macs[enet_phy_pid]},output:${ovs_phy_pid}"\n`;
-    expr += `${ovs_ofctl(cmd, `add-flow`)} "in_port=${ovs_host_pid},dl_dst=${opposite_port_macs[enet_phy_pid]},actions=mod_dl_dst=${port_macs[enet_phy_pid]},output:${ovs_phy_pid}"\n`;
+    expr += `${ovs_ofctl(cmd, `add-flow`)} "priority=${of_priority_base},in_port=${ovs_host_pid},dl_vlan=${opposite_ovs_phy_vlan},actions=strip_vlan,mod_dl_dst=${port_macs[enet_phy_pid]},output:${ovs_phy_pid}"\n`;
+    expr += `${ovs_ofctl(cmd, `add-flow`)} "priority=${of_priority_base},in_port=${ovs_host_pid},dl_dst=${opposite_port_macs[enet_phy_pid]},actions=mod_dl_dst=${port_macs[enet_phy_pid]},output:${ovs_phy_pid}"\n`;
     // Downstream:
-    expr += `${ovs_ofctl(cmd, `add-flow`)} "in_port=${ovs_phy_pid},actions=push_vlan:0x8100,mod_vlan_vid=${ovs_phy_vlan},output:${ovs_host_pid}"\n`;
+    expr += `${ovs_ofctl(cmd, `add-flow`)} "priority=${of_priority_base},in_port=${ovs_phy_pid},actions=push_vlan:0x8100,mod_vlan_vid=${ovs_phy_vlan},output:${ovs_host_pid}"\n`;
     return expr;
 };
 
