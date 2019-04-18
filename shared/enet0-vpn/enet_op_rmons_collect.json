@@ -1,0 +1,22 @@
+{
+	"op": "rmons_collect",
+	"cfg": {
+		"host_profile": {
+			"host": "127.0.0.1",
+			"username": "root",
+			"password": "devops123"
+		},
+		"ace_nic_config": [
+			{
+				"host_ip": "127.0.0.1",
+				"host_ssh_port": "22",
+				"nic_name": "0"
+			}
+		]
+	},
+	"db": {
+		"ip": "127.0.0.1",
+		"port": "8086",
+		"name": "enet0db"
+	}
+}
