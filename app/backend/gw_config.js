@@ -210,6 +210,7 @@ module.exports = function (host_profile, gw_profiles) {
 	this.host_exec_conn = undefined;
 	this.host_exec_stream = undefined;
 	this.host_execs_count = 0;
+	this.alt_host_profile = undefined;
 
 	this.reset = function () {
 		
@@ -342,11 +343,16 @@ module.exports = function (host_profile, gw_profiles) {
 				--this.host_execs_count;
 			}
 			var host_exec_conn = new SSH();
+			var host_profile = this.host_profile;
+			if (this.alt_host_profile !== undefined) {
+				host_profile = this.alt_host_profile;
+				this.alt_host_profile = undefined;
+			}
 			host_exec_conn.on('ready', function () {
 				
 				that.log.info(`Exec#${that.host_execs_count} Connection: ready`);
 				host_do_exec(that, host_exec_conn);
-			}).connect(this.host_profile);				
+			}).connect(host_profile);				
 		}
 	};
 
@@ -377,8 +383,9 @@ module.exports = function (host_profile, gw_profiles) {
 		this.host_cmds_arr = this.host_cmds_arr.concat(cmds_arr);
 	};
 	
-	this.host_exec_cmd = function (cmds_arr) {
+	this.host_exec_cmd = function (cmds_arr, alt_host_profile) {
 
+		this.alt_host_profile = alt_host_profile;
 		if (cmds_arr !== undefined) {
 			this.host_cmds_append(cmds_arr);
 		}

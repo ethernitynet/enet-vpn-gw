@@ -3,6 +3,7 @@ var vpn_common = require('./vpn_common.js');
 var MEA_EXPR = require('./mea_expr.js');
 var OVS_EXPR = require('./ovs_expr.js');
 var DOCKER_EXPR = require('./docker_expr.js');
+var INFLUXDB_EXPR = require('./influxdb_expr.js');
 var GW_CONFIG = require('./gw_config.js');
 
 /////////////////////////////////////////////////
@@ -15,6 +16,7 @@ module.exports = function (host_profile, gw_profiles) {
 	this.mea_expr = new MEA_EXPR();
 	this.ovs_expr = new OVS_EXPR();
 	this.docker_expr = new DOCKER_EXPR();
+	this.influxdb_expr = new INFLUXDB_EXPR();
 	this.cmd_log = [];
 	this.output_processor = {};
 	this.libreswan_states = {
@@ -89,6 +91,58 @@ module.exports = function (host_profile, gw_profiles) {
 			}
 		];
 		this.gw_config.host_exec_cmd(host_cmds);
+		cfg.UPDATE = `${new Date()}`;
+	};
+	
+	/////////////////////////////////////////////////
+	////////////////[rmons_collect]//////////////////
+		
+	this.rmons_collect = function (cfg, db, ret_cb) {
+		
+		const nic_id = cfg.ace_nic_config[0].nic_name;		
+		const exec_time = new Date().getTime();
+		const cmd_key = `rmons_collect${nic_id}_${exec_time}`;
+		
+		this.output_processor[cmd_key] = {
+			meta: { key: cmd_key, exec_time: exec_time, latencies: [], ret: [] },
+			cfg: cfg,
+			db: db,
+			expr: [],
+			output: [],
+			ret_cb: ret_cb
+		};
+		
+		var that = this;
+		var finish_cb = function (cmd) {
+			
+			var output_processor = cmd.output_processor[cmd.key];
+			that.cmd_log.push(output_processor);
+			if (output_processor.ret_cb) {
+				var ret_cb = output_processor.ret_cb;
+				ret_cb(cmd, that.gw_config);
+				delete that.cmd_log[that.cmd_log.length - 1][`ret_cb`];
+			} else {
+				that.gw_config.cmd_advance(cmd);
+			}
+			return cmd;
+		};
+		
+		const host_cmds = [
+			{
+				key: cmd_key,
+				label: `Collect RMONs`,
+				output_processor: this.output_processor,
+				expr_builder: this.influxdb_expr.rmons_collect
+			},
+			{
+				key: cmd_key,
+				label: `Update InfluxDB with RMONs`,
+				output_processor: this.output_processor,
+				expr_builder: this.influxdb_expr.influxdb_rmons_update,
+				output_cb: finish_cb
+			}
+		];
+		this.gw_config.host_exec_cmd(host_cmds, cfg.host_profile);
 		cfg.UPDATE = `${new Date()}`;
 	};
 	

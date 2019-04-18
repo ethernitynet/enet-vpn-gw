@@ -97,6 +97,27 @@ module.exports = function (host_profile, gw_profiles, service_ip, service_port) 
 		});
 	};
 
+	this.rmons_collect = function (db, cfg, res) {
+		
+		this.vpn_backend.rmons_collect((cfg === undefined) ? this.vpn_cfg.VPN : cfg, db, function (cmd, gw_config) {
+
+			if (gw_config === undefined) {
+				const cmd_log = {
+					time: new Date().getTime(),
+					key: cmd.key,
+					label: cmd.label
+				};
+				res.write(JSON.stringify(cmd_log));
+				//res.writeHead(200, res_headers);
+			} else {
+				const output_processor = cmd.output_processor[cmd.key];
+				const output_str = JSON.stringify(output_processor.meta);
+				res.end(output_str);
+				gw_config.cmd_advance(cmd);
+			}
+		});
+	};
+
 	this.vpn_test = function (res) {
 		
 		this.vpn_backend.vpn_test(function (cmd, gw_config) {
@@ -513,6 +534,9 @@ module.exports = function (host_profile, gw_profiles, service_ip, service_port) 
 						switch (content.op) {
 							case `get_stats`:
 								res.end(this.get_stats());
+							break;
+							case `rmons_collect`:
+								this.rmons_collect(content.db, content.cfg, res);
 							break;
 							case `dump_vpn_cfg`:
 								this.dump_vpn_cfg(res);
