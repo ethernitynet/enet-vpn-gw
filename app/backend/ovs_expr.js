@@ -311,6 +311,14 @@ module.exports = function () {
         return expr;
     };
 	
+    this.ovs_docker_add_lsnet_port = function (cmd) {
+
+        var expr = ``;
+        //expr += `set -x\n`;
+        //expr += `set +x\n`;
+        return expr;
+    };
+	
     this.boot_ovs = function (cmd) {
 
         var output_processor = cmd.output_processor[cmd.key];

@@ -101,7 +101,7 @@ module.exports = function (host_profile, gw_profiles) {
 		
 		const nic_id = cfg.ace_nic_config[0].nic_name;		
 		const exec_time = new Date().getTime();
-		const cmd_key = `rmons_collect${nic_id}_${exec_time}`;
+		const cmd_key = `rmons_collect${nic_id}`;
 		
 		this.output_processor[cmd_key] = {
 			meta: { key: cmd_key, exec_time: exec_time, latencies: [], ret: [] },
