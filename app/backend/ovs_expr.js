@@ -239,6 +239,39 @@ var ovs_docker_add_port = function (cmd, enet_phy_pid) {
     return expr;
 };
 
+var ovs_add_port = function (cmd, enet_phy_pid) {
+
+    var output_processor = cmd.output_processor[cmd.key];
+    const nic_id = output_processor.cfg.ace_nic_config[0].nic_name;
+    const libreswan_inst = `enet${nic_id}_libreswan${enet_phy_pid}`;
+    const vpn_cfg = output_processor.cfg.vpn_gw_config[0];
+    const libreswan_dev = `e${nic_id}ls${enet_phy_pid}`;
+    const libreswan_host_dev = `h${libreswan_dev}`;
+    const enet_br = `enetbr${nic_id}`;
+    const ovs_phy_pid = (nic_id === `0`) ? enet_phy_pid : (enet_phy_pid + 100);
+    const port_macs = vpn_common.mea_port_macs(nic_id);
+
+    var expr = ``;
+    expr += `ETH0_DEV_IFIDX=$(docker exec ${libreswan_inst} cat /sys/class/net/eth0/iflink)\n`;
+    expr += `ETH0_HOST_DEV_IFIDX=$((ETH0_DEV_IFIDX - 1))\n`;
+    expr += `ETH0_PEER_IFLINK=$(grep $ETH0_HOST_DEV_IFIDX /sys/class/net/*/iflink)\n`;
+    expr += `ETH0_PEER_DEV=$(sed "s~/sys/class/net/\\(.*\\)/iflink\\:[0-9]*$~\\1~" <<< $ETH0_PEER_IFLINK)\n`;
+    expr += `ip link set dev $ETH0_PEER_DEV nomaster\n`;
+    expr += `ip link set dev $ETH0_PEER_DEV down\n`;
+    expr += `ip link set dev $ETH0_PEER_DEV name ${libreswan_host_dev}\n`;
+    expr += `ip link set dev ${libreswan_host_dev} up\n`;
+	expr += `docker exec ${libreswan_inst} /bin/bash -c 'ip addr flush dev eth0'\n`;
+	expr += `docker exec ${libreswan_inst} /bin/bash -c 'ip link set dev eth0 down'\n`;
+	expr += `docker exec ${libreswan_inst} /bin/bash -c 'ip link set dev eth0 address ${port_macs[enet_phy_pid]}'\n`;
+	expr += `docker exec ${libreswan_inst} /bin/bash -c 'ip link set dev eth0 up'\n`;
+	expr += `docker exec ${libreswan_inst} /bin/bash -c 'ip link set dev lo up'\n`;
+	expr += `docker exec ${libreswan_inst} /bin/bash -c 'ip addr replace ${vpn_cfg.vpn_gw_ip}/32 dev lo'\n`;
+	expr += `docker exec ${libreswan_inst} /bin/bash -c 'ip route replace default dev eth0'\n`;
+    expr += `${ovs_vsctl(cmd)} add-port ${enet_br} ${libreswan_host_dev}`;
+    expr += ` -- set interface ${libreswan_host_dev} ofport_request=${ovs_phy_pid}\n`;
+    return expr;
+};
+
 var tunnel_add_outbound_no_offload = function (cmd) {
 
     var output_processor = cmd.output_processor[cmd.key];
@@ -307,6 +340,18 @@ module.exports = function () {
         expr += ovs_docker_add_port(cmd, 105);
         expr += ovs_docker_add_port(cmd, 106);
         expr += ovs_docker_add_port(cmd, 107);
+        //expr += `set +x\n`;
+        return expr;
+    };
+	
+    this.ovs_add_ports = function (cmd) {
+
+        var expr = ``;
+        //expr += `set -x\n`;
+        expr += ovs_add_port(cmd, 104);
+        expr += ovs_add_port(cmd, 105);
+        expr += ovs_add_port(cmd, 106);
+        expr += ovs_add_port(cmd, 107);
         //expr += `set +x\n`;
         return expr;
     };

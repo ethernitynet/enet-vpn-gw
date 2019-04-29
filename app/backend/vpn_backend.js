@@ -353,7 +353,7 @@ module.exports = function (host_profile, gw_profiles) {
 				key: cmd_key,
 				label: `connect libreswan instances`,
 				output_processor: this.output_processor,
-				expr_builder: this.ovs_expr.ovs_docker_add_ports
+				expr_builder: this.ovs_expr.ovs_add_ports
 			},
 			{
 				key: cmd_key,
