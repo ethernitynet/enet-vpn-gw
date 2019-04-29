@@ -6,31 +6,6 @@ var libreswan_expr = new LIBRESWAN_EXPR();
 /////////////////////////////////////////////////////
 /////////////////////////////////////////////////////
 
-var shutdown_libreswan_net = function (cmd) {
-
-	var output_processor = cmd.output_processor[cmd.key];
-	const nic_id = output_processor.cfg.ace_nic_config[0].nic_name;
-	const libreswan_net = `e${nic_id}lsnet`;
-	
-	var expr = ``;
-	expr += `docker network rm ${libreswan_net}\n`;
-	return expr;
-};
-
-var boot_libreswan_net = function (cmd) {
-
-	var output_processor = cmd.output_processor[cmd.key];
-	const nic_id = output_processor.cfg.ace_nic_config[0].nic_name;
-	const lsnet = `e${nic_id}lsnet`;
-    const lsnet_gw = `200.${nic_id}.${nic_id}.100`;
-    const lsnet_subnet = `${lsnet_gw}/28`;
-    const lsnet_ip_range = `200.${nic_id}.${nic_id}.104/30`;
-	
-	var expr = ``;
-	expr += `docker network create --driver=bridge --subnet=${lsnet_subnet} --ip-range=${lsnet_ip_range} --gateway=${lsnet_gw} ${lsnet}\n`;
-	return expr;
-};
-
 var shutdown_libreswan_inst = function (cmd, libreswan_inst) {
 
 	var expr = ``;
@@ -54,20 +29,12 @@ var boot_libreswan_inst = function (cmd, vpn_port, libreswan_img) {
 	const libreswan_inst = `enet${nic_id}_libreswan${vpn_port}`;	
 	const host_dir = output_processor.cfg.ace_nic_config[0].install_dir;
 	const libreswan_shared_dir = `${host_dir}${vpn_shared_dir}/${libreswan_inst}`;
-    //const libreswan_ip = `200.${nic_id}.${nic_id}.${vpn_port}`;
-	//const lsnet = `e${nic_id}lsnet`;
-    //const lsnet_gw = `200.${nic_id}.${nic_id}.100`;
-	//const vpn_cfg = output_processor.cfg.vpn_gw_config[0];
 	const isakmp_port = (500 + (vpn_port - 100) + ((nic_id === `0`) ? 0 : 10));
 	const natt_port = (4500 + (vpn_port - 100) + ((nic_id === `0`) ? 0 : 10));
 	const l2tp_port = ((1701 - 1) + (vpn_port - 100) + ((nic_id === `0`) ? 0 : 10));
-    //const libreswan_lo_ip = `250.${nic_id}.${nic_id}.250`;
-    //const enet_br = `enetbr${nic_id}`;
 	
 	var expr = ``;
-	//expr += `ip addr replace ${libreswan_ip}/32 dev ${enet_br}\n`;
 	expr += `docker run -t -d --rm --ipc=host --privileged`;
-	//expr += `	--net=${lsnet}`;
 	expr += `	--hostname=${libreswan_inst}`;
 	expr += `	--name=${libreswan_inst}`;
 	expr += `	--env ACENIC_ID=${nic_id}`;
@@ -133,8 +100,6 @@ module.exports = function () {
 		expr += shutdown_libreswan_inst(cmd, `enet${nic_id}_libreswan105`);
 		expr += shutdown_libreswan_inst(cmd, `enet${nic_id}_libreswan106`);
 		expr += shutdown_libreswan_inst(cmd, `enet${nic_id}_libreswan107`);
-		//expr += shutdown_libreswan_net(cmd);
-		//expr += boot_libreswan_net(cmd);
 		expr += boot_libreswan_inst(cmd, 104, libreswan_img);
 		expr += boot_libreswan_inst(cmd, 105, libreswan_img);
 		expr += boot_libreswan_inst(cmd, 106, libreswan_img);

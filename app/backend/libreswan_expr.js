@@ -11,7 +11,7 @@ var append_ipsec_conf = function (cmd, conn_id) {
 	var output_processor = cmd.output_processor[cmd.key];
 	const conn_cfg = output_processor.cfg.conns[conn_id];
 	const vpn_cfg = output_processor.cfg.vpn_gw_config[0];
-	const vpn_gw_ip = (conn_cfg.remote_tunnel_endpoint_ip === undefined) ? vpn_cfg.vpn_gw_ip : conn_cfg.local_tunnel_endpoint_ip;
+	const vpn_gw_ip = (conn_cfg.local_tunnel_endpoint_ip === undefined) ? vpn_cfg.vpn_gw_ip : conn_cfg.local_tunnel_endpoint_ip;
 	
 	var ipsec_conf = `\n`;
 	ipsec_conf += `conn ${conn_cfg.name}\n`;
