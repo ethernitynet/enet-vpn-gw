@@ -21,6 +21,7 @@ var restart_libreswan_service = function (cmd, libreswan_inst) {
 	return expr;
 };
 
+/*
 var boot_libreswan_inst = function (cmd, vpn_port, libreswan_img) {
 
 	var output_processor = cmd.output_processor[cmd.key];
@@ -29,19 +30,54 @@ var boot_libreswan_inst = function (cmd, vpn_port, libreswan_img) {
 	const libreswan_inst = `enet${nic_id}_libreswan${vpn_port}`;	
 	const host_dir = output_processor.cfg.ace_nic_config[0].install_dir;
 	const libreswan_shared_dir = `${host_dir}${vpn_shared_dir}/${libreswan_inst}`;
+	const libreswan_ip = `200.${nic_id}.${nic_id}.${vpn_port}`;
+	//const isakmp_port = (500 + (vpn_port - 100) + ((nic_id === `0`) ? 0 : 10));
+	//const natt_port = (4500 + (vpn_port - 100) + ((nic_id === `0`) ? 0 : 10));
+	//const l2tp_port = ((1701 - 1) + (vpn_port - 100) + ((nic_id === `0`) ? 0 : 10));
+	
+	var expr = ``;
+    expr += `ip addr replace ${libreswan_ip}/32 dev lo\n`;
+	expr += `docker run -t -d --rm --ipc=host --privileged`;
+	//expr += `	--net=none`;
+	expr += `	--hostname=${libreswan_inst}`;
+	expr += `	--name=${libreswan_inst}`;
+	expr += `	--env ACENIC_ID=${nic_id}`;
+	expr += `	--env DOCKER_INST=${libreswan_inst}`;
+	expr += `	-p ${libreswan_ip}:500:500/udp`;
+	expr += `	-p ${libreswan_ip}:4500:4500/udp`;
+	expr += `	-p ${libreswan_ip}:1701:1701/udp`;
+	expr += `	-v /sys/fs/cgroup:/sys/fs/cgroup:ro`;
+	expr += `	-v ${libreswan_shared_dir}/ipsec.conf:/etc/ipsec.conf`;
+	expr += `	-v ${libreswan_shared_dir}/ipsec.secrets:/etc/ipsec.secrets`;
+	expr += `	${libreswan_img}\n`;
+	return expr;
+};
+*/
+
+var boot_libreswan_inst = function (cmd, vpn_port, libreswan_img) {
+
+	var output_processor = cmd.output_processor[cmd.key];
+	const nic_id = output_processor.cfg.ace_nic_config[0].nic_name;
+	const vpn_shared_dir = `/shared/enet${nic_id}-vpn`;	
+	const libreswan_inst = `enet${nic_id}_libreswan${vpn_port}`;	
+    const vpn_cfg = output_processor.cfg.vpn_gw_config[0];
+	const host_dir = output_processor.cfg.ace_nic_config[0].install_dir;
+	const libreswan_shared_dir = `${host_dir}${vpn_shared_dir}/${libreswan_inst}`;
 	const isakmp_port = (500 + (vpn_port - 100) + ((nic_id === `0`) ? 0 : 10));
 	const natt_port = (4500 + (vpn_port - 100) + ((nic_id === `0`) ? 0 : 10));
 	const l2tp_port = ((1701 - 1) + (vpn_port - 100) + ((nic_id === `0`) ? 0 : 10));
 	
 	var expr = ``;
+    expr += `ip addr replace ${vpn_cfg.vpn_gw_ip}/32 dev docker0\n`;
 	expr += `docker run -t -d --rm --ipc=host --privileged`;
+	//expr += `	--net=none`;
 	expr += `	--hostname=${libreswan_inst}`;
 	expr += `	--name=${libreswan_inst}`;
 	expr += `	--env ACENIC_ID=${nic_id}`;
 	expr += `	--env DOCKER_INST=${libreswan_inst}`;
-	expr += `	-p ${isakmp_port}:500/udp`;
-	expr += `	-p ${natt_port}:4500/udp`;
-	expr += `	-p ${l2tp_port}:1701/udp`;
+	expr += `	-p ${vpn_cfg.vpn_gw_ip}:${isakmp_port}:500/udp`;
+	expr += `	-p ${vpn_cfg.vpn_gw_ip}:${natt_port}:4500/udp`;
+	expr += `	-p ${vpn_cfg.vpn_gw_ip}:${l2tp_port}:1701/udp`;
 	expr += `	-v /sys/fs/cgroup:/sys/fs/cgroup:ro`;
 	expr += `	-v ${libreswan_shared_dir}/ipsec.conf:/etc/ipsec.conf`;
 	expr += `	-v ${libreswan_shared_dir}/ipsec.secrets:/etc/ipsec.secrets`;

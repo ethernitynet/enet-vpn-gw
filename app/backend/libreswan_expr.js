@@ -87,7 +87,7 @@ module.exports = function () {
 		libreswan_states.libreswan_conf = {};
 		for (var conn_id = 0; conn_id < conns.length; ++conn_id) {
 			const conn_cfg = conns[conn_id];
-			const vpn_gw_ip = (conn_cfg.remote_tunnel_endpoint_ip === undefined) ? vpn_cfg.vpn_gw_ip : conn_cfg.local_tunnel_endpoint_ip;
+			const vpn_gw_ip = (conn_cfg.local_tunnel_endpoint_ip === undefined) ? vpn_cfg.vpn_gw_ip : conn_cfg.local_tunnel_endpoint_ip;
 			var libreswan_conf = libreswan_states.libreswan_conf[`enet${nic_id}_libreswan${conn_cfg.tunnel_port}`];
 			if (libreswan_conf === undefined) {
 				libreswan_states.libreswan_conf[`enet${nic_id}_libreswan${conn_cfg.tunnel_port}`] = { ipsec_conf: ``, ipsec_secrets: {} };
