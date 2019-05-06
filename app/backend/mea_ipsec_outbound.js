@@ -37,8 +37,8 @@ module.exports = function () {
 		var output_processor = cmd.output_processor[cmd.key];
 		var tunnel_state = output_processor.tunnel_state;
 		
-		if (output_processor.output.length === 1) {
-			const prev_stdout = output_processor.output[0].stdout;
+		if (output_processor.output.length > 0) {
+			const prev_stdout = output_processor.output[output_processor.output.length - 1].stdout;
 			cmd.return_cb = [ return_cb ];
 			cmd.return_cb.push(function (cmd) {
 				
@@ -69,8 +69,8 @@ module.exports = function () {
 		var output_processor = cmd.output_processor[cmd.key];
 		var tunnel_state = output_processor.tunnel_state;
 		
-		if (output_processor.output.length === 2) {
-			const prev_stdout = output_processor.output[1].stdout;
+		if (output_processor.output.length > 0) {
+			const prev_stdout = output_processor.output[output_processor.output.length - 1].stdout;
 			cmd.return_cb = [ return_cb ];
 			vpn_common.mea_action_add_parse(cmd, tunnel_state, `encrypt_action`, prev_stdout);
 		}
@@ -98,8 +98,8 @@ module.exports = function () {
 		var tunnel_state = output_processor.tunnel_state;
 		const conn_cfg = output_processor.cfg.conns[tunnel_state.conn_id];
 		
-		if (output_processor.output.length === 3) {
-			const prev_stdout = output_processor.output[2].stdout;
+		if (output_processor.output.length > 0) {
+			const prev_stdout = output_processor.output[output_processor.output.length - 1].stdout;
 			cmd.return_cb = [ return_cb ];
 			cmd.return_cb.push(function (cmd) {
 				

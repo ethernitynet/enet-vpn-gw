@@ -41,8 +41,8 @@ module.exports = function () {
 		var output_processor = cmd.output_processor[cmd.key];
 		var tunnel_state = output_processor.tunnel_state;
 		
-		if (output_processor.output.length === 1) {
-			const prev_stdout = output_processor.output[0].stdout;
+		if (output_processor.output.length > 0) {
+			const prev_stdout = output_processor.output[output_processor.output.length - 1].stdout;
 			cmd.return_cb = [ return_cb ];
 			cmd.return_cb.push(function (cmd) {
 				
@@ -75,8 +75,8 @@ module.exports = function () {
 		var output_processor = cmd.output_processor[cmd.key];
 		var tunnel_state = output_processor.tunnel_state;
 		
-		if (output_processor.output.length === 2) {
-			const prev_stdout = output_processor.output[1].stdout;
+		if (output_processor.output.length > 0) {
+			const prev_stdout = output_processor.output[output_processor.output.length - 1].stdout;
 			cmd.return_cb = [ return_cb ];
 			vpn_common.mea_service_add_parse(cmd, tunnel_state, `decrypt_service`, prev_stdout);
 		}
@@ -108,8 +108,8 @@ module.exports = function () {
 		var tunnel_state = output_processor.tunnel_state;
 		const next_hops = output_processor.next_hops;
 		
-		if (output_processor.output.length === 1) {
-			const prev_stdout = output_processor.output[0].stdout;
+		if (output_processor.output.length > 0) {
+			const prev_stdout = output_processor.output[output_processor.output.length - 1].stdout;
 			cmd.return_cb = [ return_cb ];
 			cmd.return_cb.push(function (cmd) {
 				
@@ -159,8 +159,8 @@ module.exports = function () {
 		const next_hops = output_processor.next_hops;
 		const conn_tag_hex = vpn_common.vpn_conn_tag_hex(output_processor.cfg, tunnel_state);
 		
-		if (output_processor.output.length === 2) {
-			const prev_stdout = output_processor.output[1].stdout;
+		if (output_processor.output.length > 0) {
+			const prev_stdout = output_processor.output[output_processor.output.length - 1].stdout;
 			const prev_next_hops_count = (tunnel_state.fwd.length - next_hops.length);
 			for (var next_hop_idx = 0; next_hop_idx < next_hops.length; ++next_hop_idx) {
 				var fwd = tunnel_state.fwd[prev_next_hops_count + next_hop_idx];

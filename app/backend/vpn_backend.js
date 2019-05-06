@@ -28,6 +28,8 @@ module.exports = function (host_profile, gw_profiles) {
 		UPDATE: `never`
 	};
 	this.host_delay = 0;
+
+	this.flush_interval = setInterval(this.gw_config.cmd_advance, 500);
 	
 	this.dump_output_processor = function () {
 		
@@ -954,7 +956,7 @@ module.exports = function (host_profile, gw_profiles) {
 
 			default:
 			delete this.output_processor[cmd_key].ret_cb;
-			this.output_processor[cmd_key].meta.error = `Inbound tunnel ${tunnel_key} acceleration unsupported: ${conn_cfg.outbound_accel}.`;
+			this.output_processor[cmd_key].meta.error = `Inbound tunnel ${tunnel_key} acceleration unsupported: ${conn_cfg.inbound_accel}.`;
 			ret_cb({ key: cmd_key, output_processor: this.output_processor });
 			break;
 		}

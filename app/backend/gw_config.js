@@ -297,16 +297,18 @@ module.exports = function (host_profile, gw_profiles) {
 	
 	this.cmd_advance = function (prev_cmd) {
 		
-		const delay = ((prev_cmd !== undefined) && (prev_cmd.delay !== undefined)) ? prev_cmd.delay : 0;
-		this.host_cmds_arr.shift();
-		if (this.host_cmds_arr.length > 0) {
-			if (delay > 0) {
-				setTimeout(host_do_exec, delay, this, this.host_exec_conn);
+		if (this.host_cmds_arr !== undefined) {
+			const delay = ((prev_cmd !== undefined) && (prev_cmd.delay !== undefined)) ? prev_cmd.delay : 0;
+			this.host_cmds_arr.shift();
+			if (this.host_cmds_arr.length > 0) {
+				if (delay > 0) {
+					setTimeout(host_do_exec, delay, this, this.host_exec_conn);
+				} else {
+					setImmediate(host_do_exec, this, this.host_exec_conn);
+				}
 			} else {
-				setImmediate(host_do_exec, this, this.host_exec_conn);
+				this.host_exec_end();
 			}
-		} else {
-			this.host_exec_end();
 		}
 	};
 
