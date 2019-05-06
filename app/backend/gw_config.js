@@ -169,10 +169,10 @@ var host_do_exec = function (gw_config_inst, host_exec_conn) {
 			//////////////////////
 			shell.exec(exec_cmd, function (code, stdout, stderr) {
 				
-				gw_config_inst.host_exec_cmd_handler(`exit`, { code: code });
-				gw_config_inst.host_exec_cmd_handler(`stdout`, { stdout: stdout });
-				gw_config_inst.host_exec_cmd_handler(`stderr`, { stderr: stderr });
-				gw_config_inst.host_exec_cmd_handler(`close`, {});
+				gw_config_inst.host_exec_cmd_handler(`exit`, { cmd: cmd, code: code });
+				gw_config_inst.host_exec_cmd_handler(`stdout`, { cmd: cmd, stdout: stdout });
+				gw_config_inst.host_exec_cmd_handler(`stderr`, { cmd: cmd, stderr: stderr });
+				gw_config_inst.host_exec_cmd_handler(`close`, { cmd: cmd });
 			});
 		} else {
 			host_exec_conn.exec(exec_cmd, function (err, stream) {
@@ -248,7 +248,7 @@ module.exports = function (host_profile, gw_profiles) {
 
 	this.host_exec_cmd_handler = function (event, data) {
 		
-		const cmd = this.host_cmds_arr[0];
+		const cmd = (data.cmd === undefined) ? this.host_cmds_arr[0] : data.cmd;
 		var output_processor = cmd.output_processor[cmd.key];
 		switch (event) {
 		case `exec`:
