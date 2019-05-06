@@ -278,17 +278,43 @@ var tunnel_add_outbound_no_offload = function (cmd) {
     const ovs_out_pid = (nic_id === `0`) ? tunnel_state.port_out : (tunnel_state.port_out + 100);
     const port_macs = vpn_common.mea_port_macs(nic_id);
     // Opposite:
-    const opposite_nic_id = (nic_id === `0`) ? `1` : `0`;
-    const opposite_port_macs = vpn_common.mea_port_macs(opposite_nic_id);
-    const opposite_ovs_phy_vlan = (opposite_nic_id === `0`) ? tunnel_state.port_out : (tunnel_state.port_out + 100);
+    //const opposite_nic_id = (nic_id === `0`) ? `1` : `0`;
+    //const opposite_port_macs = vpn_common.mea_port_macs(opposite_nic_id);
+    //const opposite_ovs_phy_vlan = (opposite_nic_id === `0`) ? tunnel_state.port_out : (tunnel_state.port_out + 100);
 
     var expr = ``;
     // Upstream:
     expr += `${ovs_ofctl(cmd, `add-flow`)} "priority=${of_priority_no_offload},in_port=${ovs_host_pid},dl_vlan=${ovs_phy_vlan},ip,nw_src=${tunnel_state.subnet_in},nw_dst=${tunnel_state.subnet_out},actions=strip_vlan,mod_dl_dst=${port_macs[tunnel_state.port_out]},output:${ovs_out_pid}"\n`;
-    expr += `${ovs_ofctl(cmd, `add-flow`)} "priority=${of_priority_no_offload},in_port=${ovs_host_pid},dl_dst=${port_macs[tunnel_state.port_in]},ip,nw_src=${tunnel_state.subnet_in},nw_dst=${tunnel_state.subnet_out},actions=mod_dl_dst=${port_macs[tunnel_state.port_out]},output:${ovs_out_pid}"\n`;
+    //expr += `${ovs_ofctl(cmd, `add-flow`)} "priority=${of_priority_no_offload},in_port=${ovs_host_pid},dl_dst=${port_macs[tunnel_state.port_in]},ip,nw_src=${tunnel_state.subnet_in},nw_dst=${tunnel_state.subnet_out},actions=mod_dl_dst=${port_macs[tunnel_state.port_out]},output:${ovs_out_pid}"\n`;
     // Upstream - opposite:
-    expr += `${ovs_ofctl(cmd, `add-flow`)} "priority=${of_priority_no_offload},in_port=${ovs_host_pid},dl_vlan=${opposite_ovs_phy_vlan},ip,nw_src=${tunnel_state.subnet_in},nw_dst=${tunnel_state.subnet_out},actions=strip_vlan,mod_dl_dst=${port_macs[tunnel_state.port_out]},output:${ovs_out_pid}"\n`;
-    expr += `${ovs_ofctl(cmd, `add-flow`)} "priority=${of_priority_no_offload},in_port=${ovs_host_pid},dl_dst=${opposite_port_macs[tunnel_state.port_in]},ip,nw_src=${tunnel_state.subnet_in},nw_dst=${tunnel_state.subnet_out},actions=mod_dl_dst=${port_macs[tunnel_state.port_out]},output:${ovs_out_pid}"\n`;
+    //expr += `${ovs_ofctl(cmd, `add-flow`)} "priority=${of_priority_no_offload},in_port=${ovs_host_pid},dl_vlan=${opposite_ovs_phy_vlan},ip,nw_src=${tunnel_state.subnet_in},nw_dst=${tunnel_state.subnet_out},actions=strip_vlan,mod_dl_dst=${port_macs[tunnel_state.port_out]},output:${ovs_out_pid}"\n`;
+    //expr += `${ovs_ofctl(cmd, `add-flow`)} "priority=${of_priority_no_offload},in_port=${ovs_host_pid},dl_dst=${opposite_port_macs[tunnel_state.port_in]},ip,nw_src=${tunnel_state.subnet_in},nw_dst=${tunnel_state.subnet_out},actions=mod_dl_dst=${port_macs[tunnel_state.port_out]},output:${ovs_out_pid}"\n`;
+    // Downstream:
+    expr += `${ovs_ofctl(cmd, `add-flow`)} "priority=${of_priority_no_offload},in_port=${ovs_out_pid},ip,nw_src=${tunnel_state.gw_in},nw_dst=${tunnel_state.gw_out},nw_proto=50,actions=push_vlan:0x8100,mod_vlan_vid=${ovs_out_pid},output:${ovs_host_pid}"\n`;
+    return expr;
+};
+
+var tunnel_add_inbound_no_offload = function (cmd) {
+
+    var output_processor = cmd.output_processor[cmd.key];
+    const nic_id = output_processor.cfg.ace_nic_config[0].nic_name;
+    const tunnel_state = output_processor.tunnel_state;
+    var ovs_host_pid = (nic_id === `0`) ? 127 : 227;
+    const ovs_phy_vlan = (nic_id === `0`) ? tunnel_state.port_in : (tunnel_state.port_in + 100);
+    const ovs_out_pid = (nic_id === `0`) ? tunnel_state.port_out : (tunnel_state.port_out + 100);
+    const port_macs = vpn_common.mea_port_macs(nic_id);
+    // Opposite:
+    //const opposite_nic_id = (nic_id === `0`) ? `1` : `0`;
+    //const opposite_port_macs = vpn_common.mea_port_macs(opposite_nic_id);
+    //const opposite_ovs_phy_vlan = (opposite_nic_id === `0`) ? tunnel_state.port_out : (tunnel_state.port_out + 100);
+
+    var expr = ``;
+    // Upstream:
+    expr += `${ovs_ofctl(cmd, `add-flow`)} "priority=${of_priority_no_offload},in_port=${ovs_host_pid},dl_vlan=${ovs_phy_vlan},ip,nw_src=${tunnel_state.gw_in},nw_dst=${tunnel_state.gw_out},nw_proto=50,actions=strip_vlan,mod_dl_dst=${port_macs[tunnel_state.port_in]},output:${ovs_out_pid}"\n`;
+    //expr += `${ovs_ofctl(cmd, `add-flow`)} "priority=${of_priority_no_offload},in_port=${ovs_host_pid},dl_dst=${port_macs[tunnel_state.port_in]},ip,nw_src=${tunnel_state.subnet_in},nw_dst=${tunnel_state.subnet_out},actions=mod_dl_dst=${port_macs[tunnel_state.port_in]},output:${ovs_out_pid}"\n`;
+    // Upstream - opposite:
+    //expr += `${ovs_ofctl(cmd, `add-flow`)} "priority=${of_priority_no_offload},in_port=${ovs_host_pid},dl_vlan=${opposite_ovs_phy_vlan},ip,nw_src=${tunnel_state.subnet_in},nw_dst=${tunnel_state.subnet_out},actions=strip_vlan,mod_dl_dst=${port_macs[tunnel_state.port_out]},output:${ovs_out_pid}"\n`;
+    //expr += `${ovs_ofctl(cmd, `add-flow`)} "priority=${of_priority_no_offload},in_port=${ovs_host_pid},dl_dst=${opposite_port_macs[tunnel_state.port_in]},ip,nw_src=${tunnel_state.subnet_in},nw_dst=${tunnel_state.subnet_out},actions=mod_dl_dst=${port_macs[tunnel_state.port_out]},output:${ovs_out_pid}"\n`;
     // Downstream:
     expr += `${ovs_ofctl(cmd, `add-flow`)} "priority=${of_priority_no_offload},in_port=${ovs_out_pid},ip,nw_src=${tunnel_state.gw_in},nw_dst=${tunnel_state.gw_out},nw_proto=50,actions=push_vlan:0x8100,mod_vlan_vid=${ovs_out_pid},output:${ovs_host_pid}"\n`;
     return expr;
@@ -318,86 +344,6 @@ var port_add_of_ctl_passthrough = function (cmd, enet_phy_pid) {
     expr += `${ovs_ofctl(cmd, `add-flow`)} "priority=${of_priority_base},in_port=${ovs_phy_pid},actions=push_vlan:0x8100,mod_vlan_vid=${ovs_phy_vlan},output:${ovs_host_pid}"\n`;
     return expr;
 };
-
-/*
-var port_add_of_ctl_passthrough = function (cmd, enet_phy_pid) {
-
-    var output_processor = cmd.output_processor[cmd.key];
-    const nic_id = output_processor.cfg.ace_nic_config[0].nic_name;
-	const isakmp_port = (500 + (enet_phy_pid - 100) + ((nic_id === `0`) ? 0 : 10));
-	const natt_port = (4500 + (enet_phy_pid - 100) + ((nic_id === `0`) ? 0 : 10));
-	const l2tp_port = ((1701 - 1) + (enet_phy_pid - 100) + ((nic_id === `0`) ? 0 : 10));
-    var ovs_host_pid = (nic_id === `0`) ? 127 : 227;
-    const ovs_phy_pid = (nic_id === `0`) ? enet_phy_pid : (enet_phy_pid + 100);
-    const ovs_phy_vlan = (nic_id === `0`) ? enet_phy_pid : (enet_phy_pid + 100);
-    const port_macs = vpn_common.mea_port_macs(nic_id);
-    // Opposite:
-    const opposite_nic_id = (nic_id === `0`) ? `1` : `0`;
-    const opposite_port_macs = vpn_common.mea_port_macs(opposite_nic_id);
-    const opposite_ovs_phy_vlan = (opposite_nic_id === `0`) ? enet_phy_pid : (enet_phy_pid + 100);
-
-    var expr = ``;
-    // Upstream:
-    expr += `${ovs_ofctl(cmd, `add-flow`)} "priority=${of_priority_base},in_port=${ovs_host_pid},dl_vlan=${ovs_phy_vlan},arp,actions=strip_vlan,mod_dl_dst=${port_macs[enet_phy_pid]},output:${ovs_phy_pid}"\n`;
-    expr += `${ovs_ofctl(cmd, `add-flow`)} "priority=${of_priority_base},in_port=${ovs_host_pid},dl_dst=${port_macs[enet_phy_pid]},arp,actions=output:${ovs_phy_pid}"\n`;
-    expr += `${ovs_ofctl(cmd, `add-flow`)} "priority=${of_priority_base},in_port=${ovs_host_pid},dl_vlan=${ovs_phy_vlan},udp,tp_dst=500,actions=strip_vlan,mod_tp_dst=${isakmp_port},mod_dl_dst=${port_macs[enet_phy_pid]},output:${ovs_phy_pid}"\n`;
-    expr += `${ovs_ofctl(cmd, `add-flow`)} "priority=${of_priority_base},in_port=${ovs_host_pid},dl_dst=${port_macs[enet_phy_pid]},udp,tp_dst=500,actions=mod_tp_dst=${isakmp_port},output:${ovs_phy_pid}"\n`;
-    expr += `${ovs_ofctl(cmd, `add-flow`)} "priority=${of_priority_base},in_port=${ovs_host_pid},dl_vlan=${ovs_phy_vlan},udp,tp_dst=4500,actions=strip_vlan,mod_tp_dst=${natt_port},mod_dl_dst=${port_macs[enet_phy_pid]},output:${ovs_phy_pid}"\n`;
-    expr += `${ovs_ofctl(cmd, `add-flow`)} "priority=${of_priority_base},in_port=${ovs_host_pid},dl_dst=${port_macs[enet_phy_pid]},udp,tp_dst=4500,actions=mod_tp_dst=${natt_port},output:${ovs_phy_pid}"\n`;
-    expr += `${ovs_ofctl(cmd, `add-flow`)} "priority=${of_priority_base},in_port=${ovs_host_pid},dl_vlan=${ovs_phy_vlan},udp,tp_dst=1701,actions=strip_vlan,mod_tp_dst=${l2tp_port},mod_dl_dst=${port_macs[enet_phy_pid]},output:${ovs_phy_pid}"\n`;
-    expr += `${ovs_ofctl(cmd, `add-flow`)} "priority=${of_priority_base},in_port=${ovs_host_pid},dl_dst=${port_macs[enet_phy_pid]},udp,tp_dst=1701,actions=mod_tp_dst=${l2tp_port},output:${ovs_phy_pid}"\n`;
-    // Upstream - opposite:
-    expr += `${ovs_ofctl(cmd, `add-flow`)} "priority=${of_priority_base},in_port=${ovs_host_pid},dl_vlan=${opposite_ovs_phy_vlan},arp,actions=strip_vlan,mod_dl_dst=${port_macs[enet_phy_pid]},output:${ovs_phy_pid}"\n`;
-    expr += `${ovs_ofctl(cmd, `add-flow`)} "priority=${of_priority_base},in_port=${ovs_host_pid},dl_dst=${opposite_port_macs[enet_phy_pid]},arp,actions=mod_dl_dst=${port_macs[enet_phy_pid]},output:${ovs_phy_pid}"\n`;
-    expr += `${ovs_ofctl(cmd, `add-flow`)} "priority=${of_priority_base},in_port=${ovs_host_pid},dl_vlan=${opposite_ovs_phy_vlan},udp,tp_dst=500,actions=strip_vlan,mod_tp_dst=${isakmp_port},mod_dl_dst=${port_macs[enet_phy_pid]},output:${ovs_phy_pid}"\n`;
-    expr += `${ovs_ofctl(cmd, `add-flow`)} "priority=${of_priority_base},in_port=${ovs_host_pid},dl_dst=${opposite_port_macs[enet_phy_pid]},udp,tp_dst=500,actions=mod_tp_dst=${isakmp_port},mod_dl_dst=${port_macs[enet_phy_pid]},output:${ovs_phy_pid}"\n`;
-    expr += `${ovs_ofctl(cmd, `add-flow`)} "priority=${of_priority_base},in_port=${ovs_host_pid},dl_vlan=${opposite_ovs_phy_vlan},udp,tp_dst=4500,actions=strip_vlan,mod_tp_dst=${natt_port},mod_dl_dst=${port_macs[enet_phy_pid]},output:${ovs_phy_pid}"\n`;
-    expr += `${ovs_ofctl(cmd, `add-flow`)} "priority=${of_priority_base},in_port=${ovs_host_pid},dl_dst=${opposite_port_macs[enet_phy_pid]},udp,tp_dst=4500,actions=mod_tp_dst=${natt_port},mod_dl_dst=${port_macs[enet_phy_pid]},output:${ovs_phy_pid}"\n`;
-    expr += `${ovs_ofctl(cmd, `add-flow`)} "priority=${of_priority_base},in_port=${ovs_host_pid},dl_vlan=${opposite_ovs_phy_vlan},udp,tp_dst=1701,actions=strip_vlan,mod_tp_dst=${l2tp_port},mod_dl_dst=${port_macs[enet_phy_pid]},output:${ovs_phy_pid}"\n`;
-    expr += `${ovs_ofctl(cmd, `add-flow`)} "priority=${of_priority_base},in_port=${ovs_host_pid},dl_dst=${opposite_port_macs[enet_phy_pid]},udp,tp_dst=1701,actions=mod_tp_dst=${l2tp_port},mod_dl_dst=${port_macs[enet_phy_pid]},output:${ovs_phy_pid}"\n`;
-    // Downstream:
-    expr += `${ovs_ofctl(cmd, `add-flow`)} "priority=${of_priority_base},in_port=${ovs_phy_pid},arp,actions=push_vlan:0x8100,mod_vlan_vid=${ovs_phy_vlan},output:${ovs_host_pid}"\n`;
-    expr += `${ovs_ofctl(cmd, `add-flow`)} "priority=${of_priority_base},in_port=${ovs_phy_pid},udp,tp_src=${isakmp_port},actions=push_vlan:0x8100,mod_vlan_vid=${ovs_phy_vlan},mod_tp_src=500,output:${ovs_host_pid}"\n`;
-    expr += `${ovs_ofctl(cmd, `add-flow`)} "priority=${of_priority_base},in_port=${ovs_phy_pid},udp,tp_src=${natt_port},actions=push_vlan:0x8100,mod_vlan_vid=${ovs_phy_vlan},mod_tp_src=4500,output:${ovs_host_pid}"\n`;
-    expr += `${ovs_ofctl(cmd, `add-flow`)} "priority=${of_priority_base},in_port=${ovs_phy_pid},udp,tp_src=${l2tp_port},actions=push_vlan:0x8100,mod_vlan_vid=${ovs_phy_vlan},mod_tp_src=1701,output:${ovs_host_pid}"\n`;
-    return expr;
-};
-*/
-
-/*
-var port_add_of_ctl_passthrough = function (cmd, enet_phy_pid) {
-
-    var output_processor = cmd.output_processor[cmd.key];
-    const nic_id = output_processor.cfg.ace_nic_config[0].nic_name;
-	//const isakmp_port = (500 + (enet_phy_pid - 100) + ((nic_id === `0`) ? 0 : 10));
-	//const natt_port = (4500 + (enet_phy_pid - 100) + ((nic_id === `0`) ? 0 : 10));
-	//const l2tp_port = ((1701 - 1) + (enet_phy_pid - 100) + ((nic_id === `0`) ? 0 : 10));
-    var ovs_host_pid = (nic_id === `0`) ? 127 : 227;
-    const ovs_phy_pid = (nic_id === `0`) ? enet_phy_pid : (enet_phy_pid + 100);
-    const ovs_phy_vlan = (nic_id === `0`) ? enet_phy_pid : (enet_phy_pid + 100);
-    const port_macs = vpn_common.mea_port_macs(nic_id);
-    // Opposite:
-    const opposite_nic_id = (nic_id === `0`) ? `1` : `0`;
-    const opposite_port_macs = vpn_common.mea_port_macs(opposite_nic_id);
-    const opposite_ovs_phy_vlan = (opposite_nic_id === `0`) ? enet_phy_pid : (enet_phy_pid + 100);
-
-    var expr = ``;
-    // Upstream:
-    expr += `${ovs_ofctl(cmd, `add-flow`)} "priority=${of_priority_base},in_port=${ovs_host_pid},dl_vlan=${ovs_phy_vlan},arp,actions=strip_vlan,mod_dl_dst=${port_macs[enet_phy_pid]},output:${ovs_phy_pid}"\n`;
-    expr += `${ovs_ofctl(cmd, `add-flow`)} "priority=${of_priority_base},in_port=${ovs_host_pid},dl_dst=${port_macs[enet_phy_pid]},arp,actions=output:${ovs_phy_pid}"\n`;
-    expr += `${ovs_ofctl(cmd, `add-flow`)} "priority=${of_priority_base},in_port=${ovs_host_pid},dl_vlan=${ovs_phy_vlan},udp,actions=strip_vlan,mod_dl_dst=${port_macs[enet_phy_pid]},output:${ovs_phy_pid}"\n`;
-    expr += `${ovs_ofctl(cmd, `add-flow`)} "priority=${of_priority_base},in_port=${ovs_host_pid},dl_dst=${port_macs[enet_phy_pid]},udp,actions=,output:${ovs_phy_pid}"\n`;
-    // Upstream - opposite:
-    expr += `${ovs_ofctl(cmd, `add-flow`)} "priority=${of_priority_base},in_port=${ovs_host_pid},dl_vlan=${opposite_ovs_phy_vlan},arp,actions=strip_vlan,mod_dl_dst=${port_macs[enet_phy_pid]},output:${ovs_phy_pid}"\n`;
-    expr += `${ovs_ofctl(cmd, `add-flow`)} "priority=${of_priority_base},in_port=${ovs_host_pid},dl_dst=${opposite_port_macs[enet_phy_pid]},arp,actions=mod_dl_dst=${port_macs[enet_phy_pid]},output:${ovs_phy_pid}"\n`;
-    expr += `${ovs_ofctl(cmd, `add-flow`)} "priority=${of_priority_base},in_port=${ovs_host_pid},dl_vlan=${opposite_ovs_phy_vlan},udp,actions=strip_vlan,mod_dl_dst=${port_macs[enet_phy_pid]},output:${ovs_phy_pid}"\n`;
-    expr += `${ovs_ofctl(cmd, `add-flow`)} "priority=${of_priority_base},in_port=${ovs_host_pid},dl_dst=${opposite_port_macs[enet_phy_pid]},udp,actions=,mod_dl_dst=${port_macs[enet_phy_pid]},output:${ovs_phy_pid}"\n`;
-    // Downstream:
-    expr += `${ovs_ofctl(cmd, `add-flow`)} "priority=${of_priority_base},in_port=${ovs_phy_pid},arp,actions=push_vlan:0x8100,mod_vlan_vid=${ovs_phy_vlan},output:${ovs_host_pid}"\n`;
-    expr += `${ovs_ofctl(cmd, `add-flow`)} "priority=${of_priority_base},in_port=${ovs_phy_pid},udp,actions=push_vlan:0x8100,output:${ovs_host_pid}"\n`;
-    return expr;
-};
-*/
 
 /////////////////////////////////////////////////////
 /////////////////////////////////////////////////////
@@ -474,6 +420,15 @@ module.exports = function () {
         var expr = ``;
         //expr += `set -x\n`;
         expr += tunnel_add_outbound_no_offload(cmd);
+        //expr += `set +x\n`;
+        return expr;
+    };
+	
+    this.add_inbound_tunnel_no_offload = function (cmd) {
+            
+        var expr = ``;
+        //expr += `set -x\n`;
+        expr += tunnel_add_inbound_no_offload(cmd);
         //expr += `set +x\n`;
         return expr;
     };

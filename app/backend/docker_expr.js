@@ -66,15 +66,22 @@ var boot_libreswan_inst = function (cmd, vpn_port, libreswan_img) {
 	const isakmp_port = (500 + (vpn_port - 100) + ((nic_id === `0`) ? 0 : 10));
 	const natt_port = (4500 + (vpn_port - 100) + ((nic_id === `0`) ? 0 : 10));
 	const l2tp_port = ((1701 - 1) + (vpn_port - 100) + ((nic_id === `0`) ? 0 : 10));
+	const enet_vpn_uri_host = `172.17.0.1`;
 	
 	var expr = ``;
     expr += `ip addr replace ${vpn_cfg.vpn_gw_ip}/32 dev docker0\n`;
-	expr += `docker run -t -d --rm --ipc=host --privileged`;
+	expr += `docker run`;
+	expr += `	-t`;
+	expr += `	-d`;
+	expr += `	--rm`;
+	expr += `	--ipc=host`;
+	expr += `	--privileged`;
 	//expr += `	--net=none`;
-	expr += `	--hostname=${libreswan_inst}`;
-	expr += `	--name=${libreswan_inst}`;
 	expr += `	--env ACENIC_ID=${nic_id}`;
 	expr += `	--env DOCKER_INST=${libreswan_inst}`;
+	expr += `	--env ENET_VPN_URI=http://${enet_vpn_uri_host}:4400${nic_id}`;
+	expr += `	--hostname=${libreswan_inst}`;
+	expr += `	--name=${libreswan_inst}`;
 	expr += `	-p ${vpn_cfg.vpn_gw_ip}:${isakmp_port}:500/udp`;
 	expr += `	-p ${vpn_cfg.vpn_gw_ip}:${natt_port}:4500/udp`;
 	expr += `	-p ${vpn_cfg.vpn_gw_ip}:${l2tp_port}:1701/udp`;
